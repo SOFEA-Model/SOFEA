@@ -41,7 +41,6 @@ ApplicationPage::ApplicationPage(SourceGroup *sg, QWidget *parent)
     // NOTE: uodate SourceTable delegates with any format changes.
 
     mcAppStart = new MonteCarloDateTimeEdit;
-    mcAppStart->setTimeSpec(Qt::UTC);
     mcAppStart->setDisplayFormat("yyyy-MM-dd HH:mm");
 
     mcAppRate = new MonteCarloLineEdit;
@@ -577,6 +576,9 @@ void FluxProfilePage::plotTemporalScaling()
 
     QDateTime dt0 = QDateTime(QDate(fs.refStart.date().year(), 1, 1));
     QDateTime dt1 = QDateTime(dt0.addYears(1));
+
+    dt0.setTimeSpec(Qt::UTC);
+    dt1.setTimeSpec(Qt::UTC);
 
     // Plot Limits
     double x0 = QwtDate::toDouble(dt0);

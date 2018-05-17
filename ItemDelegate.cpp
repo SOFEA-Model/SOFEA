@@ -268,6 +268,7 @@ QWidget *DateTimeEditDelegate::createEditor(QWidget *parent,
 {
     QDateTimeEdit *editor = new QDateTimeEdit(parent);
     editor->setDateTimeRange(m_min, m_max);
+    editor->setTimeSpec(Qt::UTC);
     editor->setDisplayFormat("yyyy-MM-dd HH:mm");
     editor->setFrame(false);
 
@@ -278,7 +279,7 @@ void DateTimeEditDelegate::setEditorData(QWidget *editor,
     const QModelIndex &index) const
 {
     QDateTime value = index.model()->data(index, Qt::EditRole).toDateTime();
-
+    value.setTimeSpec(Qt::UTC);
     QDateTimeEdit *dtEdit = static_cast<QDateTimeEdit*>(editor);
     dtEdit->setDateTime(value);
 }
@@ -290,7 +291,7 @@ void DateTimeEditDelegate::setModelData(QWidget *editor,
     QDateTimeEdit *dtEdit = static_cast<QDateTimeEdit*>(editor);
     dtEdit->interpretText();
     QDateTime value = dtEdit->dateTime();
-
+    value.setTimeSpec(Qt::UTC);
     model->setData(index, value, Qt::EditRole);
 }
 
@@ -300,7 +301,6 @@ void DateTimeEditDelegate::updateEditorGeometry(QWidget *editor,
 {
     editor->setGeometry(option.rect);
 }
-
 
 //-----------------------------------------------------------------------------
 // PointDelegate

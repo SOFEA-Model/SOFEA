@@ -506,6 +506,7 @@ void MainWindow::importValidationData(Scenario *s)
             as->yinit = yinit;
             as->appRate = apprate;
             as->appStart = QDateTime::fromString(QString::fromStdString(start), Qt::ISODate);
+            as->appStart.setTimeSpec(Qt::UTC);
             as->incorpDepth = incdepth;
             as->setGeometry();
             sg->sources.push_back(as);
@@ -934,7 +935,7 @@ void MainWindow::about()
 {
     QString aboutText;
     aboutText += "<h3>Corteva Agriscience<br />Soil Fumigant Exposure Assessment (SOFEA) Modeling System</h3>";
-    aboutText += "<h4>Version 4.0.0 <i>BETA</i>";
+    aboutText += "<h4>Version 4.0.1 <i>BETA</i>";
 #if _WIN64
     aboutText += " 64-bit</h4>";
 #elif _WIN32

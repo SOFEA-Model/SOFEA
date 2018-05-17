@@ -7,7 +7,7 @@ struct FluxScaling
     FluxScaling() :
         tsMethod(TSMethod::Disabled),
         dsMethod(DSMethod::Disabled),
-        refStart(QDateTime::fromString("01/01/2000", "MM/dd/yyyy")),
+        refStart(QDate(2000, 1, 1), QTime(0, 0, 0), Qt::UTC),
         refAppRate(0),
         refDepth(2.54),
         refVL(1),

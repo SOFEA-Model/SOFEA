@@ -123,19 +123,19 @@ std::string Scenario::writeInput() const
     // SOURCE Pathway
     //-------------------------------------------------------------------------
 
+    w.write("SO STARTING\n");
+
+    // LOCATION, SRCPARAM, AREAVERT, HOUREMIS, BUFRZONE
     isrc = 0;
-    igrp = 1;
+    igrp = 0;
     for (const SourceGroup& sg : sourceGroups) {
         if (sg.sources.size() == 0)
             continue;
 
-        w.write("** Source Group {} (G{:0=3})\n", sg.grpid, igrp);
-        w.write("SO STARTING\n");
-        int isrc0 = isrc;
+        w.write("** Source Group {} (G{:0=3})\n", sg.grpid, ++igrp);
+
         for (const Source& s : sg.sources) {
-            // LOCATION, SRCPARAM, AREAVERT, HOUREMIS
             w << s.toString(++isrc);
-            // BUFRZONE
             for (const std::pair<double, int>& z : sg.zones) {
                 QDateTime zoneStart = s.appStart;
                 QDateTime zoneEnd = zoneStart.addSecs(z.second * 60 * 60);
@@ -144,10 +144,22 @@ std::string Scenario::writeInput() const
             }
         }
 
-        w.write("\n   SRCGROUP G{:0=3} S{:0=3}-S{:0=3}\n", igrp, ++isrc0, isrc);
-        w.write("SO FINISHED\n\n");
-        igrp++;
+        w.write("\n");
     }
+
+    // SRCGROUP
+    isrc = 0;
+    igrp = 0;
+    for (const SourceGroup& sg : sourceGroups) {
+        if (sg.sources.size() == 0)
+            continue;
+
+        int isrc0 = ++isrc;
+        isrc += sg.sources.size() - 1;
+        w.write("   SRCGROUP G{:0=3} S{:0=3}-S{:0=3}\n", ++igrp, isrc0, isrc);
+    }
+
+    w.write("SO FINISHED\n\n");
 
     //-------------------------------------------------------------------------
     // RECEPTOR Pathway
@@ -166,11 +178,12 @@ std::string Scenario::writeInput() const
         }
 
         // Receptor Nodes
-        w.write("** Source Group {} (G{:0=3})\n", sg.grpid, igrp);
-        for (const ReceptorNode& node : sg.nodes) {
-            w << node.toString();
+        if (sg.nodes.size() > 0) {
+            w.write("** Source Group {} (G{:0=3}), Discrete\n", sg.grpid, igrp);
+            for (const ReceptorNode& node : sg.nodes) {
+                w << node.toString();
+            }
         }
-        w.write("\n");
 
         // Receptor Rings
         int iarc = 1;
@@ -180,6 +193,7 @@ std::string Scenario::writeInput() const
             w << ring.toString(igrp, iarc);
             iarc++;
         }
+
         igrp++;
     }
     w.write("RE FINISHED\n\n");
@@ -248,47 +262,65 @@ void Scenario::writeFluxFile(const std::string& path) const
         t = t.addSecs(60 * 60);
     }
 
-    // Write the flux profile for all source groups.
+    // Generate and store the expanded reference flux profile for each source group.
+    std::map<const SourceGroup *, std::vector<double>> xrFluxMap;
+
     for (const SourceGroup& sg : sourceGroups)
     {
         // Expand the reference flux profile to one point per hour.
-        std::vector<double> vflux;
+        std::vector<double> xrFlux;
         for (const auto& xy : sg.refFlux) {
-            std::fill_n(std::back_inserter(vflux), xy.first, xy.second);
+            std::fill_n(std::back_inserter(xrFlux), xy.first, xy.second);
         }
 
-        // Determine the number of hours in the flux profile.
-        int n = vflux.size();
+        xrFluxMap[&sg] = xrFlux;
+    }
 
-        // Initialize an array with application started flag for each source.
-        std::vector<bool> started(sg.sources.size(), false);
+    // Determine the overall number of sources across source groups.
+    int nsrc = 0;
+    for (const SourceGroup& sg : sourceGroups)
+        nsrc += sg.sources.size();
 
-        // Iterate over the time grid.
-        for (const auto& kv : grid)
+    // Initialize a vector with application started flag for each source.
+    std::vector<bool> started(nsrc, false);
+
+    // Write the flux profile for all sources. Must be in order of hour, then source.
+    for (const auto& kv : grid)
+    {
+        // Initialize the source counter.
+        int isrc = 0;
+
+        for (const SourceGroup &sg : sourceGroups)
         {
-            // Write the flux for each source, applying scaling.
-            int isrc = 0;
-            for (const Source& s : sg.sources)
+            // Get the stored reference flux profile for this source group.
+            std::vector<double> xrFlux = xrFluxMap[&sg];
+
+            // Determine the number of hours in the expanded flux profile.
+            int n = xrFlux.size();
+
+            for (const Source &s : sg.sources)
             {
-                int i = 0; // position in flux vector
+                // Calculate the overall flux scale factor.
                 double sf = sg.fluxScaling.fluxScaleFactor(s.appRate, s.appStart, s.incorpDepth);
 
+                // Position in reference flux vector.
+                int i = 0;
+
+                // Calculate flux.
                 double flux;
                 if (kv.first == s.appStart) {
-                    started[isrc] = true; // application started
+                    started[isrc] = true;
                 }
                 if (started[isrc] && i < n) {
-                    flux = vflux[i] * sf;
+                    flux = xrFlux[i] * sf;
                     i++;
                 }
                 else {
                     flux = 0;
                 }
 
-                // Write the SO HOUREMIS record.
-                w.write("SO HOUREMIS {} S{:0=3} {: 8.6E}\n", kv.second, isrc + 1, flux);
-
-                isrc++;
+                // Write the SO HOUREMIS record and increment source counter.
+                w.write("SO HOUREMIS {} S{:0=3} {: 8.6E}\n", kv.second, ++isrc, flux);
             }
         }
     }

@@ -16,7 +16,7 @@ SourceGroup::SourceGroup()
     appMethod = AppMethod::Other;
     appFactor = 1.0;
     validationMode = false;
-    appStart = QDateTime(QDate(2000, 1, 1), QTime(0, 0, 0));
+    appStart = QDateTime(QDate(2000, 1, 1), QTime(0, 0, 0), Qt::UTC);
     appRate = Distribution::Constant();
     incorpDepth = Distribution::Constant();
 }
@@ -87,7 +87,6 @@ std::string ReceptorRing::toString(int igrp, int iarc) const
         w.write("{: 6.1f} {: 6.1f} {: 6.1f} G{:0=3}R{:0=3}\n",
                 zElev, zHill, zFlag, igrp, iarc);
     }
-    w.write("\n");
     return w.str();
 }
 
@@ -105,6 +104,6 @@ std::string ReceptorGrid::toString(int igrp, int inet) const
     w.write("   GRIDCART G{:0=3}C{:0=3} XYINC ", igrp, inet);
     w.write("{} {} {} ",  xInit, xCount, xDelta);
     w.write("{} {} {}\n", yInit, yCount, yDelta);
-    w.write("   GRIDCART G{:0=3}C{:0=3} END\n\n", igrp, inet);
+    w.write("   GRIDCART G{:0=3}C{:0=3} END\n", igrp, inet);
     return w.str();
 }

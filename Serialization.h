@@ -122,6 +122,7 @@ void load_minimal(Archive const&, QDateTime& dt, std::string const& value)
 {
     QString qs = QString::fromStdString(value);
     dt = QDateTime::fromString(qs, Qt::ISODate);
+    dt.setTimeSpec(Qt::UTC);
 }
 
 // External save function for QDate

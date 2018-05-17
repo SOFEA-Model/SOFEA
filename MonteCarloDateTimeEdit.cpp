@@ -8,6 +8,8 @@
 MonteCarloDateTimeEdit::MonteCarloDateTimeEdit(QWidget *parent)
     : QDateTimeEdit(parent)
 {
+    setTimeSpec(Qt::UTC);
+
     const QIcon chartIcon = QIcon(":/images/Effects_16x.png");
     QLineEdit *lePtr = this->lineEdit();
     QAction *act = new QAction(chartIcon, "Define Distribution");
