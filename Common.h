@@ -1,0 +1,4 @@
+#pragma once
+
+#define AERMOD_VERSION_STRING "08081"
+#define ISCST3_VERSION_STRING "02035"
