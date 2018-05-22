@@ -97,7 +97,6 @@ set(SOURCES
     main.cpp
     Analysis.cpp
     AnalysisWindow.cpp
-    ConsoleWidget.cpp
     CurveTracker.cpp
     GenericDistribution.cpp
     GenericDistributionDialog.cpp
@@ -105,6 +104,7 @@ set(SOURCES
     InputViewer.cpp
     IPCServer.cpp
     ItemDelegate.cpp
+    LogWidget.cpp
     MainWindow.cpp
     MetFileParser.cpp
     MonteCarloDateTimeEdit.cpp
@@ -135,7 +135,6 @@ set(HEADERS
     Common.h
     Analysis.h
     AnalysisWindow.h
-    ConsoleWidget.h
     CurveTracker.h
     FluxScaling.h
     GenericDistribution.h
@@ -145,6 +144,7 @@ set(HEADERS
     IPCServer.h
     ItemDelegate.h
     ListEditor.h
+    LogWidget.h
     MainWindow.h
     MetFileParser.h
     MonteCarloDateTimeEdit.h

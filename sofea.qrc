@@ -60,5 +60,24 @@
         <file>images/Panel_16x.png</file>
         <file>images/EditReceptors_16x.png</file>
         <file>images/EditReceptors_32x.png</file>
+        <file>images/CleanData_16x.png</file>
+        <file>images/Filter_16x.png</file>
+        <file>images/FilterDropdown_16x.png</file>
+        <file>images/StatusAnnotations_Alert_16xLG_color.png</file>
+        <file>images/StatusAnnotations_Alert_32xLG_color.png</file>
+        <file>images/StatusAnnotations_Complete_and_ok_16xLG_color.png</file>
+        <file>images/StatusAnnotations_Complete_and_ok_32xLG_color.png</file>
+        <file>images/StatusAnnotations_Critical_16xLG_color.png</file>
+        <file>images/StatusAnnotations_Critical_32xLG_color.png</file>
+        <file>images/StatusAnnotations_Information_16xLG.png</file>
+        <file>images/StatusAnnotations_Information_16xLG_color.png</file>
+        <file>images/StatusAnnotations_Information_32xLG.png</file>
+        <file>images/StatusAnnotations_Information_32xLG_color.png</file>
+        <file>images/StatusAnnotations_Invalid_16xLG_color.png</file>
+        <file>images/StatusAnnotations_Invalid_32xLG_color.png</file>
+        <file>images/StatusAnnotations_Warning_16xLG_color.png</file>
+        <file>images/StatusAnnotations_Warning_32xLG_color.png</file>
+        <file>images/StatusAnnotations_Warning_16xLG.png</file>
+        <file>images/StatusAnnotations_Warning_32xLG.png</file>
     </qresource>
 </RCC>

@@ -44,6 +44,7 @@ SourceTable::SourceTable(SourceGroup *sg, QWidget *parent)
     table->verticalHeader()->setVisible(true);
     table->horizontalHeader()->setVisible(true);
     table->horizontalHeader()->setStretchLastSection(false);
+    table->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     table->setFrameStyle(QFrame::NoFrame);
     table->setContextMenuPolicy(Qt::CustomContextMenu);
     table->setModel(model);

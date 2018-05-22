@@ -23,6 +23,7 @@
 #include <boost/math/distributions/weibull.hpp>
 
 #include <boost/log/trivial.hpp>
+#include <boost/log/attributes/scoped_attribute.hpp>
 
 #include "GenericDistribution.h"
 
@@ -146,11 +147,13 @@ namespace Detail
 
 void GenericDistribution::pdf(QVector<double> const& x, QVector<double> &y) const
 {
+    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Distribution");
+
     y.reserve(x.size());
     try {
         boost::apply_visitor(Distribution::Detail::pdf_visitor(x, y), *this);
     } catch (const std::exception &e) {
-        BOOST_LOG_TRIVIAL(error) << e.what();
+        BOOST_LOG_TRIVIAL(warning) << e.what();
         return;
     }
-};
+}

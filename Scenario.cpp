@@ -148,6 +148,8 @@ std::string Scenario::writeInput() const
     }
 
     // SRCGROUP
+    w.write("   SRCGROUP ALL\n");
+
     isrc = 0;
     igrp = 0;
     for (const SourceGroup& sg : sourceGroups) {
@@ -222,6 +224,7 @@ std::string Scenario::writeInput() const
 
     w.write("OU STARTING\n");
     w.write("   RECTABLE ALLAVE FIRST\n");
+    w.write("   POSTFILE  1 ALL  NETCDF ALL.nc\n");
 
     igrp = 1;
     for (const SourceGroup& sg : sourceGroups) {

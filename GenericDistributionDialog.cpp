@@ -4,6 +4,7 @@
 #include <limits>
 
 #include <boost/log/trivial.hpp>
+#include <boost/log/attributes/scoped_attribute.hpp>
 #include <boost/optional.hpp>
 
 #define BOOST_MULTI_INDEX_DISABLE_SERIALIZATION
@@ -141,14 +142,14 @@ const QMultiMap<ID, ParameterInfo> parameterMap = {
     { ID::Laplace,           { "Location: ",                boost::none,  boost::none,  boost::none,            3,   0.01 }},
     { ID::Poisson,           { "Mean: ",                    boost::none,        0.001,  boost::none,            3,      1 }},
     { ID::Weibull,           { "Scale: ",                   boost::none,        0.001,  boost::none,            3,   0.01 }},
-    { ID::Weibull,           { "Shape: ",                   boost::none,        0.001,  boost::none,            3,   0.01 }},
-    { ID::Cauchy,            { "Scale: ",                   boost::none,  boost::none,  boost::none,            3,   0.01 }},
+    { ID::Weibull,           { "Shape: ",                   boost::none,            1,  boost::none,            3,   0.01 }},
+    { ID::Cauchy,            { "Scale: ",                   boost::none,            0,  boost::none,            3,   0.01 }},
     { ID::Cauchy,            { "Location: ",                boost::none,  boost::none,  boost::none,            3,   0.01 }},
-    { ID::ChiSquared,        { "Degrees of freedom: ",      boost::none,            1,         1000,            0,      1 }},
+    { ID::ChiSquared,        { "Degrees of freedom: ",      boost::none,            2,         1000,            0,      1 }},
     { ID::NCChiSquared,      { "Non-centrality: ",          boost::none,        0.001,         1000,            3,   0.01 }},
     { ID::NCChiSquared,      { "Degrees of freedom: ",      boost::none,            1,         1000,            0,      1 }},
     { ID::FisherF,           { "Degrees of freedom 2: ",    boost::none,            1,          100,            0,      1 }},
-    { ID::FisherF,           { "Degrees of freedom 1: ",    boost::none,            1,           20,            0,      1 }},
+    { ID::FisherF,           { "Degrees of freedom 1: ",    boost::none,            2,           20,            0,      1 }},
     { ID::Lognormal,         { "Scale: ",                   boost::none,        0.001,  boost::none,            3,   0.01 }},
     { ID::Lognormal,         { "Location: ",                boost::none,  boost::none,  boost::none,            3,   0.01 }},
     { ID::Normal,            { "Standard deviation: ",      boost::none,        0.001,  boost::none,            3,   0.01 }},
@@ -674,6 +675,8 @@ void GenericDistributionDialog::setDistribution(DistributionID id)
 
 void GenericDistributionDialog::updatePlot()
 {
+    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Distribution");
+
     double step;
     QVector<QPointF> samples;
     QVector<double> xvec;
@@ -717,7 +720,7 @@ void GenericDistributionDialog::updatePlot()
     try {
         newDist.pdf(xvec, yvec);
     } catch (const std::exception &e) {
-        BOOST_LOG_TRIVIAL(error) << e.what();
+        BOOST_LOG_TRIVIAL(warning) << e.what();
         return;
     }
 

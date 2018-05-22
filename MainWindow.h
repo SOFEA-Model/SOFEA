@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 
-#include "ConsoleWidget.h"
+#include "LogWidget.h"
 #include "SourceGroupProperties.h"
 #include "ScenarioProperties.h"
 #include "InputViewer.h"
@@ -88,8 +88,8 @@ private:
     // Project Tree
     QTreeWidget *projectTree;
 
-    // Console
-    ConsoleWidget *console;
+    // Log Widget
+    LogWidget *messages;
 
     // Scenario/SourceGroup Containers
     boost::ptr_vector<Scenario> scenarios;

@@ -14,6 +14,7 @@
 #include <boost/geometry/geometries/register/multi_polygon.hpp>
 
 #include <boost/log/trivial.hpp>
+#include <boost/log/attributes/scoped_attribute.hpp>
 
 // Adapt QPointF to the Boost.Geometry Point Concept
 BOOST_GEOMETRY_REGISTER_POINT_2D_GET_SET(QPointF, double, cs::cartesian, x, y, setX, setY)
@@ -107,10 +108,12 @@ bool GeometryOp::is_valid(QPolygonF const& polygon)
 
 bool GeometryOp::correct(QPolygonF &polygon)
 {
+    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Geometry");
+
     boost::geometry::correct(polygon);
     std::string message;
     if (!boost::geometry::is_valid(polygon, message)) {
-        BOOST_LOG_TRIVIAL(error) << message;
+        BOOST_LOG_TRIVIAL(warning) << message;
         return false;
     }
     else {
@@ -143,6 +146,8 @@ void GeometryOp::buffer(std::vector<QPolygonF> const& mpolygon, std::vector<QPol
 
 void GeometryOp::buffer(mpolygon_t const& mpolygon, mpolygon_t& result, double distance, double min_length, std::size_t points_per_circle)
 {
+    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Geometry");
+
     bg::strategy::buffer::distance_symmetric<double> distance_strategy(distance);
     bg::strategy::buffer::join_round join_strategy(points_per_circle);
     bg::strategy::buffer::end_round end_strategy(points_per_circle);

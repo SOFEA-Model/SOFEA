@@ -11,10 +11,6 @@
 #include <boost/smart_ptr/make_shared_object.hpp>
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
-#include <boost/log/sinks/sync_frontend.hpp>
-#include <boost/log/sinks/text_ostream_backend.hpp>
-#include <boost/log/sources/logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
 
 #include "csv/csv.h"
 
@@ -191,14 +187,14 @@ void MainWindow::createPanels()
     addDockWidget(Qt::LeftDockWidgetArea, dwProjectTree);
     viewMenu->addAction(dwProjectTree->toggleViewAction());
 
-    // Console
-    QDockWidget *dwConsole = new QDockWidget(tr("Messages"), this);
-    dwConsole->setObjectName("Console");
-    dwConsole->setAllowedAreas(Qt::BottomDockWidgetArea);
-    console = new ConsoleWidget(dwConsole);
-    dwConsole->setWidget(console);
-    addDockWidget(Qt::BottomDockWidgetArea, dwConsole);
-    viewMenu->addAction(dwConsole->toggleViewAction());
+    // Log Widget
+    QDockWidget *dwMessages = new QDockWidget(tr("Messages"), this);
+    dwMessages->setObjectName("Messages");
+    dwMessages->setAllowedAreas(Qt::BottomDockWidgetArea);
+    messages = new LogWidget(dwMessages);
+    dwMessages->setWidget(messages);
+    addDockWidget(Qt::BottomDockWidgetArea, dwMessages);
+    viewMenu->addAction(dwMessages->toggleViewAction());
 }
 
 void MainWindow::setupConnections()
@@ -257,24 +253,21 @@ void MainWindow::setupConnections()
 
 void MainWindow::setupLogging()
 {
-    // FIXME
-    // See: https://stackoverflow.com/questions/848269/mixing-qt-with-stl-and-boost-are-there-any-bridges-to-make-it-easy
-    // See: https://stackoverflow.com/questions/2350940/streaming-to-qtextedit-via-qtextstream
+    auto core = boost::log::core::get();
 
-    /*
-    boost::shared_ptr<boost::log::core> core = boost::log::core::get();
-
-    // Create the sink
-    typedef boost::log::sinks::synchronous_sink<boost::log::sinks::text_ostream_backend> text_sink;
-    boost::shared_ptr<text_sink> sink = boost::make_shared<text_sink>();
-
-    // Attach the stream
-    QString output;
-    sink->locked_backend()->add_stream(boost::make_shared<QTextStream>(output));
-
-    // Register the sink
+    // Custom Sink
+    auto backend = boost::make_shared<LogWidgetBackend>(messages);
+    typedef boost::log::sinks::synchronous_sink<LogWidgetBackend> sink_t;
+    auto sink = boost::make_shared<sink_t>(backend);
     core->add_sink(sink);
-    */
+
+    // Test
+    //BOOST_LOG_TRIVIAL(trace) << "Trace";
+    //BOOST_LOG_TRIVIAL(debug) << "Debug";
+    //BOOST_LOG_TRIVIAL(info) << "Info";
+    //BOOST_LOG_TRIVIAL(warning) << "Warning";
+    //BOOST_LOG_TRIVIAL(error) << "Error";
+    //BOOST_LOG_TRIVIAL(fatal) << "Fatal";
 }
 
 void MainWindow::loadSettings()
@@ -345,7 +338,7 @@ void MainWindow::openProject()
         ia(scenarios);
     } catch (const std::exception &e) {
         QMessageBox::critical(this, "Parse Error", QString::fromLocal8Bit(e.what()));
-        BOOST_LOG_TRIVIAL(error) << e.what();
+        //BOOST_LOG_TRIVIAL(error) << e.what();
         return;
     }
 
@@ -424,6 +417,9 @@ void MainWindow::closeProject()
     // Clear project data.
     projectFile.clear();
     projectDir.clear();
+
+    // Clear messages.
+    messages->clear();
 
     // Remove all scenarios.
     for (auto it = scenarios.rbegin(); it != scenarios.rend(); ++it)
@@ -511,7 +507,8 @@ void MainWindow::importValidationData(Scenario *s)
             as->setGeometry();
             sg->sources.push_back(as);
         } catch (const std::exception &e) {
-            BOOST_LOG_TRIVIAL(error) << e.what();
+            QMessageBox::critical(this, "Parse Error", QString::fromLocal8Bit(e.what()));
+            //BOOST_LOG_TRIVIAL(error) << e.what();
             break;
         }
     }
