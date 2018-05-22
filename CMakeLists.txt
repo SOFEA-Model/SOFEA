@@ -11,8 +11,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Local Paths
 
-set(QWT_ROOT "C:/Qwt-6.1.3")
-set(BOOST_ROOT "C:/boost_1_66_0")
+set(QWT_ROOT "C:/Qwt-6.3.0-svn")
+set(BOOST_ROOT "C:/boost_1_67_0")
 set(HDF5_ROOT "C:/Program Files/HDF_Group/HDF5/1.8.20")
 set(SZIP_LIBRARY "C:/Program Files/HDF_Group/HDF5/1.8.20/lib")
 set(NETCDF_INCLUDE_DIR "C:/Program Files/netCDF/include")
@@ -53,7 +53,7 @@ set(BOOST_USE_STATIC_LIBS ON)
 set(BOOST_USE_MULTITHREADED ON)
 set(BOOST_USE_STATIC_RUNTIME OFF)
 
-find_package(Boost 1.66.0)
+find_package(Boost 1.67.0)
 
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})

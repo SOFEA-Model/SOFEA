@@ -10,6 +10,10 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     //app.setStyle(QStyleFactory::create("Fusion"));
 
+    // High DPI support.
+    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+
     QCoreApplication::setOrganizationName("Corteva Agriscience");
     QCoreApplication::setOrganizationDomain("corteva.com");
     QCoreApplication::setApplicationName("SOFEA");
