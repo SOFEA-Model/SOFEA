@@ -249,6 +249,7 @@ StandardTableView* AnalysisWindow::outputTable(QWidget *parent)
     table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     table->horizontalHeader()->setStretchLastSection(false);
     table->setFrameStyle(QFrame::NoFrame);
+    table->setSelectionBehavior(QAbstractItemView::SelectItems);
 
     return table;
 }
