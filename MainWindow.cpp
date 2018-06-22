@@ -932,7 +932,7 @@ void MainWindow::about()
 {
     QString aboutText;
     aboutText += "<h3>Corteva Agriscience<br />Soil Fumigant Exposure Assessment (SOFEA) Modeling System</h3>";
-    aboutText += "<h4>Version 4.0.1 <i>BETA</i>";
+    aboutText += QString("<h4>Version %1 <i>BETA</i>").arg(SOFEA_VERSION_STRING);
 #if _WIN64
     aboutText += " 64-bit</h4>";
 #elif _WIN32
@@ -950,7 +950,7 @@ void MainWindow::about()
     // Dispersion Model Info
     aboutText += "<h4>Model Version Information:</h4>";
     aboutText += QString("AERMOD %1<br>").arg(AERMOD_VERSION_STRING);
-    aboutText += QString("ISCST3 %1").arg(ISCST3_VERSION_STRING);
+    //aboutText += QString("ISCST3 %1").arg(ISCST3_VERSION_STRING);
 
     // Contributor Info
     aboutText += "<h4>Developers:</h4>";

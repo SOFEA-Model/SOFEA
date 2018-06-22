@@ -1,4 +1,5 @@
 #pragma once
 
+#define SOFEA_VERSION_STRING "4.0.2"
 #define AERMOD_VERSION_STRING "08081"
 #define ISCST3_VERSION_STRING "02035"
