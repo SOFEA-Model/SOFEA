@@ -94,7 +94,7 @@ double SourceTable::getTotalMass() const
     // Calculate the total mass with AF.
     double total = 0;
     for (const Source &s : sgPtr->sources)
-        total += sgPtr->appFactor * s.appRate;
+        total += sgPtr->appFactor * s.appRate * s.area();
 
     return total;
 }
