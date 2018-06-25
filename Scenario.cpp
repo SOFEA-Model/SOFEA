@@ -287,6 +287,9 @@ void Scenario::writeFluxFile(const std::string& path) const
     // Initialize a vector with application started flag for each source.
     std::vector<bool> started(nsrc, false);
 
+    // Initialize a vector with position in reference flux vector for each source.
+    std::vector<int> index(nsrc, 0);
+
     // Write the flux profile for all sources. Must be in order of hour, then source.
     for (const auto& kv : grid)
     {
@@ -306,17 +309,14 @@ void Scenario::writeFluxFile(const std::string& path) const
                 // Calculate the overall flux scale factor.
                 double sf = sg.fluxScaling.fluxScaleFactor(s.appRate, s.appStart, s.incorpDepth);
 
-                // Position in reference flux vector.
-                int i = 0;
-
                 // Calculate flux.
                 double flux;
                 if (kv.first == s.appStart) {
                     started[isrc] = true;
                 }
-                if (started[isrc] && i < n) {
-                    flux = xrFlux[i] * sf;
-                    i++;
+                if (started[isrc] && index[isrc] < n) {
+                    flux = xrFlux[index[isrc]] * sf;
+                    index[isrc]++;
                 }
                 else {
                     flux = 0;
