@@ -2,6 +2,7 @@
 
 #include "ScenarioPages.h"
 #include "MetFileParser.h"
+#include "MetFileInfoDialog.h"
 
 /****************************************************************************
 ** General
@@ -93,13 +94,9 @@ MetDataPage::MetDataPage(Scenario *s, QWidget *parent)
 
     leSurfaceStationId = new ReadOnlyLineEdit;
     leUpperAirStationId = new ReadOnlyLineEdit;
-    //leTotalHours = new ReadOnlyLineEdit;
-    //leCalmHours = new ReadOnlyLineEdit;
-    //leMissingHours = new ReadOnlyLineEdit;
 
     lwIntervals = new QListWidget;
     lwIntervals->setSelectionMode(QAbstractItemView::NoSelection);
-
 
     //StandardTableView *statsTable = new StandardTableView;
     //QStandardItemModel *statsModel = new QStandardItemModel;
@@ -114,7 +111,7 @@ MetDataPage::MetDataPage(Scenario *s, QWidget *parent)
     //header->resizeSection(1, fm.width("Total Hours"));
     //header->resizeSection(2, fm.width("Calm Hours"));
 
-
+    btnDiagnostics = new QPushButton("Diagnostics...");
     btnUpdate = new QPushButton("Update");
 
     // Layouts
@@ -144,12 +141,6 @@ MetDataPage::MetDataPage(Scenario *s, QWidget *parent)
     infoLayout->addWidget(leSurfaceStationId,                          0, 1);
     infoLayout->addWidget(new QLabel(tr("Upper air station ID:")),     1, 0);
     infoLayout->addWidget(leUpperAirStationId,                         1, 1);
-    //infoLayout->addWidget(new QLabel(tr("Total hours:")),              2, 0);
-    //infoLayout->addWidget(leTotalHours,                                2, 1);
-    //infoLayout->addWidget(new QLabel(tr("Calm hours:")),               3, 0);
-    //infoLayout->addWidget(leCalmHours,                                 3, 1);
-    //infoLayout->addWidget(new QLabel(tr("Missing hours:")),            4, 0);
-    //infoLayout->addWidget(leMissingHours,                              4, 1);
 
     QVBoxLayout *statsLayout = new QVBoxLayout;
     statsLayout->addSpacing(5);
@@ -159,10 +150,11 @@ MetDataPage::MetDataPage(Scenario *s, QWidget *parent)
     QGroupBox *gbFileInfo = new QGroupBox("File Information");
     gbFileInfo->setLayout(infoLayout);
 
-    // Update Button
+    // Buttons
     QHBoxLayout *layout4 = new QHBoxLayout;
     layout4->addStretch(1);
     layout4->addWidget(btnUpdate);
+    layout4->addWidget(btnDiagnostics);
 
     // Main Layout
     QVBoxLayout *mainLayout = new QVBoxLayout;
@@ -190,6 +182,7 @@ void MetDataPage::init()
 
     connect(btnSurfaceDataFile, &QPushButton::clicked, this, &MetDataPage::browseMetDataFile);
     connect(btnUpperAirDataFile, &QPushButton::clicked, this, &MetDataPage::browseMetDataFile);
+    connect(btnDiagnostics, &QPushButton::clicked, this, &MetDataPage::showInfoDialog);
     connect(btnUpdate, &QPushButton::clicked, this, &MetDataPage::update);
 
     load();
@@ -223,16 +216,30 @@ void MetDataPage::load()
     }
 }
 
+void MetDataPage::showInfoDialog()
+{
+    std::string surfaceFile = leSurfaceDataFile->text().toStdString();
+
+    MetFileParser parser(surfaceFile);
+    std::shared_ptr<SurfaceData> sd = parser.getSurfaceData();
+
+    if (sd == nullptr)
+        return;
+
+    MetFileInfoDialog dialog(sd, this);
+    dialog.exec();
+}
+
 void MetDataPage::update()
 {
     std::string surfaceFile = leSurfaceDataFile->text().toStdString();
-    SurfaceFileInfo sfInfo = MetFileParser::parseSurfaceFile(surfaceFile);
+
+    MetFileParser parser(surfaceFile);
+    SurfaceInfo sfInfo = parser.getSurfaceInfo();
 
     leSurfaceStationId->setText(QString::fromStdString(sfInfo.sfloc));
     leUpperAirStationId->setText(QString::fromStdString(sfInfo.ualoc));
-    //leTotalHours->setText(QString::number(sfInfo.nrec));
-    //leCalmHours->setText(QString::number(sfInfo.ncalm));
-    //leMissingHours->setText(QString::number(sfInfo.nmiss));
+
 
     lwIntervals->clear();
     for (const std::string& i : sfInfo.intervals) {

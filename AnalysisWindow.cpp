@@ -339,7 +339,7 @@ QWidget* AnalysisWindow::infoControl(QWidget *parent)
     mainLayout->addRow("File Path: ", lePath);
     mainLayout->addRow("Receptors: ", leReceptors);
     mainLayout->addRow("Time Steps: ", leTimeSteps);
-    mainLayout->addRow("Library Version: ", leVersion);
+    mainLayout->addRow("netCDF Version: ", leVersion);
     control->setLayout(mainLayout);
 
     return control;

@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <memory>
 #include <vector>
 
 #include <boost/algorithm/string.hpp>
@@ -17,102 +18,80 @@ using namespace boost::gregorian;
 using namespace boost::posix_time;
 using namespace boost::icl;
 
-struct SurfaceHeader
+inline bool checkCalm(const SurfaceData::SurfaceRecord& sr)
 {
-    std::string mplat;      // T2,A8    latitude
-    std::string mplon;      // T12,A8   longitude
-    std::string ualoc;      // T37,A8   upper air station identifier
-    std::string sfloc;      // T54,A8   surface station identifier
-    std::string osloc;      // T71,A8   site-specific identifier
-    std::string versno;     // T93,A6   AERMET version
-    double thresh1spd;      // F5.2     optional
-    std::string cc_tt_subs; // A17      optional
-    std::string mmif_vers;  // A40      optional
-};
+    // Based on subroutine CHKCLM in METEXT.F
 
-struct SurfaceRecord
+    if (sr.wspd == 0)
+        return true;
+    else
+        return false;
+}
+
+inline bool checkMiss(const SurfaceData::SurfaceRecord& sr)
 {
-    int mpyr;               // I2,1X    year
-    int mpcmo;              // I2,1X    month
-    int mpcdy;              // I2,1X    day
-    int mpjdy;              // I3,1X    Julian day
-    int j;                  // I2,1X    hour
-    double hflux;           // F6.1,1X  sensible heat flux (W/m2)
-    double ustar;           // F6.3,1X  surface friction velocity (m/s)
-    double wstar;           // F6.3,1X  convective velocity scale (m/s)
-    double vptg;            // F6.3,1X  vertical potential temperature gradient above PBL
-    double ziconv;          // F5.0,1X  height of convectively-generated boundary layer (m)
-    double zimech;          // F5.0,1X  height of mechanically-generated boundary layer (m)
-    double mol;             // F8.1,1X  Monin-Obukhov length (m)
-    double z0;              // F7.4,1X  surface roughness length (m)
-    double bowen;           // F6.2,1X  Bowen ratio
-    double albedo;          // F6.2,1X  albedo
-    double wspd;            // F7.2,1X  wind speed (m/s)
-    double wdir;            // F6.1,1X  wind direction (degrees)
-    double zref;            // F6.1,1X  reference height for Ws and Wd (m)
-    double t;               // F6.1,1X  temperature (K)
-    double ztref;           // F6.1,1X  reference height for temp (m)
-    int ipcode;             // I5,1X    precipitation code
-    double pamt;            // F6.2,1X  precipitation amount (mm)
-    double rh;              // F6.0,1X  relative humidity
-    double p;               // F6.0,1X  surface pressure
-    int ccvr;               // I5,1X    cloud cover
-    std::string wsadj;      // A7,1X    flag for WS adjustment
-    std::string subs;       // A12      flags for CCVR and TEMP substitutions
-};
+    // Based on subroutine CHKMSG in METEXT.F
 
-struct ProfileRecord
+    // Wind speed (meters/second)
+    if (sr.wspd >= 90.0 || sr.wspd < 0.0) {
+        return true;
+    }
+    // Wind direction (degrees from north)
+    else if (sr.wdir > 900.0 || sr.wdir <= -9.0) {
+        return true;
+    }
+    // Ambient temperature (kelvins)
+    else if (sr.t > 900.0 || sr.t <= 0.0) {
+        return true;
+    }
+    // Monin-Obukhov length (meters)
+    else if (sr.mol < -99990.0) {
+        return true;
+    }
+    // Convective Mixing height (meters)
+    else if (sr.mol < 0.0 && (sr.ziconv > 90000.0 || sr.ziconv < 0.0)) {
+        return true;
+    }
+    // Mechanical Mixing height (meters)
+    else if (sr.zimech > 90000.0 || sr.zimech < 0.0) {
+        return true;
+    }
+    // Surface friction velocity (meters/second)
+    else if (sr.ustar < 0.0 || sr.ustar >= 9.0) {
+        return true;
+    }
+    // Convective velocity scale (meters/second)
+    else if (sr.wstar < 0.0 && (sr.mol < 0.0 && sr.mol > -99990.0)) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+MetFileParser::MetFileParser(const std::string& filename)
 {
-    int mpyr;               // I2,1X    year
-    int mpcmo;              // I2,1X    month
-    int mpcdy;              // I2,1X    day
-    int j;                  // I2,1X    hour
-    double ht;              // F6.1,1X  measurement height (m)
-    int top;                // I1,1X    top of profile flag
-    double wdir;            // F5.0,1X  wind direction at the current level (degrees)
-    double wspd;            // F7.2,1X  wind speed at the current level (m/s)
-    double t;               // F7.1,1X  temperature at the current level (C)
-    double sa;              // F6.1,1X  sigma-A (degrees)
-    double sw;              // F7.2     sigma-W (m/s)
-};
-
-SurfaceFileInfo MetFileParser::parseSurfaceFile(const std::string& filename)
-{
-    SurfaceFileInfo info;
-    SurfaceHeader sh;
-    SurfaceRecord sr;
-    std::vector<SurfaceRecord> srvec;
-    
-    // For tracking contiguous time intervals.
-    interval_set<ptime> tset;
-
     std::ifstream ifs(filename, std::ios_base::in);
     if (!ifs)
-        return info;
+        return;
+
+    sd = std::make_shared<SurfaceData>();
 
     std::string line; // buffer
-    
+
     if (std::getline(ifs, line) && line.size() >= 99)
     {
-        sh.mplat  = line.substr(2,  8); // T2,A8
-        sh.mplon  = line.substr(12, 8); // T12,A8
-        sh.ualoc  = line.substr(37, 8); // T37,A8
-        sh.sfloc  = line.substr(54, 8); // T54,A8
-        sh.osloc  = line.substr(71, 8); // T71,A8
-        sh.versno = line.substr(93, 6); // T93,A6
+        sd->header.mplat  = line.substr(2,  8); // T2,A8
+        sd->header.mplon  = line.substr(12, 8); // T12,A8
+        sd->header.ualoc  = line.substr(37, 8); // T37,A8
+        sd->header.sfloc  = line.substr(54, 8); // T54,A8
+        sd->header.osloc  = line.substr(71, 8); // T71,A8
+        sd->header.versno = line.substr(93, 6); // T93,A6
     }
-
-    info.mplat  = boost::trim_copy(sh.mplat);
-    info.mplon  = boost::trim_copy(sh.mplon);
-    info.ualoc  = boost::trim_copy(sh.ualoc);
-    info.sfloc  = boost::trim_copy(sh.sfloc);
-    info.osloc  = boost::trim_copy(sh.osloc);
-    info.versno = boost::trim_copy(sh.versno);
-    
-    int ncalm = 0; // track calm hours
 
     while (ifs.good())
     {
+        SurfaceData::SurfaceRecord sr;
         std::getline(ifs, line);
 
         std::istringstream iss(line);
@@ -123,39 +102,63 @@ SurfaceFileInfo MetFileParser::parseSurfaceFile(const std::string& filename)
 
         if (iss.good())
         {
-            if (sr.wspd == 0)
-                ncalm++;
-            
-            // Use a window of 1950 to 2049 for 2-digit years per AERMOD 
+            sr.calm = checkCalm(sr);
+            sr.miss = checkMiss(sr);
+
+            if (sr.calm)
+                sd->ncalm++;
+            else if (sr.miss)
+                sd->nmiss++;
+
+            // Use a window of 1950 to 2049 for 2-digit years per AERMOD
             // convention. See v99211 (July 30, 1999) release notes.
             int offset = ((sr.mpyr > 49) ? 1900 : 2000);
             sr.mpyr += offset;
-            
-            // Append record to output vector
-            srvec.push_back(sr);
 
-            // Interval calculations
+            // Append record to output vector
+            sd->records.push_back(sr);
+
+            // Interval calculations to track contiguous time intervals.
             ptime t(date(sr.mpyr, sr.mpcmo, sr.mpcdy), hours(sr.j - 1));
-            tset += discrete_interval<ptime>::right_open(t, t + hours(1));
+            sd->intervals += discrete_interval<ptime>::right_open(t, t + hours(1));
         }
     }
 
-    info.tmin = first(tset);
-    info.tmax = last(tset);
+    sd->nrec = sd->records.size();
+}
 
-    // Calculate total number of hours between start and end
-    time_duration td = info.tmax - info.tmin;
+SurfaceInfo MetFileParser::getSurfaceInfo() const
+{
+    SurfaceInfo info;
 
-    info.nrec = srvec.size();
-    info.ncalm = ncalm;
-    info.nmiss = td.hours() - srvec.size() + 1;
+    if (sd == nullptr)
+        return info;
 
-    // Convert intervals to string vector
-    for (const auto &interval : tset) {
+    // Header Info
+    info.mplat  = boost::trim_copy(sd->header.mplat);
+    info.mplon  = boost::trim_copy(sd->header.mplon);
+    info.ualoc  = boost::trim_copy(sd->header.ualoc);
+    info.sfloc  = boost::trim_copy(sd->header.sfloc);
+    info.osloc  = boost::trim_copy(sd->header.osloc);
+    info.versno = boost::trim_copy(sd->header.versno);
+
+    // Record Info
+    info.tmin = first(sd->intervals);
+    info.tmax = last(sd->intervals);
+    info.nrec = sd->nrec;
+    info.ncalm = sd->ncalm;
+    info.nmiss = sd->nmiss;
+
+    for (const auto &interval : sd->intervals) {
         std::ostringstream oss;
         oss << interval;
         info.intervals.push_back(oss.str());
     }
-    
+
     return info;
+}
+
+std::shared_ptr<SurfaceData> MetFileParser::getSurfaceData() const
+{
+    return sd;
 }

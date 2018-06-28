@@ -5,16 +5,21 @@ project(sofea)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "../cmake/")
 
+# C++17 Support
+#if(MSVC)
+#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
+#endif(MSVC)
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Local Paths
 
-set(QWT_ROOT "C:/Qwt-6.3.0-svn")
+set(QWT_ROOT "C:/Qwt-6.1.3")
+set(QWTPOLAR_ROOT "C:/QwtPolar-1.2.0-svn")
 set(BOOST_ROOT "C:/boost_1_67_0")
 set(HDF5_ROOT "C:/Program Files/HDF_Group/HDF5/1.8.20")
-set(SZIP_LIBRARY "C:/Program Files/HDF_Group/HDF5/1.8.20/lib")
 set(NETCDF_INCLUDE_DIR "C:/Program Files/netCDF/include")
 set(NETCDF_LIBRARY "C:/Program Files/netCDF/lib")
 set(FMT_LIBRARY_DIR "../lib")
@@ -41,6 +46,17 @@ include_directories(${QWT_INCLUDE_DIR})
 link_directories(${QWT_LIBRARY_DIR})
 
 #############################
+# QwtPolar
+#############################
+
+set(QWTPOLAR_INCLUDE_DIR ${QWTPOLAR_ROOT}/include)
+set(QWTPOLAR_LIBRARY_DIR ${QWTPOLAR_ROOT}/lib)
+set(QWTPOLAR_LIBRARIES "qwtpolar")
+
+include_directories(${QWTPOLAR_INCLUDE_DIR})
+link_directories(${QWTPOLAR_LIBRARY_DIR})
+
+#############################
 # Boost
 #############################
 
@@ -62,8 +78,7 @@ link_directories(${Boost_LIBRARY_DIRS})
 # HDF5
 #############################
 
-set(HDF5_USE_STATIC_LIBRARIES ON)
-find_package(HDF5 COMPONENTS C HL)
+find_package(HDF5 COMPONENTS C HL NO_MODULE REQUIRED static)
 
 include_directories(${HDF5_INCLUDE_DIRS})
 link_directories(${HDF5_C_LIBRARY_DIRS})
@@ -94,6 +109,7 @@ link_directories(${FMT_LIBRARY_DIR})
 set(TARGET ${CMAKE_PROJECT_NAME})
 
 set(SOURCES
+    ctkRangeSlider.cpp
     main.cpp
     Analysis.cpp
     AnalysisWindow.cpp
@@ -106,6 +122,7 @@ set(SOURCES
     ItemDelegate.cpp
     LogWidget.cpp
     MainWindow.cpp
+    MetFileInfoDialog.cpp
     MetFileParser.cpp
     MonteCarloDateTimeEdit.cpp
     MonteCarloLineEdit.cpp
@@ -132,6 +149,7 @@ set(SOURCES
 )
 
 set(HEADERS
+    ctkRangeSlider.h
     Common.h
     Analysis.h
     AnalysisWindow.h
@@ -146,6 +164,7 @@ set(HEADERS
     ListEditor.h
     LogWidget.h
     MainWindow.h
+    MetFileInfoDialog.h
     MetFileParser.h
     MonteCarloDateTimeEdit.h
     MonteCarloLineEdit.h
@@ -200,4 +219,5 @@ target_link_libraries(${TARGET}
     ${NETCDF_LIBRARIES}
     ${QT5_LIBRARIES}
     ${QWT_LIBRARIES}
+    ${QWTPOLAR_LIBRARIES}
     ${FMT_LIBRARIES})

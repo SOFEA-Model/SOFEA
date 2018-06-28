@@ -5,13 +5,14 @@
 
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include <QDateTime>
 
 #include "SourceGroup.h"
 
-struct SurfaceFileInfo
+struct SurfaceInfo
 {
     // Header
     std::string mplat;
@@ -28,7 +29,6 @@ struct SurfaceFileInfo
 
     boost::posix_time::ptime tmin = boost::posix_time::ptime();
     boost::posix_time::ptime tmax = boost::posix_time::ptime();
-
     std::vector<std::string> intervals;
 };
 
@@ -56,7 +56,7 @@ struct Scenario
     double windRotation;
 
     // Surface File Info
-    SurfaceFileInfo sfInfo;
+    SurfaceInfo sfInfo;
     QDateTime minTime;
     QDateTime maxTime;
     std::string surfaceId;

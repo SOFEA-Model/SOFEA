@@ -57,6 +57,7 @@ public:
     void load();
 
 private slots:
+    void showInfoDialog();
     void update();
     void browseMetDataFile();
 
@@ -72,10 +73,8 @@ private:
 
     ReadOnlyLineEdit *leSurfaceStationId;
     ReadOnlyLineEdit *leUpperAirStationId;
-    ReadOnlyLineEdit *leTotalHours;
-    ReadOnlyLineEdit *leCalmHours;
-    ReadOnlyLineEdit *leMissingHours;
     QListWidget *lwIntervals;
+    QPushButton *btnDiagnostics;
     QPushButton *btnUpdate;
 };
 

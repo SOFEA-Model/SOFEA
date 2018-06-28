@@ -44,7 +44,8 @@ Scenario::Scenario()
 
 void Scenario::resetSurfaceFileInfo()
 {
-    sfInfo = MetFileParser::parseSurfaceFile(surfaceFile);
+    MetFileParser parser(surfaceFile);
+    sfInfo = parser.getSurfaceInfo();
 
     if (sfInfo.tmin.is_not_a_date_time())
         return;
