@@ -2,10 +2,7 @@
 #define SOURCEMODEL_H
 
 #include <QAbstractTableModel>
-#include <QList>
 #include <QVariant>
-
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "SourceGroup.h"
 
@@ -15,11 +12,9 @@ class SourceModel : public QAbstractTableModel
 
 public:
     SourceModel(SourceGroup *sg, QObject *parent = nullptr);
-    void setDirectEditMode(bool on);
-    void save();
     void load();
     void reset();
-    void import(const QString &file);
+    void import();
     Source* getSource(const QModelIndex &index);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -37,8 +32,6 @@ public slots:
 
 private:
     SourceGroup *sgPtr;
-    boost::ptr_vector<Source> sources;
-    bool directEdit = false;
 };
 
 #endif // SOURCEMODEL_H

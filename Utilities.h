@@ -1,12 +1,18 @@
 #ifndef UTILITIES_H
 #define UTILITIES_H
 
+#include <string>
+
+#include <QFrame>
 #include <QDateEdit>
 #include <QGridLayout>
-#include <QFrame>
+#include <QLabel>
 #include <QLineEdit>
-#include <QPlainTextEdit>
+#include <QTextEdit>
 #include <QPalette>
+#include <QPlainTextEdit>
+#include <QStringList>
+#include <QTextEdit>
 
 //-----------------------------------------------------------------------------
 // GridLayout
@@ -69,10 +75,42 @@ class ReadOnlyLineEdit : public QLineEdit
 {
 public:
     explicit ReadOnlyLineEdit(QWidget *parent = nullptr);
+    void setBasePalette();
 protected:
     void paintEvent(QPaintEvent *event) override;
 private:
-    QPalette currentPalette;
+    QPalette m_defaultPalette;
+};
+
+//-----------------------------------------------------------------------------
+// ReadOnlyTextEdit
+//-----------------------------------------------------------------------------
+
+class ReadOnlyTextEdit : public QTextEdit
+{
+public:
+    explicit ReadOnlyTextEdit(QWidget *parent = nullptr);
+    void setRowCount(const int rows);
+protected:
+    void paintEvent(QPaintEvent *event) override;
+private:
+    QPalette m_defaultPalette;
+};
+
+//-----------------------------------------------------------------------------
+// StatusLabel
+//-----------------------------------------------------------------------------
+
+class StatusLabel : public QWidget
+{
+public:
+    StatusLabel(QWidget *parent = nullptr);
+    void setSeverity(const int severity);
+    void setText(const QString& text);
+
+private:
+    QLabel *m_iconLabel;
+    QLabel *m_textLabel;
 };
 
 #endif // UTILITIES_H

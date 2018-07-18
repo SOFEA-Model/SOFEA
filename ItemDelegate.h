@@ -32,7 +32,6 @@ public:
     QSize sizeHint(const QStyleOptionViewItem &option,
         const QModelIndex &index) const override;
 
-private:
     static QPixmap brushValuePixmap(const QBrush &b);
 };
 

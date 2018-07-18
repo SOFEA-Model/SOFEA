@@ -8,6 +8,7 @@
 #include "ScenarioProperties.h"
 #include "InputViewer.h"
 #include "SourceTable.h"
+#include "AnalysisWindow.h"
 
 #include <boost/ptr_container/ptr_vector.hpp>
 
@@ -76,20 +77,15 @@ private:
 private:
     QTabWidget *centralTabWidget;
 
-    // Menus
     QMenu *fileMenu;
     QMenu *viewMenu;
     QMenu *modelMenu;
     QMenu *helpMenu;
 
-    // Toolbar
     QToolBar *toolbar;
-
-    // Project Tree
     QTreeWidget *projectTree;
-
-    // Log Widget
     LogWidget *messages;
+    AnalysisWindow *analysisWindow = nullptr;
 
     // Scenario/SourceGroup Containers
     boost::ptr_vector<Scenario> scenarios;

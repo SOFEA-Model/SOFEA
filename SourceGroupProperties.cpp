@@ -3,21 +3,28 @@
 
 #include "SourceGroupProperties.h"
 
-SourceGroupProperties::SourceGroupProperties(SourceGroup *sg, QWidget *parent)
-    : SettingsDialog(parent), sgPtr(sg), saved(false)
+SourceGroupProperties::SourceGroupProperties(Scenario *s, SourceGroup *sg, QWidget *parent)
+    : SettingsDialog(parent), sgPtr(sg), _saved(false)
 {
     setWindowTitle(QString::fromStdString(sg->grpid));
     setWindowIcon(QIcon(":/images/BuildQueue_32x.png"));
 
     applicationPage = new ApplicationPage(sg);
+    depositionPage = new DepositionPage(sg);
     fluxProfilePage = new FluxProfilePage(sg);
     bufferZonePage = new BufferZonePage(sg);
-    fieldPage = new FieldPage(sg);
+
+    if (!s->aermodDryDeposition && !s->aermodWetDeposition) {
+        depositionPage->warnDepoNotEnabled();
+    }
+    if (s->aermodGDVelocityEnabled) {
+        depositionPage->warnUserVelocity();
+    }
 
     addPage("Application", applicationPage);
+    addPage("Deposition", depositionPage);
     addPage("Flux Profile", fluxProfilePage);
     addPage("Buffer Zone", bufferZonePage);
-    addPage("Fields", fieldPage);
 
     connect(buttonBox, &QDialogButtonBox::accepted, this, &SourceGroupProperties::accept);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &SourceGroupProperties::reject);
@@ -26,9 +33,9 @@ SourceGroupProperties::SourceGroupProperties(SourceGroup *sg, QWidget *parent)
 void SourceGroupProperties::accept()
 {   
     applicationPage->save();
+    depositionPage->save();
     fluxProfilePage->save();
     bufferZonePage->save();
-    fieldPage->save();
 
     // Recalculate source values if distribution is modified and in prospective mode.
     if (!sgPtr->validationMode)
@@ -41,12 +48,23 @@ void SourceGroupProperties::accept()
             sgPtr->resampleIncorpDepth();
     }
 
-    saved = true;
+    // Recalculate deposition values if modified, regardless of mode.
+    if (depositionPage->mcAirDiffusion->isModified())
+        sgPtr->resampleAirDiffusion();
+    if (depositionPage->mcWaterDiffusion->isModified())
+        sgPtr->resampleWaterDiffusion();
+    if (depositionPage->mcCuticularResistance->isModified())
+        sgPtr->resampleCuticularResistance();
+    if (depositionPage->mcHenryConstant->isModified())
+        sgPtr->resampleHenryConstant();
+
+    _saved = true;
+    emit saved();
 }
 
 void SourceGroupProperties::reject()
 {
-    if (saved)
+    if (_saved)
         QDialog::done(QDialog::Accepted);
     else
         QDialog::done(QDialog::Rejected);

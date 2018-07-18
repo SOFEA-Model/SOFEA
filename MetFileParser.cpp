@@ -12,7 +12,7 @@
 #include <boost/icl/ptime.hpp>
 #include <boost/icl/interval_set.hpp>
 
-#include "fmt/format.h"
+#include <fmt/format.h>
 
 using namespace boost::gregorian;
 using namespace boost::posix_time;

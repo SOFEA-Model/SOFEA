@@ -5,6 +5,7 @@
 
 #include "Scenario.h"
 #include "StandardTableView.h"
+#include "ListEditor.h"
 #include "Utilities.h"
 
 QT_BEGIN_NAMESPACE
@@ -21,6 +22,7 @@ class QListWidget;
 class QPushButton;
 class QRadioButton;
 class QSpinBox;
+class QToolButton;
 QT_END_NAMESPACE
 
 /****************************************************************************
@@ -29,7 +31,6 @@ QT_END_NAMESPACE
 
 class GeneralPage : public QWidget
 {
-    Q_OBJECT
 public:
     GeneralPage(Scenario *s, QWidget *parent = nullptr);
     void init();
@@ -41,6 +42,8 @@ private:
 
     QComboBox *cboFumigant;
     DoubleLineEdit *leDecayCoefficient;
+    QDoubleSpinBox *sbFlagpoleHeight;
+    ListEditor *periodEditor;
 };
 
 /****************************************************************************
@@ -50,6 +53,7 @@ private:
 class MetDataPage : public QWidget
 {
     Q_OBJECT
+
 public:
     MetDataPage(Scenario *s, QWidget *parent = nullptr);
     void init();
@@ -65,9 +69,9 @@ private:
     Scenario *scenario;
 
     QLineEdit *leSurfaceDataFile;        // SURFFILE
-    QPushButton *btnSurfaceDataFile;
+    QToolButton *btnSurfaceDataFile;
     QLineEdit *leUpperAirDataFile;       // PROFFILE
-    QPushButton *btnUpperAirDataFile;
+    QToolButton *btnUpperAirDataFile;
     QDoubleSpinBox *sbAnemometerHeight;  // PROFBASE/ANEMHGHT
     QDoubleSpinBox *sbWindRotation;      // WDROTATE
 
@@ -85,11 +89,15 @@ private:
 class DispersionPage : public QWidget
 {
     Q_OBJECT
+
 public:
     DispersionPage(Scenario *s, QWidget *parent = nullptr);
     void init();
     void save();
     void load();
+
+private slots:
+    void resetState();
 
 private:
     Scenario *scenario;
@@ -97,16 +105,20 @@ private:
     // AERMOD
     QCheckBox *chkFlat;
     QCheckBox *chkFastArea;
+    QCheckBox *chkDryDeposition;
+    QCheckBox *chkDryDplt;
+    QCheckBox *chkAreaDplt;
+    QCheckBox *chkGDVelocity;
+    QDoubleSpinBox *sbGDVelocity;
+    QCheckBox *chkWetDeposition;
+    QCheckBox *chkWetDplt;
     QCheckBox *chkLowWind;
-    QWidget *lowWindParams;
+    QLabel *lblSVmin;
+    QLabel *lblWSmin;
+    QLabel *lblFRANmax;
     QDoubleSpinBox *sbSVmin;
     QDoubleSpinBox *sbWSmin;
     QDoubleSpinBox *sbFRANmax;
-
-    // ISCST3
-    QGroupBox *gbIscNonDefault;
-    QCheckBox *chkIscNoCalm;
-    QCheckBox *chkIscMsgPro;
 };
 
-#endif // SCENARIOPAGES_H
+#endif SCENARIOPAGES_H

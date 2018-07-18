@@ -96,26 +96,12 @@ LogWidget::LogWidget(QWidget *parent) : QWidget(parent)
     showWarningsAct = new QAction(warningIcon, tr("Show Warnings"), this);
     showWarningsAct->setCheckable(true);
 
-    filterDistributionAct = new QAction(tr("Distribution"), this);
-    filterGeometryAct = new QAction(tr("Geometry"), this);
-    filterModelAct = new QAction(tr("Model"), this);
-    filterAnalysisAct = new QAction(tr("Analysis"), this);
-
-    filterDistributionAct->setCheckable(true);
-    filterGeometryAct->setCheckable(true);
-    filterModelAct->setCheckable(true);
-    filterAnalysisAct->setCheckable(true);
-
-    QMenu *filterMenu = new QMenu;
-    filterMenu->addAction(filterDistributionAct);
-    filterMenu->addAction(filterGeometryAct);
-    filterMenu->addAction(filterModelAct);
-    filterMenu->addAction(filterAnalysisAct);
+    tagFilterMenu = new QMenu;
 
     FilterButton *filterBtn = new FilterButton;
     filterBtn->setToolTip(tr("Filter"));
     filterBtn->setIcon(filterIcon);
-    filterBtn->setMenu(filterMenu);
+    filterBtn->setMenu(tagFilterMenu);
     filterBtn->setPopupMode(QToolButton::InstantPopup);
 
     toolbar = new QToolBar;
@@ -152,6 +138,28 @@ LogWidget::LogWidget(QWidget *parent) : QWidget(parent)
     init();
 }
 
+void LogWidget::setTags(const QStringList& tags)
+{
+    // This should only be called once.
+    if (!tagFilterMenu->isEmpty())
+        return;
+
+    for (const QString& tag : tags) {
+        QAction *filterAct = new QAction(tag, this);
+        filterAct->setCheckable(true);
+        filterAct->setChecked(true);
+        tagFilterMenu->addAction(filterAct);
+    }
+
+    // Set the connections. Need to iterate over the menu after
+    // it has taken ownership of the pointer.
+    for (const QAction *act : tagFilterMenu->actions()) {
+        connect(act, &QAction::toggled, [=](bool checked) {
+            proxyModel->setFilterTag(act->text(), checked);
+        });
+    }
+}
+
 void LogWidget::clear()
 {
     logModel->clear();
@@ -163,26 +171,10 @@ void LogWidget::init()
     connect(clearAct, &QAction::triggered, this, &LogWidget::clear);
     connect(showInfoAct, &QAction::triggered, proxyModel, &LogFilterProxyModel::setInfoVisible);
     connect(showWarningsAct, &QAction::triggered, proxyModel, &LogFilterProxyModel::setWarningsVisible);
-    connect(filterDistributionAct, &QAction::toggled, [=](bool checked) {
-        proxyModel->setFilterTag("Distribution", checked);
-    });
-    connect(filterGeometryAct, &QAction::toggled, [=](bool checked) {
-        proxyModel->setFilterTag("Geometry", checked);
-    });
-    connect(filterModelAct, &QAction::toggled, [=](bool checked) {
-        proxyModel->setFilterTag("Model", checked);
-    });
-    connect(filterAnalysisAct, &QAction::toggled, [=](bool checked) {
-        proxyModel->setFilterTag("Analysis", checked);
-    });
 
     // Set Defaults
     showInfoAct->setChecked(true);
     showWarningsAct->setChecked(true);
-    filterDistributionAct->setChecked(true);
-    filterGeometryAct->setChecked(true);
-    filterModelAct->setChecked(true);
-    filterAnalysisAct->setChecked(true);
 }
 
 void LogWidget::appendRow(const QString& text, boost::log::trivial::severity_level severity, const QString& tag)

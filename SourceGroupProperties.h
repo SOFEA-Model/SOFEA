@@ -1,15 +1,20 @@
 #ifndef SOURCEGROUPPROPERTIES_H
 #define SOURCEGROUPPROPERTIES_H
 
-#include "SettingsDialog.h"
+#include "Scenario.h"
+#include "SourceGroup.h"
 #include "SourceGroupPages.h"
+#include "SettingsDialog.h"
 
 class SourceGroupProperties : public SettingsDialog
 {
     Q_OBJECT
 
 public:
-    SourceGroupProperties(SourceGroup *sg, QWidget *parent = nullptr);
+    SourceGroupProperties(Scenario *s, SourceGroup *sg, QWidget *parent = nullptr);
+
+signals:
+    void saved();
 
 public slots:
     void accept() override;
@@ -18,10 +23,10 @@ public slots:
 private:
     SourceGroup *sgPtr;
     ApplicationPage *applicationPage;
+    DepositionPage *depositionPage;
     FluxProfilePage *fluxProfilePage;
     BufferZonePage *bufferZonePage;
-    FieldPage *fieldPage;
-    bool saved;
+    bool _saved;
 };
 
 #endif // SOURCEGROUPPROPERTIES_H

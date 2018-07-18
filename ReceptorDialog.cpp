@@ -7,14 +7,27 @@
 #include "Utilities.h"
 #include "GeometryOp.h"
 
-ReceptorDialog::ReceptorDialog(SourceGroup *sg, QWidget *parent)
-    : QDialog(parent), sgPtr(sg), saved(false)
+template <typename T>
+void addStandardItem(QStandardItemModel *model, int row, int col, T value, bool editable)
 {
-    setAttribute(Qt::WA_DeleteOnClose, true);
-    setWindowIcon(QIcon(":/images/EditReceptors_32x.png"));
-    setWindowTitle(QString::fromStdString(sgPtr->grpid));
+    QStandardItem *item = new QStandardItem;
+    item->setEditable(editable);
+    item->setData(value, Qt::DisplayRole);
+    model->setItem(row, col, item);
+}
 
-    // Ring Controls
+// TODO:
+// - zElev: terrain elevation (m)
+// - zHill: hill height scale (m)
+// - zFlag: receptor height above terrain (m)
+
+//-----------------------------------------------------------------------------
+// ReceptorRingTab
+//-----------------------------------------------------------------------------
+
+ReceptorRingTab::ReceptorRingTab(QStandardItemModel *model, QWidget *parent)
+    : QWidget(parent), ringModel(model)
+{
     sbRingBuffer = new QDoubleSpinBox;
     sbRingBuffer->setRange(0.1, 99000); // 99km
     sbRingBuffer->setValue(100);
@@ -24,10 +37,6 @@ ReceptorDialog::ReceptorDialog(SourceGroup *sg, QWidget *parent)
     sbRingSpacing->setRange(0.1, 99000); // 99km
     sbRingSpacing->setValue(100);
     sbRingSpacing->setDecimals(2);
-
-    ringModel = new QStandardItemModel;
-    ringModel->setColumnCount(3);
-    ringModel->setHorizontalHeaderLabels(QStringList{"", "Distance (m)", "Spacing (m)"});
 
     ringTable = new StandardTableView;
     ringTable->setModel(ringModel);
@@ -42,19 +51,81 @@ ReceptorDialog::ReceptorDialog(SourceGroup *sg, QWidget *parent)
 
     ringEditor = new StandardTableEditor(QBoxLayout::LeftToRight);
 
-    // Node Controls
+    // Connections
+    connect(ringEditor->btnAdd,    &QPushButton::clicked, this, &ReceptorRingTab::onAddRingClicked);
+    connect(ringEditor->btnRemove, &QPushButton::clicked, this, &ReceptorRingTab::onRemoveRingClicked);
+
+    ringEditor->init(ringTable);
+    ringEditor->disconnectActions();
+
+    // Layout
+    QGridLayout *ringInputLayout = new QGridLayout;
+    ringInputLayout->setColumnMinimumWidth(0, 200);
+    ringInputLayout->setColumnStretch(0, 0);
+    ringInputLayout->setColumnStretch(1, 1);
+    ringInputLayout->addWidget(new QLabel("Buffer distance (m): "), 0, 0);
+    ringInputLayout->addWidget(new QLabel("Receptor spacing (m): "), 1, 0);
+    ringInputLayout->addWidget(sbRingBuffer, 0, 1);
+    ringInputLayout->addWidget(sbRingSpacing, 1, 1);
+    ringInputLayout->setRowMinimumHeight(2, 5);
+    ringInputLayout->addWidget(ringEditor, 3, 1);
+
+    QVBoxLayout *ringTableLayout = new QVBoxLayout;
+    ringTableLayout->setContentsMargins(0, 0, 0, 0);
+    ringTableLayout->addWidget(ringTable);
+
+    // Main Layout
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    mainLayout->addLayout(ringInputLayout, 0);
+    mainLayout->addSpacing(5);
+    mainLayout->addLayout(ringTableLayout, 1);
+
+    setLayout(mainLayout);
+}
+
+void ReceptorRingTab::onAddRingClicked()
+{
+    QColor color = QColor(Qt::black);
+    double buffer = sbRingBuffer->value();
+    double spacing = sbRingSpacing->value();
+
+    // Check if a ring with the current buffer distance already exists.
+    QModelIndex start = ringModel->index(0, 1);
+    QModelIndexList match = ringModel->match(start, Qt::DisplayRole, QVariant::fromValue(buffer), 1);
+    if (!match.isEmpty()) {
+        // Ring exists; update it.
+        QModelIndex index = match.value(0);
+        QStandardItem *spacingItem = ringModel->item(index.row(), 2);
+        spacingItem->setData(spacing, Qt::DisplayRole);
+    }
+    else {
+        // Add a new ring.
+        int currentRow = ringModel->rowCount();
+        addStandardItem(ringModel, currentRow, 0, color, true);
+        addStandardItem(ringModel, currentRow, 1, buffer, false);
+        addStandardItem(ringModel, currentRow, 2, spacing, false);
+    }
+}
+
+void ReceptorRingTab::onRemoveRingClicked()
+{
+    ringTable->removeSelectedRows();
+}
+
+//-----------------------------------------------------------------------------
+// ReceptorNodeTab
+//-----------------------------------------------------------------------------
+
+ReceptorNodeTab::ReceptorNodeTab(QStandardItemModel *model, QWidget *parent)
+    : QWidget(parent), nodeModel(model)
+{
     leNodeX = new DoubleLineEdit(-10000000, 10000000, 2);
-    leNodeY = new DoubleLineEdit(-10000000, 10000000, 2);
-
-    leNodeX->setFixedWidth(90);
-    leNodeY->setFixedWidth(90);
-
     leNodeX->setValue(0);
-    leNodeY->setValue(0);
+    leNodeX->setFixedWidth(90);
 
-    nodeModel = new QStandardItemModel;
-    nodeModel->setColumnCount(3);
-    nodeModel->setHorizontalHeaderLabels(QStringList{"", "X (m)", "Y (m)"});
+    leNodeY = new DoubleLineEdit(-10000000, 10000000, 2);
+    leNodeY->setValue(0);
+    leNodeY->setFixedWidth(90);
 
     nodeTable = new StandardTableView;
     nodeTable->setModel(nodeModel);
@@ -69,7 +140,60 @@ ReceptorDialog::ReceptorDialog(SourceGroup *sg, QWidget *parent)
 
     nodeEditor = new StandardTableEditor(QBoxLayout::LeftToRight);
 
-    // Grid Controls
+    // Connections
+    connect(nodeEditor->btnAdd,    &QPushButton::clicked, this, &ReceptorNodeTab::onAddNodeClicked);
+    connect(nodeEditor->btnRemove, &QPushButton::clicked, this, &ReceptorNodeTab::onRemoveNodeClicked);
+
+    nodeEditor->init(nodeTable);
+    nodeEditor->disconnectActions();
+
+    // Layout
+    QGridLayout *nodeInputLayout = new QGridLayout;
+    nodeInputLayout->setColumnMinimumWidth(0, 200);
+    nodeInputLayout->setColumnStretch(0, 0);
+    nodeInputLayout->setColumnStretch(1, 1);
+    nodeInputLayout->addWidget(new QLabel("Receptor coordinates (m): "), 0, 0);
+    nodeInputLayout->addWidget(leNodeX, 0, 1);
+    nodeInputLayout->addWidget(leNodeY, 0, 2);
+    nodeInputLayout->setRowMinimumHeight(1, 5);
+    nodeInputLayout->addWidget(nodeEditor, 2, 1, 1, 2);
+
+    QVBoxLayout *nodeTableLayout = new QVBoxLayout;
+    nodeTableLayout->setContentsMargins(0, 0, 0, 0);
+    nodeTableLayout->addWidget(nodeTable);
+
+    // Main Layout
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    mainLayout->addLayout(nodeInputLayout, 0);
+    mainLayout->addSpacing(5);
+    mainLayout->addLayout(nodeTableLayout, 1);
+
+    setLayout(mainLayout);
+}
+
+void ReceptorNodeTab::onAddNodeClicked()
+{
+    QColor color = QColor(Qt::red);
+
+    // Insert item at back.
+    int currentRow = nodeModel->rowCount();
+    addStandardItem(nodeModel, currentRow, 0, color, true);
+    addStandardItem(nodeModel, currentRow, 1, leNodeX->value(), false);
+    addStandardItem(nodeModel, currentRow, 2, leNodeY->value(), false);
+}
+
+void ReceptorNodeTab::onRemoveNodeClicked()
+{
+    nodeTable->removeSelectedRows();
+}
+
+//-----------------------------------------------------------------------------
+// ReceptorGridTab
+//-----------------------------------------------------------------------------
+
+ReceptorGridTab::ReceptorGridTab(QStandardItemModel *model, QWidget *parent)
+    : QWidget(parent), gridModel(model)
+{
     leGridXInit = new DoubleLineEdit(-10000000, 10000000, 2);
     leGridYInit = new DoubleLineEdit(-10000000, 10000000, 2);
     sbGridXCount = new QSpinBox;
@@ -94,10 +218,6 @@ ReceptorDialog::ReceptorDialog(SourceGroup *sg, QWidget *parent)
     sbGridXDelta->setValue(100);
     sbGridYDelta->setValue(100);
 
-    gridModel = new QStandardItemModel;
-    gridModel->setColumnCount(4);
-    gridModel->setHorizontalHeaderLabels(QStringList{"", "Origin", "Count", "Spacing (m)"});
-
     gridTable = new StandardTableView;
     gridTable->setModel(gridModel);
     gridTable->setMinimumWidth(400);
@@ -112,66 +232,14 @@ ReceptorDialog::ReceptorDialog(SourceGroup *sg, QWidget *parent)
 
     gridEditor = new StandardTableEditor(QBoxLayout::LeftToRight);
 
-    // Receptor Count
-    lblReceptorCount = new QLabel("0");
+    // Connections
+    connect(gridEditor->btnAdd,    &QPushButton::clicked, this, &ReceptorGridTab::onAddGridClicked);
+    connect(gridEditor->btnRemove, &QPushButton::clicked, this, &ReceptorGridTab::onRemoveGridClicked);
 
-    // Plot
-    plot = new StandardPlot(this);
-    plot->setPanZoomMode(true);
-    plot->setRescaler(true);
+    gridEditor->init(gridTable);
+    gridEditor->disconnectActions();
 
-	// Button Box
-    buttonBox = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Close);
-
-    // Ring Layout
-    QGridLayout *ringInputLayout = new QGridLayout;
-    ringInputLayout->setColumnMinimumWidth(0, 200);
-    ringInputLayout->setColumnStretch(0, 0);
-    ringInputLayout->setColumnStretch(1, 1);
-    ringInputLayout->addWidget(new QLabel("Buffer distance (m): "), 0, 0);
-    ringInputLayout->addWidget(new QLabel("Receptor spacing (m): "), 1, 0);
-    ringInputLayout->addWidget(sbRingBuffer, 0, 1);
-    ringInputLayout->addWidget(sbRingSpacing, 1, 1);
-    ringInputLayout->setRowMinimumHeight(2, 5);
-    ringInputLayout->addWidget(ringEditor, 3, 1);
-
-    QVBoxLayout *ringTableLayout = new QVBoxLayout;
-    ringTableLayout->setContentsMargins(0, 0, 0, 0);
-    ringTableLayout->addWidget(ringTable);
-
-    QVBoxLayout *ringLayout = new QVBoxLayout;
-    ringLayout->addLayout(ringInputLayout, 0);
-    ringLayout->addSpacing(5);
-    ringLayout->addLayout(ringTableLayout, 1);
-
-    QWidget *ringTab = new QWidget;
-    ringTab->setLayout(ringLayout);
-
-    // Node Layout
-    QGridLayout *nodeInputLayout = new QGridLayout;
-    nodeInputLayout->setColumnMinimumWidth(0, 200);
-    nodeInputLayout->setColumnStretch(0, 0);
-    nodeInputLayout->setColumnStretch(1, 1);
-    nodeInputLayout->setColumnStretch(2, 1);
-    nodeInputLayout->addWidget(new QLabel("Receptor coordinates (m): "), 0, 0);
-    nodeInputLayout->addWidget(leNodeX, 0, 1);
-    nodeInputLayout->addWidget(leNodeY, 0, 2);
-    nodeInputLayout->setRowMinimumHeight(1, 5);
-    nodeInputLayout->addWidget(nodeEditor, 2, 1, 1, 2);
-
-    QVBoxLayout *nodeTableLayout = new QVBoxLayout;
-    nodeTableLayout->setContentsMargins(0, 0, 0, 0);
-    nodeTableLayout->addWidget(nodeTable);
-
-    QVBoxLayout *nodeLayout = new QVBoxLayout;
-    nodeLayout->addLayout(nodeInputLayout, 0);
-    nodeLayout->addSpacing(5);
-    nodeLayout->addLayout(nodeTableLayout, 1);
-
-    QWidget *nodeTab = new QWidget;
-    nodeTab->setLayout(nodeLayout);
-
-    // Grid Layout
+    // Layout
     QGridLayout *gridInputLayout = new QGridLayout;
     gridInputLayout->setColumnMinimumWidth(0, 200);
     gridInputLayout->setColumnStretch(0, 0);
@@ -193,20 +261,80 @@ ReceptorDialog::ReceptorDialog(SourceGroup *sg, QWidget *parent)
     gridTableLayout->setContentsMargins(0, 0, 0, 0);
     gridTableLayout->addWidget(gridTable);
 
-    QVBoxLayout *gridLayout = new QVBoxLayout;
-    gridLayout->addLayout(gridInputLayout, 0);
-    gridLayout->addSpacing(5);
-    gridLayout->addLayout(gridTableLayout, 1);
+    // Main Layout
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    mainLayout->addLayout(gridInputLayout, 0);
+    mainLayout->addSpacing(5);
+    mainLayout->addLayout(gridTableLayout, 1);
 
-    QWidget *gridTab = new QWidget;
-    gridTab->setLayout(gridLayout);
+    setLayout(mainLayout);
+}
+
+void ReceptorGridTab::onAddGridClicked()
+{
+    QColor color = QColor(Qt::blue);
+    QPointF pInit = QPointF(leGridXInit->value(), leGridYInit->value());
+    QPoint pCount = QPoint(sbGridXCount->value(), sbGridYCount->value());
+    QPointF pDelta = QPointF(sbGridXDelta->value(), sbGridYDelta->value());
+
+    // Insert item at back.
+    int currentRow = gridModel->rowCount();
+    addStandardItem(gridModel, currentRow, 0, color, true);
+    addStandardItem(gridModel, currentRow, 1, pInit, false);
+    addStandardItem(gridModel, currentRow, 2, pCount, false);
+    addStandardItem(gridModel, currentRow, 3, pDelta, false);
+}
+
+void ReceptorGridTab::onRemoveGridClicked()
+{
+    gridTable->removeSelectedRows();
+}
+
+//-----------------------------------------------------------------------------
+// ReceptorDialog
+//-----------------------------------------------------------------------------
+
+ReceptorDialog::ReceptorDialog(Scenario *s, SourceGroup *sg, QWidget *parent)
+    : QDialog(parent), sPtr(s), sgPtr(sg), saved(false)
+{
+    setAttribute(Qt::WA_DeleteOnClose, true);
+    setWindowIcon(QIcon(":/images/EditReceptors_32x.png"));
+    setWindowTitle(QString::fromStdString(sgPtr->grpid));
+
+    ringModel = new QStandardItemModel;
+    ringModel->setColumnCount(3);
+    ringModel->setHorizontalHeaderLabels(QStringList{"", "Distance (m)", "Spacing (m)"});
+
+    nodeModel = new QStandardItemModel;
+    nodeModel->setColumnCount(3);
+    nodeModel->setHorizontalHeaderLabels(QStringList{"", "X (m)", "Y (m)"});
+
+    gridModel = new QStandardItemModel;
+    gridModel->setColumnCount(4);
+    gridModel->setHorizontalHeaderLabels(QStringList{"", "Origin", "Count", "Spacing (m)"});
+
+    ringTab = new ReceptorRingTab(ringModel, this);
+    nodeTab = new ReceptorNodeTab(nodeModel, this);
+    gridTab = new ReceptorGridTab(gridModel, this);
 
     QTabWidget *tabWidget = new QTabWidget;
     tabWidget->addTab(ringTab, "Rings");
     tabWidget->addTab(nodeTab, "Discrete");
     tabWidget->addTab(gridTab, "Uniform Grid");
 
-    // Main Layouts
+    // Receptor Count
+    lblReceptorCount = new QLabel("0");
+
+    // Plot
+    plot = new StandardPlot(this);
+    plot->setAutoReplot(false);
+    plot->setPanZoomMode(true);
+    plot->setRescaler(true);
+
+	// Button Box
+    buttonBox = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Close);
+
+    // Layout
     QVBoxLayout *paramsLayout = new QVBoxLayout;
     paramsLayout->addWidget(tabWidget, 1);
 
@@ -234,48 +362,20 @@ ReceptorDialog::ReceptorDialog(SourceGroup *sg, QWidget *parent)
     split->addWidget(tabWidget, 0);
     split->addLayout(plotLayout, 1);
 
+    // Main Layout
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addLayout(split);
     mainLayout->addWidget(buttonBox);
 
     setLayout(mainLayout);
-
     installEventFilter(this);
-
     init();
-}
-
-template <typename T>
-void addStandardItem(QStandardItemModel *model, int row, int col, T value, bool editable)
-{
-    QStandardItem *item = new QStandardItem;
-    item->setEditable(editable);
-    item->setData(value, Qt::DisplayRole);
-    model->setItem(row, col, item);
 }
 
 void ReceptorDialog::init()
 {
     connect(buttonBox, &QDialogButtonBox::rejected, this, &ReceptorDialog::reject);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &ReceptorDialog::accept);
-
-    connect(ringEditor->btnAdd,    &QPushButton::clicked, this, &ReceptorDialog::onAddRingClicked);
-    connect(ringEditor->btnRemove, &QPushButton::clicked, this, &ReceptorDialog::onRemoveRingClicked);
-
-    connect(nodeEditor->btnAdd,    &QPushButton::clicked, this, &ReceptorDialog::onAddNodeClicked);
-    connect(nodeEditor->btnRemove, &QPushButton::clicked, this, &ReceptorDialog::onRemoveNodeClicked);
-
-    connect(gridEditor->btnAdd,    &QPushButton::clicked, this, &ReceptorDialog::onAddGridClicked);
-    connect(gridEditor->btnRemove, &QPushButton::clicked, this, &ReceptorDialog::onRemoveGridClicked);
-
-    ringEditor->init(ringTable);
-    ringEditor->disconnectActions();
-
-    nodeEditor->init(nodeTable);
-    nodeEditor->disconnectActions();
-
-    gridEditor->init(gridTable);
-    gridEditor->disconnectActions();
 
     // Call load before connecting dataChanged signals.
     load();
@@ -472,71 +572,6 @@ void ReceptorDialog::reject()
         QDialog::done(QDialog::Accepted);
     else
         QDialog::done(QDialog::Rejected);
-}
-
-void ReceptorDialog::onAddRingClicked()
-{
-    QColor color = QColor(Qt::black);
-    double buffer = sbRingBuffer->value();
-    double spacing = sbRingSpacing->value();
-
-    // Check if a ring with the current buffer distance already exists.
-    QModelIndex start = ringModel->index(0, 1);
-    QModelIndexList match = ringModel->match(start, Qt::DisplayRole, QVariant::fromValue(buffer), 1);
-    if (!match.isEmpty()) {
-        // Ring exists; update it.
-        QModelIndex index = match.value(0);
-        QStandardItem *item = ringModel->item(index.row(), 2);
-        item->setData(spacing, Qt::DisplayRole);
-    }
-    else {
-        // Add a new ring.
-        int currentRow = ringModel->rowCount();
-        addStandardItem(ringModel, currentRow, 0, color, true);
-        addStandardItem(ringModel, currentRow, 1, buffer, false);
-        addStandardItem(ringModel, currentRow, 2, spacing, false);
-    }
-}
-
-void ReceptorDialog::onRemoveRingClicked()
-{
-    ringTable->removeSelectedRows();
-}
-
-void ReceptorDialog::onAddNodeClicked()
-{
-    QColor color = QColor(Qt::red);
-
-    // Insert item at back.
-    int currentRow = nodeModel->rowCount();
-    addStandardItem(nodeModel, currentRow, 0, color, true);
-    addStandardItem(nodeModel, currentRow, 1, leNodeX->value(), false);
-    addStandardItem(nodeModel, currentRow, 2, leNodeY->value(), false);
-}
-
-void ReceptorDialog::onRemoveNodeClicked()
-{
-    nodeTable->removeSelectedRows();
-}
-
-void ReceptorDialog::onAddGridClicked()
-{
-    QColor color = QColor(Qt::blue);
-    QPointF pInit = QPointF(leGridXInit->value(), leGridYInit->value());
-    QPoint pCount = QPoint(sbGridXCount->value(), sbGridYCount->value());
-    QPointF pDelta = QPointF(sbGridXDelta->value(), sbGridYDelta->value());
-
-    // Insert item at back.
-    int currentRow = gridModel->rowCount();
-    addStandardItem(gridModel, currentRow, 0, color, true);
-    addStandardItem(gridModel, currentRow, 1, pInit, false);
-    addStandardItem(gridModel, currentRow, 2, pCount, false);
-    addStandardItem(gridModel, currentRow, 3, pDelta, false);
-}
-
-void ReceptorDialog::onRemoveGridClicked()
-{
-    gridTable->removeSelectedRows();
 }
 
 void ReceptorDialog::updatePlot()

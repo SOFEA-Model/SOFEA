@@ -6,7 +6,7 @@
 
 #include <boost/log/trivial.hpp>
 
-#include "csv/csv.h"
+#include <csv/csv.h>
 
 /****************************************************************************
 ** Application
@@ -38,7 +38,8 @@ ApplicationPage::ApplicationPage(SourceGroup *sg, QWidget *parent)
     bgCalcMode->addButton(radioProspective, 1);
     bgCalcMode->addButton(radioValidation, 2);
 
-    // NOTE: uodate SourceTable delegates with any format changes.
+    // NOTE: Update SourceTable delegates with any format changes.
+    // FIXME: Formats should be stored in one place.
 
     mcAppStart = new MonteCarloDateTimeEdit;
     mcAppStart->setDisplayFormat("yyyy-MM-dd HH:mm");
@@ -130,6 +131,107 @@ void ApplicationPage::load()
     mcAppStart->setDateTime(sgPtr->appStart); // FIXME: mcAppStart->setDistribution(sgPtr->appStart);
     mcAppRate->setDistribution(sgPtr->appRate);
     mcIncorpDepth->setDistribution(sgPtr->incorpDepth);
+}
+
+
+/****************************************************************************
+** Deposition
+****************************************************************************/
+
+DepositionPage::DepositionPage(SourceGroup *sg, QWidget *parent)
+    : QWidget(parent), sgPtr(sg)
+{
+    mcAirDiffusion = new MonteCarloLineEdit;
+    mcAirDiffusion->setRange(0.000001, 0.5);
+    mcAirDiffusion->setDecimals(8);
+
+    mcWaterDiffusion = new MonteCarloLineEdit;
+    mcWaterDiffusion->setRange(0.000001, 0.5);
+    mcWaterDiffusion->setDecimals(8);
+
+    mcCuticularResistance = new MonteCarloLineEdit;
+    mcCuticularResistance->setRange(0, 1000000);
+    mcCuticularResistance->setDecimals(8);
+
+    mcHenryConstant = new MonteCarloLineEdit;
+    mcHenryConstant->setRange(0, 10000);
+    mcHenryConstant->setDecimals(8);
+
+    lblDepoNotEnabled = new StatusLabel;
+    lblDepoNotEnabled->setSeverity(3);
+    lblDepoNotEnabled->setText("Deposition must be enabled for these parameters to take effect.");
+
+    lblDepoUserVelocity = new StatusLabel;
+    lblDepoUserVelocity->setSeverity(3);
+    lblDepoUserVelocity->setText("Custom gas dry deposition velocity must be disabled for these parameters to take effect.");
+
+    // Layout
+    GridLayout *layout1 = new GridLayout;
+    layout1->addWidget(new QLabel(QLatin1String("Air diffusion (cm\xb2/sec):")), 0, 0);
+    layout1->addWidget(mcAirDiffusion, 0, 1);
+    layout1->addWidget(new QLabel(QLatin1String("Water diffusion (cm\xb2/sec):")), 1, 0);
+    layout1->addWidget(mcWaterDiffusion, 1, 1);
+    layout1->addWidget(new QLabel(QLatin1String("Cuticular resistance (s/cm):")), 2, 0);
+    layout1->addWidget(mcCuticularResistance, 2, 1);
+    layout1->addWidget(new QLabel(QLatin1String("Henry's law constant (Pa-m\xb3/mol):")), 3, 0);
+    layout1->addWidget(mcHenryConstant, 3, 1);
+
+    QGroupBox *gbMonteCarlo = new QGroupBox("Monte Carlo Parameters");
+    gbMonteCarlo->setFlat(true);
+    gbMonteCarlo->setLayout(layout1);
+
+    // Main Layout
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    mainLayout->addWidget(gbMonteCarlo);
+    mainLayout->addSpacing(5);
+    mainLayout->addWidget(lblDepoNotEnabled);
+    mainLayout->addWidget(lblDepoUserVelocity);
+    mainLayout->addStretch(1);
+
+    BackgroundFrame *frame = new BackgroundFrame;
+    frame->setLayout(mainLayout);
+    QVBoxLayout *frameLayout = new QVBoxLayout;
+    frameLayout->addWidget(frame);
+    frameLayout->setMargin(0);
+
+    setLayout(frameLayout);
+    init();
+}
+
+void DepositionPage::init()
+{
+    lblDepoNotEnabled->setVisible(false);
+    lblDepoUserVelocity->setVisible(false);
+
+    load();
+}
+
+void DepositionPage::warnDepoNotEnabled()
+{
+    lblDepoNotEnabled->setVisible(true);
+    lblDepoUserVelocity->setVisible(false);
+}
+
+void DepositionPage::warnUserVelocity()
+{
+    lblDepoNotEnabled->setVisible(false);
+    lblDepoUserVelocity->setVisible(true);
+}
+
+void DepositionPage::save()
+{
+    sgPtr->airDiffusion = mcAirDiffusion->getDistribution();
+    sgPtr->waterDiffusion = mcWaterDiffusion->getDistribution();
+    sgPtr->cuticularResistance = mcCuticularResistance->getDistribution();
+    sgPtr->henryConstant = mcHenryConstant->getDistribution();
+}
+
+void DepositionPage::load()
+{
+    mcAirDiffusion->setDistribution(sgPtr->airDiffusion);
+    mcWaterDiffusion->setDistribution(sgPtr->waterDiffusion);
+    mcCuticularResistance->setDistribution(sgPtr->cuticularResistance);
+    mcHenryConstant->setDistribution(sgPtr->henryConstant);
 }
 
 /****************************************************************************
@@ -270,10 +372,10 @@ FluxProfilePage::FluxProfilePage(SourceGroup *sg, QWidget *parent)
 
     // Temporal Scaling Layout
     GridLayout *temporalParamLayout = new GridLayout;
-    temporalParamLayout->addWidget(new QLabel(tr("Reference start date:")), 0, 0);
-    temporalParamLayout->addWidget(deRefDate, 0, 1);
-    temporalParamLayout->addWidget(new QLabel(tr("Flux scaling method:")), 1, 0);
-    temporalParamLayout->addWidget(cboTemporalScaling, 1, 1);
+    temporalParamLayout->addWidget(new QLabel(tr("Flux scaling method:")), 0, 0);
+    temporalParamLayout->addWidget(cboTemporalScaling, 0, 1);
+    temporalParamLayout->addWidget(new QLabel(tr("Reference start date:")), 1, 0);
+    temporalParamLayout->addWidget(deRefDate, 1, 1);
     temporalStack = new QStackedWidget;
     temporalStack->addWidget(new QWidget);
     temporalStack->addWidget(stackWidget1);
@@ -289,14 +391,14 @@ FluxProfilePage::FluxProfilePage(SourceGroup *sg, QWidget *parent)
 
     // Incorporation Depth Scaling Layout
     GridLayout *depthParamLayout = new GridLayout;
-    depthParamLayout->addWidget(new QLabel(tr("Reference depth (cm):")), 0, 0);
-    depthParamLayout->addWidget(sbRefDepth, 0, 1);
-    depthParamLayout->addWidget(new QLabel(tr("Measured volatilization loss:")), 1, 0);
-    depthParamLayout->addWidget(sbRefVL, 1, 1);
-    depthParamLayout->addWidget(new QLabel(tr("Maximum volatilization loss:")), 2, 0);
-    depthParamLayout->addWidget(sbMaxVL, 2, 1);
-    depthParamLayout->addWidget(new QLabel(tr("Flux scaling method:")), 3, 0);
-    depthParamLayout->addWidget(cboDepthScaling, 3, 1);
+    depthParamLayout->addWidget(new QLabel(tr("Flux scaling method:")), 0, 0);
+    depthParamLayout->addWidget(cboDepthScaling, 0, 1);
+    depthParamLayout->addWidget(new QLabel(tr("Reference depth (cm):")), 1, 0);
+    depthParamLayout->addWidget(sbRefDepth, 1, 1);
+    depthParamLayout->addWidget(new QLabel(tr("Measured volatilization loss:")), 2, 0);
+    depthParamLayout->addWidget(sbRefVL, 2, 1);
+    depthParamLayout->addWidget(new QLabel(tr("Maximum volatilization loss:")), 3, 0);
+    depthParamLayout->addWidget(sbMaxVL, 3, 1);
     QHBoxLayout *depthPlotLayout = new QHBoxLayout();
     depthPlotLayout->addStretch(1);
     depthPlotLayout->addWidget(btnPlotDS);
@@ -878,179 +980,3 @@ void BufferZonePage::onRemoveZoneClicked()
     zoneTable->removeSelectedRows();
 }
 
-
-/****************************************************************************
-** Fields
-****************************************************************************/
-
-const QMap<SourceType, QString> FieldPage::sourceTypeMap = {
-    {SourceType::POINT,    "POINT"},
-    {SourceType::POINTCAP, "POINTCAP"},
-    {SourceType::POINTHOR, "POINTHOR"},
-    {SourceType::VOLUME,   "VOLUME"},
-    {SourceType::AREA,     "AREA"},
-    {SourceType::AREAPOLY, "AREAPOLY"},
-    {SourceType::AREACIRC, "AREACIRC"},
-    {SourceType::OPENPIT,  "OPENPIT"},
-    {SourceType::LINE,     "LINE"},
-    {SourceType::BUOYLINE, "BUOYLINE"}
-};
-
-FieldPage::FieldPage(SourceGroup *sg, QWidget *parent)
-    : QWidget(parent), sgPtr(sg)
-{
-    btnAddSource = new QPushButton("Add");
-    btnRemoveSource = new QPushButton("Remove");
-    btnImport = new QPushButton("Import...");
-
-    btnAddSourceMenu = new QMenu(this);
-    const QIcon icoArea = QIcon(":/images/Rectangle_16x.png");
-    const QIcon icoAreaCirc = QIcon(":/images/Circle_16x.png");
-    const QIcon icoAreaPoly = QIcon(":/images/Polygon_16x.png");
-    actAddArea = new QAction(icoArea, "Area");
-    actAddAreaCirc = new QAction(icoAreaCirc, "Circular");
-    actAddAreaPoly = new QAction(icoAreaPoly, "Polygon");
-    btnAddSourceMenu->addAction(actAddArea);
-    btnAddSourceMenu->addAction(actAddAreaCirc);
-    btnAddSourceMenu->addAction(actAddAreaPoly);
-    btnAddSource->setMenu(btnAddSourceMenu);
-
-    sourceTable = new StandardTableView;
-    sourceTable->setSelectionMode(QAbstractItemView::ContiguousSelection);
-    sourceTable->verticalHeader()->setVisible(true);
-    sourceTable->horizontalHeader()->setVisible(false);
-
-    sourceEditor = new SourceEditor;
-    sourceEditor->setVisible(false);
-
-    // Layout
-    QHBoxLayout *buttonLayout = new QHBoxLayout;
-    buttonLayout->addWidget(btnAddSource);
-    buttonLayout->addWidget(btnRemoveSource);
-    buttonLayout->addStretch(1);
-    buttonLayout->addWidget(btnImport);
-
-    QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->addLayout(buttonLayout);
-    mainLayout->addWidget(sourceTable, 1);
-    mainLayout->addWidget(sourceEditor, 0);
-
-    BackgroundFrame *frame = new BackgroundFrame;
-    frame->setLayout(mainLayout);
-    QVBoxLayout *frameLayout = new QVBoxLayout;
-    frameLayout->addWidget(frame);
-    frameLayout->setMargin(0);
-
-    setLayout(frameLayout);
-    init();
-}
-
-void FieldPage::init()
-{
-    // Defaults
-    btnRemoveSource->setEnabled(false);
-
-    // Initialize SourceModel
-    sourceModel = new SourceModel(sgPtr, this);
-    sourceTable->setModel(sourceModel);
-
-    // Hide all columns except source ID.
-    for (int i=1; i < sourceModel->columnCount(); ++i)
-        sourceTable->setColumnHidden(i, true);
-
-    // Connections
-    connect(actAddArea,     &QAction::triggered, sourceModel, &SourceModel::addAreaSource);
-    connect(actAddAreaCirc, &QAction::triggered, sourceModel, &SourceModel::addAreaCircSource);
-    connect(actAddAreaPoly, &QAction::triggered, sourceModel, &SourceModel::addAreaPolySource);
-    connect(btnRemoveSource, &QPushButton::clicked, this, &FieldPage::removeSelectedRows);
-    connect(btnImport, &QPushButton::clicked, this, &FieldPage::import);
-
-    connect(sourceTable->selectionModel(), &QItemSelectionModel::selectionChanged, this, &FieldPage::onSelectionChanged);
-    connect(sourceModel, &QAbstractItemModel::rowsInserted, this, &FieldPage::onRowsInserted);
-    connect(sourceModel, &QAbstractItemModel::rowsRemoved,  this, &FieldPage::onRowsRemoved);
-
-    load();
-}
-
-void FieldPage::save()
-{
-    sourceModel->save();
-}
-
-void FieldPage::load()
-{
-    sourceModel->load();
-}
-
-void FieldPage::onSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected)
-{
-    Q_UNUSED(selected);
-    Q_UNUSED(deselected);
-
-    const QItemSelectionModel *selectionModel = sourceTable->selectionModel();
-
-    if (!selectionModel)
-        return;
-
-    bool hasSelection = selectionModel->hasSelection();
-    btnRemoveSource->setEnabled(hasSelection);
-
-    // Map to source editor; only enabled if exactly one row selected
-    QModelIndexList selectedRows = selectionModel->selectedRows();
-    bool enableEditor = (hasSelection && selectedRows.count() == 1);
-
-    // Update source editor
-    if (enableEditor) {
-        const QModelIndex &index = selectedRows.first();
-        Source *sPtr = sourceModel->getSource(index);
-        sourceEditor->setSource(sPtr);
-        sourceEditor->setVisible(true);
-    }
-    else {
-        sourceEditor->setVisible(false);
-    }
-}
-
-void FieldPage::removeSelectedRows()
-{
-    const QItemSelectionModel *selectionModel = sourceTable->selectionModel();
-    QModelIndexList selectedRows = selectionModel->selectedRows();
-    int row = selectedRows.first().row();
-    int count = selectedRows.count();
-    sourceModel->removeRows(row, count);
-}
-
-void FieldPage::onRowsInserted(const QModelIndex &parent, int first, int last)
-{
-    Q_UNUSED(parent);
-    Q_UNUSED(first);
-    Q_UNUSED(last);
-
-    sourceTable->scrollToBottom();
-    sourceTable->selectLastRow();
-    sourceTable->setFocus();
-}
-
-void FieldPage::onRowsRemoved(const QModelIndex &parent, int first, int last)
-{
-    Q_UNUSED(parent);
-    Q_UNUSED(first);
-    Q_UNUSED(last);
-
-    return;
-}
-
-void FieldPage::import()
-{
-    QSettings settings;
-    QString currentDir = settings.value("DefaultDirectory", QDir::rootPath()).toString();
-    QString fileFilter = "Runstream File (*.inp *.dat)";
-    QString defaultDirectory = QDir::rootPath();
-    const QString file = QFileDialog::getOpenFileName(this,
-                         tr("Import Geometry"),
-                         currentDir,
-                         fileFilter);
-
-    if (!file.isEmpty())
-        sourceModel->import(file);
-}

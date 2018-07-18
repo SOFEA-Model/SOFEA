@@ -10,8 +10,6 @@
 #include "Utilities.h"
 
 #include "SourceGroup.h"
-#include "SourceModel.h"
-#include "SourceEditor.h"
 
 QT_BEGIN_NAMESPACE
 class QAction;
@@ -60,6 +58,31 @@ private:
     QRadioButton *radioProspective;
     QRadioButton *radioValidation;
     QGroupBox *gbMonteCarlo;
+};
+
+/****************************************************************************
+** Deposition
+****************************************************************************/
+
+class DepositionPage : public QWidget
+{
+public:
+    DepositionPage(SourceGroup *sg, QWidget *parent = nullptr);
+    void init();
+    void warnDepoNotEnabled();
+    void warnUserVelocity();
+    void load();
+    void save();
+
+    MonteCarloLineEdit *mcAirDiffusion;
+    MonteCarloLineEdit *mcWaterDiffusion;
+    MonteCarloLineEdit *mcCuticularResistance;
+    MonteCarloLineEdit *mcHenryConstant;
+
+private:
+    StatusLabel *lblDepoNotEnabled;
+    StatusLabel *lblDepoUserVelocity;
+    SourceGroup *sgPtr;
 };
 
 /****************************************************************************
@@ -147,43 +170,6 @@ private:
     QStandardItemModel *zoneModel;
     StandardTableView *zoneTable;
     StandardTableEditor *zoneEditor;
-};
-
-/****************************************************************************
-** Fields
-****************************************************************************/
-
-class FieldPage : public QWidget
-{
-    Q_OBJECT
-public:
-    FieldPage(SourceGroup *sg, QWidget *parent = nullptr);
-    void init();
-    void save();
-    void load();
-
-private:
-    SourceGroup *sgPtr;
-    SourceModel *sourceModel;
-
-    static const QMap<SourceType, QString> sourceTypeMap;
-
-    QPushButton *btnAddSource;
-    QPushButton *btnRemoveSource;
-    QPushButton *btnImport;
-    QMenu *btnAddSourceMenu;
-    QAction *actAddArea;
-    QAction *actAddAreaCirc;
-    QAction *actAddAreaPoly;
-    StandardTableView *sourceTable;
-    SourceEditor *sourceEditor;
-
-private slots:
-    void onSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
-    void removeSelectedRows();
-    void onRowsInserted(const QModelIndex& parent, int first, int last);
-    void onRowsRemoved(const QModelIndex& parent, int first, int last);
-    void import();
 };
 
 #endif // SOURCEGROUPPAGES_H

@@ -37,7 +37,6 @@ SourceTable::SourceTable(SourceGroup *sg, QWidget *parent)
     : QWidget(parent), sgPtr(sg)
 {
     model = new SourceModel(sgPtr, this);
-    model->setDirectEditMode(true);
 
     table = new StandardTableView;
     table->setSelectionMode(QAbstractItemView::ContiguousSelection);
@@ -63,12 +62,14 @@ SourceTable::SourceTable(SourceGroup *sg, QWidget *parent)
     const QIcon icoArea = QIcon(":/images/Rectangle_16x.png");
     const QIcon icoAreaCirc = QIcon(":/images/Circle_16x.png");
     const QIcon icoAreaPoly = QIcon(":/images/Polygon_16x.png");
+    const QIcon icoImport = QIcon(":/images/Import_grey_16x.png");
     const QIcon icoEdit = QIcon(":/images/Edit_grey_16x.png");
-    const QIcon icoFlux = QIcon(":/images/StepLineChart_16x.png");
+    const QIcon icoFlux = QIcon(":/images/KagiChart_16x.png");
     const QIcon icoRefresh = QIcon(":/images/Refresh_16x.png");
     actAddArea = new QAction(icoArea, "Area", this);
     actAddAreaCirc = new QAction(icoAreaCirc, "Circular", this);
     actAddAreaPoly = new QAction(icoAreaPoly, "Polygon", this);
+    actImport = new QAction(icoImport, "Import...", this);
     actEdit = new QAction(icoEdit, tr("Edit Geometry"), this);
     actFlux = new QAction(icoFlux, tr("Flux Profile"), this);
     actRemove = new QAction(tr("Remove"), this);
@@ -173,6 +174,7 @@ void SourceTable::showContextMenu(const QPoint &pos)
     addSourceMenu->addAction(actAddArea);
     addSourceMenu->addAction(actAddAreaCirc);
     addSourceMenu->addAction(actAddAreaPoly);
+    contextMenu->addAction(actImport);
     contextMenu->addAction(actEdit);
     contextMenu->addAction(actFlux);
     contextMenu->addSeparator();
@@ -214,6 +216,9 @@ void SourceTable::showContextMenu(const QPoint &pos)
     }
     else if (selectedItem && selectedItem == actAddAreaPoly) {
         model->addAreaPolySource();
+    }
+    else if (selectedItem && selectedItem == actImport) {
+        model->import();
     }
     else if (selectedItem && selectedItem == actEdit) {
         Source *s = model->getSource(selectedRows.first());

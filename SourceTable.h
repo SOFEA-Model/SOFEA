@@ -39,6 +39,7 @@ private:
     QAction *actAddArea;
     QAction *actAddAreaCirc;
     QAction *actAddAreaPoly;
+    QAction *actImport;
     QAction *actEdit;
     QAction *actFlux;
     QAction *actRemove;

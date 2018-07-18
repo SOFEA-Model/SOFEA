@@ -1,27 +1,20 @@
 #include <QtWidgets>
 
-#include <sstream>
-#include <iostream> // DEBUG
-
 #include <qwt_series_data.h>
 #include <qwt_polar_grid.h>
 #include <qwt_polar_curve.h>
 #include <qwt_scale_engine.h>
 #include <qwt_painter.h>
 
-//#include <boost/date_time/gregorian/gregorian.hpp>
-//#include <boost/date_time/posix_time/posix_time.hpp>
+// Master branch as of 2018-07-17:
+// https://github.com/HDembinski/histogram/tree/bff0c7bb
 
-// https://github.com/HDembinski/histogram/tree/v2.0
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4068) // Level 1, C4068: unknown pragma
 #include <boost/histogram.hpp>
-#pragma warning(pop)
-#endif
 
 #include "MetFileInfoDialog.h"
 
+
+// Internal function from qwtpolar/src/qwt_polar_curve.cpp
 static inline bool qwtInsidePole(const QwtScaleMap &map, double radius)
 {
     return map.isInverting() ? (radius > map.s1()) : (radius < map.s1());
@@ -190,6 +183,9 @@ MetFileInfoDialog::MetFileInfoDialog(std::shared_ptr<SurfaceData> sd, QWidget *p
     leCalmHours = new ReadOnlyLineEdit;
     leMissingHours = new ReadOnlyLineEdit;
 
+    // Plot Widget
+    wrPlot = new WindRosePlot;
+
     // Plot Controls
     rbSectorSize10 = new QRadioButton(QLatin1String("10\x00b0"));
     rbSectorSize15 = new QRadioButton(QLatin1String("15\x00b0"));
@@ -198,97 +194,123 @@ MetFileInfoDialog::MetFileInfoDialog(std::shared_ptr<SurfaceData> sd, QWidget *p
     bgSectorSize->addButton(rbSectorSize10);
     bgSectorSize->addButton(rbSectorSize15);
     bgSectorSize->addButton(rbSectorSize30);
-    //sbBinCount = new QSpinBox;
-    //sbBinCount->setRange(1, 10);
+    sbBinCount = new QSpinBox;
+    sbBinCount->setRange(1, 6);
+    sbBinCount->setValue(6);
 
-    // Plot Widgets
-    wrPlot = new WindRosePlot;
+    // Bin Editor Model
+    binModel = new QStandardItemModel;
 
-    // Color Map
-    colors.push_back(QColor(0,   41,  255, 200));
-    colors.push_back(QColor(0,   213, 255, 200));
-    colors.push_back(QColor(125, 255, 122, 200));
-    colors.push_back(QColor(255, 230, 0,   200));
-    colors.push_back(QColor(255, 71,  0,   200));
-    colors.push_back(QColor(128, 0,   0,   200));
+    // Bin Editor
+    binEditor = new QListView;
+    binEditor->setModel(binModel);
+    binEditor->setFrameShape(QFrame::NoFrame);
+    binEditor->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    binEditor->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    binEditor->setMovement(QListView::Static);
+    binEditor->setResizeMode(QListView::Adjust);
+    binEditor->setFlow(QListView::LeftToRight);
+    binEditor->setWrapping(true);
+    binEditor->setIconSize(QSize(16,16));
+    binEditor->setFixedHeight(16+5+5); // FIXME, subclass and set sizeHint
+    // https://stackoverflow.com/questions/25613456/adjust-the-height-of-qlistview-to-fit-the-content
+
+    // Radio Button Layout
+    QHBoxLayout *sectorSizeLayout = new QHBoxLayout;
+    sectorSizeLayout->addWidget(rbSectorSize10);
+    sectorSizeLayout->addWidget(rbSectorSize15);
+    sectorSizeLayout->addWidget(rbSectorSize30);
+    sectorSizeLayout->addStretch(1);
 
     // Controls Layout
-    QFormLayout *layout1 = new QFormLayout;
-    layout1->addRow(new QLabel(tr("Interval: ")), timeRangeSlider);
-    layout1->addRow(new QLabel(tr("Start time:")), leStartTime);
-    layout1->addRow(new QLabel(tr("End time:")), leEndTime);
+    QGridLayout *controlsLayout = new QGridLayout;
+    controlsLayout->setColumnMinimumWidth(2, 10);
+    controlsLayout->setColumnMinimumWidth(5, 10);
+    controlsLayout->setColumnStretch(1, 2);
+    controlsLayout->setColumnStretch(4, 0);
+    // Time Controls
+    controlsLayout->addWidget(new QLabel(tr("Interval: ")),           0, 0);
+    controlsLayout->addWidget(timeRangeSlider,                        0, 1);
+    controlsLayout->addWidget(new QLabel(tr("Start time:")),          1, 0);
+    controlsLayout->addWidget(leStartTime,                            1, 1);
+    controlsLayout->addWidget(new QLabel(tr("End time:")),            2, 0);
+    controlsLayout->addWidget(leEndTime,                              2, 1);
+    // Time Metrics
+    controlsLayout->addWidget(new QLabel(tr("Total hours: ")),        0, 3);
+    controlsLayout->addWidget(leTotalHours,                           0, 4);
+    controlsLayout->addWidget(new QLabel(tr("Calm hours: ")),         1, 3);
+    controlsLayout->addWidget(leCalmHours,                            1, 4);
+    controlsLayout->addWidget(new QLabel(tr("Missing hours: ")),      2, 3);
+    controlsLayout->addWidget(leMissingHours,                         2, 4);
+    // Plot Controls
+    controlsLayout->addWidget(new QLabel(tr("Sector size: ")),        0, 6);
+    controlsLayout->addLayout(sectorSizeLayout,                       0, 7);
+    controlsLayout->addWidget(new QLabel(tr("Bin count: ")),          1, 6);
+    controlsLayout->addWidget(sbBinCount,                             1, 7);
 
-    QFormLayout *layout2 = new QFormLayout;
-    layout2->addRow(new QLabel(tr("Total hours: ")), leTotalHours);
-    layout2->addRow(new QLabel(tr("Calm hours: ")), leCalmHours);
-    layout2->addRow(new QLabel(tr("Missing hours: ")), leMissingHours);
+    // Azimuth Spacing (degrees)
+    // Automatic Radius, or Min/Max
+    // Min/Max Wind Speed
 
-    QHBoxLayout *dataControlsLayout = new QHBoxLayout;
-    dataControlsLayout->addLayout(layout1);
-    dataControlsLayout->addSpacing(5);
-    dataControlsLayout->addLayout(layout2);
+    // Controls Frame Layout
+    QVBoxLayout *frameLayout = new QVBoxLayout;
+    frameLayout->addLayout(controlsLayout);
+    frameLayout->addSpacing(10);
+    frameLayout->addWidget(binEditor);
 
-    QHBoxLayout *plotControlsLayout = new QHBoxLayout;
-    plotControlsLayout->addWidget(new QLabel(tr("Sector size: ")));
-    plotControlsLayout->addWidget(rbSectorSize10);
-    plotControlsLayout->addWidget(rbSectorSize15);
-    plotControlsLayout->addWidget(rbSectorSize30);
-    plotControlsLayout->addStretch(1);
-
-    QVBoxLayout *controlsLayout = new QVBoxLayout;
-    controlsLayout->addLayout(dataControlsLayout);
-    controlsLayout->addSpacing(10);
-    controlsLayout->addLayout(plotControlsLayout);
-
+    // Controls Frame
     QFrame *controlsFrame = new QFrame;
     controlsFrame->setBackgroundRole(QPalette::Base);
     controlsFrame->setAutoFillBackground(true);
     controlsFrame->setFrameShape(QFrame::NoFrame);
-    controlsFrame->setLayout(controlsLayout);
+    controlsFrame->setLayout(frameLayout);
 
     // Main Layout
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->addWidget(controlsFrame);
-    mainLayout->addWidget(wrPlot);
-
+    mainLayout->addWidget(controlsFrame, 0);
+    mainLayout->addWidget(wrPlot, 1);
     setLayout(mainLayout);
-    init();
-}
 
-void MetFileInfoDialog::init()
-{
     if (sd == nullptr)
         return;
 
     if (sd->records.size() == 0)
         return;
 
+    init();
+}
+
+void MetFileInfoDialog::init()
+{
+    // Default Color Map
+    wrColors.push_back(QColor(0,   41,  255, 200));
+    wrColors.push_back(QColor(0,   213, 255, 200));
+    wrColors.push_back(QColor(125, 255, 122, 200));
+    wrColors.push_back(QColor(255, 230, 0,   200));
+    wrColors.push_back(QColor(255, 71,  0,   200));
+    wrColors.push_back(QColor(128, 0,   0,   200));
+
     // Defaults
     rbSectorSize15->setChecked(true);
+    sbBinCount->setValue(6);
 
     // Connections
     connect(timeRangeSlider, &ctkRangeSlider::valuesChanged,
-            this, &MetFileInfoDialog::onRangeChanged);
+            this, &MetFileInfoDialog::onIntervalChanged);
 
     connect(bgSectorSize, QOverload<int>::of(&QButtonGroup::buttonClicked),
-        [=](int id) {
-        if (rbSectorSize10->isChecked())
-            wdBinCount = 36;
-        else if (rbSectorSize15->isChecked())
-            wdBinCount = 24;
-        else if (rbSectorSize30->isChecked())
-            wdBinCount = 12;
+            this, &MetFileInfoDialog::onSectorSizeChanged);
 
-        drawSectors();
-    });
+    connect(sbBinCount, QOverload<int>::of(&QSpinBox::valueChanged),
+            this, &MetFileInfoDialog::onBinCountChanged);
 
     timeRangeSlider->setRange(1, sd->nrec);
     timeRangeSlider->setPositions(1, sd->nrec);
     timeRangeSlider->setEnabled(true);
 }
 
-void MetFileInfoDialog::onRangeChanged(const int min, const int max)
+void MetFileInfoDialog::onIntervalChanged(const int min, const int max)
 {
     if (min < 1 || max > sd->records.size())
         return;
@@ -297,7 +319,7 @@ void MetFileInfoDialog::onRangeChanged(const int min, const int max)
     idxMin = min;
     idxMax = max;
 
-    // Recalculate derived values on subset.
+    // Recalculate derived values on surface data subset.
     int nrec = idxMax - idxMin + 1;
     int ncalm = 0;
     int nmiss = 0;
@@ -326,33 +348,53 @@ void MetFileInfoDialog::onRangeChanged(const int min, const int max)
     drawSectors();
 }
 
+void MetFileInfoDialog::onSectorSizeChanged(int id)
+{
+    Q_UNUSED(id);
+
+    if (rbSectorSize10->isChecked())
+        wdBinCount = 36;
+    else if (rbSectorSize15->isChecked())
+        wdBinCount = 24;
+    else if (rbSectorSize30->isChecked())
+        wdBinCount = 12;
+
+    drawSectors();
+}
+
+void MetFileInfoDialog::onBinCountChanged(int value)
+{
+
+}
+
 void MetFileInfoDialog::drawSectors()
 {
     namespace bh = boost::histogram;
-    using namespace bh::literals; // for _c
-    typedef bh::histogram<bh::Dynamic, bh::builtin_axes, bh::adaptive_storage<>> histogram_t;
+    using namespace bh::literals; // enables _c suffix
 
     if (idxMin < 1 || idxMax > sd->records.size())
         return;
 
     // Remove and delete existing curves.
-    sectors.clear();
+    wrSectors.clear();
     wrPlot->detachItems(QwtPolarItem::Rtti_PolarCurve, true);
 
     // Number of valid observations (denominator).
     int nvalid = 0;
 
     // Generate the histogram.
-    std::vector<histogram_t::axis_type> axes;
-    axes.emplace_back(bh::axis::circular<>(wdBinCount, 0.0, 360.0, "wdir"));  // wdir (azimuth)
-    axes.emplace_back(bh::axis::regular<>(wsBinCount, wsMin, wsMax, "wspd")); // wspd (color)
-    histogram_t h = histogram_t(axes.begin(), axes.end());
+    using wdir_axis_t = bh::axis::circular<>;
+    using wspd_axis_t = bh::axis::regular<>;
+    auto hist = bh::make_static_histogram(
+        wdir_axis_t(wdBinCount, 0.0, 360.0, "wdir"),  // wdir (azimuth)
+        wspd_axis_t(wsBinCount, wsMin, wsMax, "wspd") // wspd (color)
+    );
 
-    for (int i=idxMin-1; i < idxMax; ++i) {
+    for (int i = idxMin-1; i < idxMax; ++i) {
         auto sr = sd->records[i];
         if (!sr.calm && !sr.miss) {
             nvalid++;
-            h.fill(sr.wdir, sr.wspd);
+            hist(sr.wdir, sr.wspd);
         }
     }
 
@@ -364,20 +406,22 @@ void MetFileInfoDialog::drawSectors()
 
     double max_radius = 0;
 
-    for (int i=0; i < bh::bins(h.axis(0_c)); ++i)
+    for (auto wdir : hist.axis(0_c))
     {
         double prev_radius = 0;
 
-        for (int j=0; j <= bh::bins(h.axis(1_c)); ++j)
+        for (auto wspd : hist.axis(1_c))
         {
-            double azimuth0 = bh::left(h.axis(0_c), i) + azimuthSpacing;
-            double azimuth1 = bh::right(h.axis(0_c), i) - azimuthSpacing;
+            double azimuth0 = wdir.lower() + azimuthSpacing;
+            double azimuth1 = wdir.upper() - azimuthSpacing;
             double radius0 = prev_radius;
-            double radius1 = prev_radius + (h.value(i, j) / static_cast<double>(nvalid));
+            double radius1 = prev_radius + (hist.at(wdir, wspd).value() /
+                                            static_cast<double>(nvalid));
 
             if (radius1 > max_radius)
                 max_radius = radius1;
 
+            // Create the point series for Qwt.
             QVector<QwtPointPolar> vertices;
             vertices.push_back(QwtPointPolar(azimuth0, radius0));
             vertices.push_back(QwtPointPolar(azimuth0, radius1));
@@ -388,8 +432,8 @@ void MetFileInfoDialog::drawSectors()
 
             // Get the brush associated with the bin.
             QBrush brush = QBrush(QColor(128, 128, 128, 200));
-            if (j < colors.size())
-                brush = QBrush(colors[j]);
+            if (wspd.idx() < wrColors.size())
+                brush = QBrush(wrColors[wspd.idx()]);
 
             WindRoseSector *sector = new WindRoseSector;
             sector->setStyle(QwtPolarCurve::UserCurve);
@@ -397,7 +441,8 @@ void MetFileInfoDialog::drawSectors()
             sector->setBrush(brush);
             sector->setData(series);
             sector->setRenderHint(WindRoseSector::RenderAntialiased);
-            sectors.push_back(sector);
+            sector->setZ(100);
+            wrSectors.push_back(sector);
 
             prev_radius = radius1;
         }
@@ -408,19 +453,26 @@ void MetFileInfoDialog::drawSectors()
     wrPlot->setScale(QwtPolar::Radius, -0.01, max_scale);
 
     // Attach the curves.
-    for (const auto& sector : sectors)
+    for (const auto& sector : wrSectors)
         sector->attach(wrPlot);
 
     wrPlot->replot();
 
     // Legend labels for wind speed.
-    for (int j=0; j < bh::bins(h.axis(1_c)); ++j)
+    for (auto wspd : hist.axis(1_c))
     {
-        double radial0 = bh::left(h.axis(1_c), j);
-        double radial1 = bh::right(h.axis(1_c), j);
-        //std::ostringstream oss;
-        //oss << "[" << radial0 << ", " << radial1 << ")";
-        //std::cout << oss.str();
+        double radial0 = wspd.lower();
+        double radial1 = wspd.upper();
+        QString label = tr("[")  + QString::number(radial0, 'g', 5) +
+                        tr(", ") + QString::number(radial1, 'g', 5) + tr(")");
+
+        QBrush brush = QBrush(wrColors[wspd.idx()]);
+        QPixmap pm = ColorPickerDelegate::brushValuePixmap(brush);
+        QStandardItem *item = new QStandardItem;
+        item->setEditable(false);
+        item->setData(label, Qt::DisplayRole);
+        item->setData(pm, Qt::DecorationRole);
+        binModel->setItem(wspd.idx(), 0, item);
     }
 }
 

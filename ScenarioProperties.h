@@ -1,8 +1,9 @@
 #ifndef SCENARIOPROPERTIES_H
 #define SCENARIOPROPERTIES_H
 
-#include "SettingsDialog.h"
+#include "Scenario.h"
 #include "ScenarioPages.h"
+#include "SettingsDialog.h"
 
 class ScenarioProperties : public SettingsDialog
 {
@@ -10,6 +11,9 @@ class ScenarioProperties : public SettingsDialog
 
 public:
     ScenarioProperties(Scenario *s, QWidget *parent = nullptr);
+
+signals:
+    void saved();
 
 public slots:
     void accept() override;
@@ -20,7 +24,7 @@ private:
     GeneralPage *generalPage;
     MetDataPage *metDataPage;
     DispersionPage *dispersionPage;
-    bool saved;
+    bool _saved;
 };
 
 #endif // SCENARIOPROPERTIES_H

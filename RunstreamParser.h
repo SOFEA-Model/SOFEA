@@ -11,7 +11,7 @@
 class RunstreamParser
 {
 public:
-    static void parseSources(const QString& inputFile, boost::ptr_vector<Source>& sources);
+    static void parseSources(const QString& filename, SourceGroup *sgPtr);
 };
 
 #endif // RUNSTREAMPARSER_H

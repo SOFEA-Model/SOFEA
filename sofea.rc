@@ -1,7 +1,7 @@
 IDI_ICON1 ICON DISCARDABLE "sofea.ico"
 1 VERSIONINFO
-FILEVERSION 4,0,2,0
-PRODUCTVERSION 4,0,2,0
+FILEVERSION 4,1,0,0
+PRODUCTVERSION 4,1,0,0
 FILEOS 0x4
 FILETYPE 0x0
 BEGIN
@@ -11,12 +11,12 @@ BEGIN
     BEGIN
       VALUE "CompanyName", "Corteva Agriscience"
       VALUE "FileDescription", "SOFEA"
-      VALUE "FileVersion", "4.0.2"
+      VALUE "FileVersion", "4.1.0"
       VALUE "InternalName", "SOFEA"
       VALUE "LegalCopyright", "Copyright \251 2018 DowDuPont Inc."
       VALUE "OriginalFilename", "sofea.exe"
       VALUE "ProductName", "SOFEA"
-      VALUE "ProductVersion", "4.0.2"
+      VALUE "ProductVersion", "4.1.0"
     END
   END
 

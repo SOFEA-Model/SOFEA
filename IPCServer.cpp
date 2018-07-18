@@ -2,6 +2,9 @@
 
 #include "IPCServer.h"
 
+#include <boost/log/trivial.hpp>
+#include <boost/log/attributes/scoped_attribute.hpp>
+
 const QString PIPENAME = "\\\\.\\pipe\\AERMODProgressPipe";
 
 IPCServer::IPCServer(QObject *parent) : QObject(parent)
@@ -11,23 +14,31 @@ IPCServer::IPCServer(QObject *parent) : QObject(parent)
 
 bool IPCServer::start()
 {
+    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Model");
+
     if (!server->listen(PIPENAME)) {
-        qDebug() << QString("Unable to start the IPC server: %1").arg(server->errorString());
+        BOOST_LOG_TRIVIAL(error) << "Unable to start the IPC server: "
+                                 << server->errorString().toStdString();
         return false;
     }
-    qDebug() << "IPC server started.";
+
+    BOOST_LOG_TRIVIAL(debug) << "IPC server started";
     connect(server, &QLocalServer::newConnection, this, &IPCServer::clientConnected);
     return true;
 }
 
 bool IPCServer::stop()
 {
+    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Model");
+
     server->close();
     if (server->isListening()) {
-        qDebug() << QString("Unable to stop the IPC server: %1").arg(server->errorString());
+        BOOST_LOG_TRIVIAL(error) << "Unable to stop the IPC server: "
+                                 << server->errorString().toStdString();
         return false;
     }
-    qDebug() << "IPC server stopped.";
+
+    BOOST_LOG_TRIVIAL(debug) << "IPC server stopped";
     disconnect(server, &QLocalServer::newConnection, this, &IPCServer::clientConnected);
     connections.clear();
     return true;
@@ -35,7 +46,8 @@ bool IPCServer::stop()
 
 void IPCServer::clientConnected()
 {
-    qDebug() << "IPC client connected.";
+    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Model");
+    BOOST_LOG_TRIVIAL(debug) << "IPC client connected";
 
     QLocalSocket *socket = server->nextPendingConnection();
     connections.push_back(socket);
@@ -45,7 +57,8 @@ void IPCServer::clientConnected()
 
 void IPCServer::clientDisconnected()
 {
-    qDebug() << "IPC client disconnected.";
+    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Model");
+    BOOST_LOG_TRIVIAL(debug) << "IPC client disconnected";
 
     QLocalSocket *socket = qobject_cast<QLocalSocket*>(QObject::sender());
     connections.removeAll(socket);

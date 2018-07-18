@@ -79,5 +79,8 @@
         <file>images/StatusAnnotations_Warning_32xLG_color.png</file>
         <file>images/StatusAnnotations_Warning_16xLG.png</file>
         <file>images/StatusAnnotations_Warning_32xLG.png</file>
+        <file>images/SyncArrow_16x.png</file>
+        <file>images/SyncArrow_32x.png</file>
+        <file>images/KagiChart_16x.png</file>
     </qresource>
 </RCC>

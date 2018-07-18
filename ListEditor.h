@@ -15,7 +15,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 
-#include <QDebug>
+#include <limits>
 
 class ListEditor : public QWidget
 {
@@ -24,8 +24,8 @@ private:
     QListWidget *lwEditor;
     QToolButton *btnAdd;
     QToolButton *btnRemove;
-    double minValue;
-    double maxValue;
+    double minValue = std::numeric_limits<double>::lowest();
+    double maxValue = std::numeric_limits<double>::max();
 
 public:
     void ListEditor::addValue(double p)
@@ -42,6 +42,17 @@ public:
         lwEditor->clear();
         for (double p : values)
             addValue(p);
+        resetLayout();
+    }
+
+    void ListEditor::clearValues()
+    {
+        lwEditor->clear();
+    }
+
+    void ListEditor::setEditable(bool editable)
+    {
+        cboEditor->setEditable(editable);
     }
 
     void ListEditor::setComboBoxItems(const QStringList &items)
@@ -54,6 +65,7 @@ public:
     void ListEditor::setValidator(double min, double max, int decimals)
     {
         QDoubleValidator *validator = new QDoubleValidator(min, max, decimals);
+        cboEditor->setEditable(true);
         cboEditor->setValidator(validator);
         minValue = min;
         maxValue = max;
@@ -63,7 +75,7 @@ public:
     {
         lwEditor->setFixedHeight(lwEditor->sizeHintForRow(0) + 2 * lwEditor->frameWidth());
         cboEditor->setFixedHeight(lwEditor->height());
-        cboEditor->setStyleSheet("font-size: 8pt;");
+        cboEditor->setStyleSheet("font-size: 8pt;"); // stylesheet required here.
     }
 
     std::vector<double> ListEditor::values() const
@@ -112,7 +124,6 @@ public:
     ListEditor(QWidget *parent = nullptr) : QWidget(parent)
     {
         cboEditor = new QComboBox;
-        cboEditor->setEditable(true);
         cboEditor->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
         btnAdd = new QToolButton;
@@ -133,6 +144,11 @@ public:
         lwEditor->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         lwEditor->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         lwEditor->setSpacing(2);
+
+        // Font
+        QFont font = lwEditor->font();
+        font.setPointSize(8);
+        lwEditor->setFont(font);
 
         // Connections
         connect(cboEditor, QOverload<int>::of(&QComboBox::currentIndexChanged),

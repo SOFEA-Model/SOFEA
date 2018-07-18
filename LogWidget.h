@@ -11,6 +11,8 @@
 #include <QMenu>
 #include <QSortFilterProxyModel>
 #include <QStandardItemModel>
+#include <QString>
+#include <QStringList>
 #include <QToolBar>
 #include <QToolButton>
 #include <QTreeView>
@@ -46,6 +48,7 @@ friend class LogWidgetBackend;
 
 public:
     explicit LogWidget(QWidget *parent = nullptr);
+    void setTags(const QStringList& tags);
     void clear();
 
 private:
@@ -55,15 +58,13 @@ private:
     QAction *clearAct;
     QAction *showInfoAct;
     QAction *showWarningsAct;
-    QAction *filterDistributionAct;
-    QAction *filterGeometryAct;
-    QAction *filterModelAct;
-    QAction *filterAnalysisAct;
+    QMenu *tagFilterMenu;
 
     QToolBar *toolbar;
     QStandardItemModel *logModel;
     LogFilterProxyModel *proxyModel;
     QTreeView *logView;
+
 };
 
 // Custom Backend for Boost.Log v2

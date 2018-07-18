@@ -3,8 +3,18 @@
 #include <cstddef>
 #include <string>
 #include <vector>
+#include <map>
+#include <utility>
 
-struct AnalysisOptions
+struct GeneralAnalysisOpts
+{
+    std::string type;
+    int avePeriod = 1;
+    double scaleFactor = 1;
+    std::string sourceGroup;
+};
+
+struct ReceptorAnalysisOpts
 {
     bool calcRecMean = false;
     bool calcRecMax = false;
@@ -13,6 +23,10 @@ struct AnalysisOptions
     std::vector<double> recPercentiles;
     bool calcRecMaxRM = false;
     std::vector<double> recWindowSizes;
+};
+
+struct HistogramAnalysisOpts
+{
     bool calcCDF = false;
     bool calcPDF = false;
     int cdfBins = 0;
@@ -41,28 +55,52 @@ struct Histogram
 
 class Analysis
 {
+    struct dim_info_t {
+        int id;
+        size_t len = 0;
+    };
+
+    struct att_info_t {
+        int id;
+        int xtype;
+        size_t len = 0;
+        std::string value;
+    };
+
+    struct var_info_t {
+        int id;
+        int xtype;
+        std::vector<int> dimids;
+        std::map<std::string, att_info_t> atts;
+    };
+
 public:
     explicit Analysis(const std::string &file);
+    ~Analysis();
 
-    bool openFile(int& ncid);
-    bool calcReceptorStats(int& ncid, AnalysisOptions opts, ReceptorStats& out);
-    bool calcHistogram(int& ncid, AnalysisOptions opts, Histogram& out);
-    bool closeFile(int& ncid);
+    void exportTimeSeries(GeneralAnalysisOpts genOpts, const std::string& filename);
+    void calcReceptorStats(GeneralAnalysisOpts genOpts, ReceptorAnalysisOpts opts, ReceptorStats& out) const;
+    void calcHistogram(GeneralAnalysisOpts genOpts, HistogramAnalysisOpts opts, Histogram& out) const;
 
-    long long getTimeStepCount() const;
-    long long getReceptorCount() const;
-    std::string getLastError() const;
-    std::string libraryVersion() const;
+    std::string getModelVersion() const;
+    std::string getModelOptions() const;
+    std::string getTitle() const;
+    int getTimeStepCount() const;
+    int getReceptorCount() const;
+    std::vector<int> getAveragingPeriods() const;
+    std::vector<std::string> getSourceGroups() const;
+    std::vector<std::pair<std::string, std::string>> getTypes() const;
+    std::string getUnits(const std::string& varname) const;
+    std::string getTimeString(const double reltime) const;
+    static std::string libraryVersion();
 
 private:
+    void setAttributeValue(int varid, att_info_t &info, const char *name) const;
+    void init();
+
     std::string filename;
-    std::string errmsg;
-
-    int dim_time, dim_type, dim_recs;   // netCDF dimension IDs
-    int var_x, var_y, var_z, var_conc;  // netCDF variable IDs
-    int var_time, var_type, var_recs;   // netCDF coordinate variable IDs
-
-    size_t ntime = 0;
-    size_t ntype = 0;
-    size_t nrecs = 0;
+    int ncid;
+    std::map<std::string, dim_info_t> dims;
+    std::map<std::string, var_info_t> vars;
+    std::map<std::string, att_info_t> global_atts;
 };

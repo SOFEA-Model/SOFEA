@@ -232,8 +232,9 @@ namespace Detail
     */
 
     // FIXME
-    // To workaround issue with boost::variant serialization in cereal,
-    // increase MPL type limit and define variant as usual.
+    // To workaround issue with boost::variant serialization in cereal, increase
+    // MPL type limit (BOOST_MPL_LIMIT_LIST_SIZE) and define variant as usual.
+    // https://github.com/USCiLab/cereal/issues/490
 
     using Variant = boost::variant<
         UniformReal,

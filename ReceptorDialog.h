@@ -21,29 +21,81 @@ class QLabel;
 class QDialogButtonBox;
 QT_END_NAMESPACE
 
+class ReceptorRingTab : public QWidget
+{
+    Q_OBJECT
+public:
+    ReceptorRingTab(QStandardItemModel *model, QWidget *parent = nullptr);
+
+private slots:
+    void onAddRingClicked();
+    void onRemoveRingClicked();
+
+private:
+    QDoubleSpinBox *sbRingBuffer;
+    QDoubleSpinBox *sbRingSpacing;
+    QStandardItemModel *ringModel;
+    StandardTableView *ringTable;
+    StandardTableEditor *ringEditor;
+};
+
+class ReceptorNodeTab : public QWidget
+{
+    Q_OBJECT
+public:
+    ReceptorNodeTab(QStandardItemModel *model, QWidget *parent = nullptr);
+
+private slots:
+    void onAddNodeClicked();
+    void onRemoveNodeClicked();
+
+private:
+    DoubleLineEdit *leNodeX;
+    DoubleLineEdit *leNodeY;
+    QStandardItemModel *nodeModel;
+    StandardTableView *nodeTable;
+    StandardTableEditor *nodeEditor;
+};
+
+class ReceptorGridTab : public QWidget
+{
+    Q_OBJECT
+public:
+    ReceptorGridTab(QStandardItemModel *model, QWidget *parent = nullptr);
+
+private slots:
+    void onAddGridClicked();
+    void onRemoveGridClicked();
+
+private:
+    DoubleLineEdit *leGridXInit;
+    DoubleLineEdit *leGridYInit;
+    QSpinBox *sbGridXCount;
+    QSpinBox *sbGridYCount;
+    QDoubleSpinBox *sbGridXDelta;
+    QDoubleSpinBox *sbGridYDelta;
+    QStandardItemModel *gridModel;
+    StandardTableView *gridTable;
+    StandardTableEditor *gridEditor;
+};
+
 class ReceptorDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    ReceptorDialog(SourceGroup *sg, QWidget *parent = nullptr);
+    ReceptorDialog(Scenario *s, SourceGroup *sg, QWidget *parent = nullptr);
     void init();
     void save();
     void load();
 
-
 private slots:
     void accept() override;
     void reject() override;
-    void onAddRingClicked();
-    void onRemoveRingClicked();
-    void onAddNodeClicked();
-    void onRemoveNodeClicked();
-    void onAddGridClicked();
-    void onRemoveGridClicked();
     void updatePlot();
 
 private:
+    Scenario *sPtr;
     SourceGroup *sgPtr;
     std::vector<ReceptorRing> ringData() const;
     std::vector<ReceptorNode> nodeData() const;
@@ -56,30 +108,13 @@ private:
     std::vector<ReceptorGrid> grids;
     bool saved;
 
-    // Ring Controls
-    QDoubleSpinBox *sbRingBuffer;
-    QDoubleSpinBox *sbRingSpacing;
     QStandardItemModel *ringModel;
-    StandardTableView *ringTable;
-    StandardTableEditor *ringEditor;
-
-    // Node Controls
-    DoubleLineEdit *leNodeX;
-    DoubleLineEdit *leNodeY;
     QStandardItemModel *nodeModel;
-    StandardTableView *nodeTable;
-    StandardTableEditor *nodeEditor;
-
-    // Grid Controls
-    DoubleLineEdit *leGridXInit;
-    DoubleLineEdit *leGridYInit;
-    QSpinBox *sbGridXCount;
-    QSpinBox *sbGridYCount;
-    QDoubleSpinBox *sbGridXDelta;
-    QDoubleSpinBox *sbGridYDelta;
     QStandardItemModel *gridModel;
-    StandardTableView *gridTable;
-    StandardTableEditor *gridEditor;
+
+    ReceptorRingTab *ringTab;
+    ReceptorNodeTab *nodeTab;
+    ReceptorGridTab *gridTab;
 
     QLabel *lblReceptorCount;
     StandardPlot *plot;

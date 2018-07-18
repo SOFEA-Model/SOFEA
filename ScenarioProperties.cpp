@@ -5,7 +5,7 @@
 #include "Scenario.h"
 
 ScenarioProperties::ScenarioProperties(Scenario *s, QWidget *parent)
-    : SettingsDialog(parent), sPtr(s), saved(false)
+    : SettingsDialog(parent), sPtr(s), _saved(false)
 {
     setWindowTitle(QString::fromStdString(s->title));
     setWindowIcon(QIcon(":/images/Settings_32x.png"));
@@ -28,12 +28,13 @@ void ScenarioProperties::accept()
     metDataPage->save();
     dispersionPage->save();
 
-    saved = true;
+    _saved = true;
+    emit saved();
 }
 
 void ScenarioProperties::reject()
 {
-    if (saved)
+    if (_saved)
         QDialog::done(QDialog::Accepted);
     else
         QDialog::done(QDialog::Rejected);

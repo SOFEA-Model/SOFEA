@@ -98,9 +98,10 @@ QLineF CurveTracker::curveLineAt(const QwtPlotCurve *curve, double x) const
         {
             int index = qwtUpperSampleIndex<QPointF>(*curve->data(), x, compareX());
 
-            if (index == -1 && x == curve->sample(curve->dataSize() - 1).x()) {
+            int dataSize = static_cast<int>(curve->dataSize());
+            if (index == -1 && x == curve->sample(dataSize - 1).x()) {
                 // the last sample is excluded from qwtUpperSampleIndex
-                index = curve->dataSize() - 1;
+                index = dataSize - 1;
             }
 
             if (index > 0) {

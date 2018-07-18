@@ -14,7 +14,18 @@ GeneralPage::GeneralPage(Scenario *s, QWidget *parent)
     cboFumigant = new QComboBox;
 
     leDecayCoefficient = new DoubleLineEdit;
-    leDecayCoefficient->setText("0");
+
+    sbFlagpoleHeight = new QDoubleSpinBox;
+    sbFlagpoleHeight->setRange(0, 1000);
+    sbFlagpoleHeight->setDecimals(2);
+
+    periodEditor = new ListEditor;
+    periodEditor->setValidator(1, 24, 0);
+    periodEditor->addValue(1);
+    periodEditor->addValue(24);
+    periodEditor->resetLayout();
+    periodEditor->setComboBoxItems(QStringList{"1","2","3","4","6","8","12","24"});
+    periodEditor->setEditable(false);
 
     // Layouts
     GridLayout *layout1 = new GridLayout;
@@ -22,9 +33,10 @@ GeneralPage::GeneralPage(Scenario *s, QWidget *parent)
     layout1->addWidget(cboFumigant, 0, 1);
     layout1->addWidget(new QLabel(tr("Decay coefficient (1/sec):")), 1, 0);
     layout1->addWidget(leDecayCoefficient, 1, 1);
-
-    layout1->setRowMinimumHeight(0, 28);
-    layout1->setRowMinimumHeight(1, 28);
+    layout1->addWidget(new QLabel(tr("Default receptor height (m):")), 2, 0);
+    layout1->addWidget(sbFlagpoleHeight, 2, 1);
+    layout1->addWidget(new QLabel(tr("Averaging periods (hr): ")), 3, 0);
+    layout1->addWidget(periodEditor, 3, 1, 2, 1);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addLayout(layout1);
@@ -54,6 +66,14 @@ void GeneralPage::save()
 {
     scenario->fumigantId = cboFumigant->currentData().toInt();
     scenario->decayCoefficient = leDecayCoefficient->text().toDouble();
+    scenario->flagpoleHeight = sbFlagpoleHeight->value();
+
+    scenario->averagingPeriods.clear();
+    std::vector<double> periods = periodEditor->values();
+    for (const double period : periods) {
+        int value = static_cast<int>(period);
+        scenario->averagingPeriods.push_back(value);
+    }
 }
 
 void GeneralPage::load()
@@ -62,6 +82,13 @@ void GeneralPage::load()
     int fumigantIndex = cboFumigant->findData(fumigantId);
     cboFumigant->setCurrentIndex(fumigantIndex);
     leDecayCoefficient->setText(QString::number(scenario->decayCoefficient));
+    sbFlagpoleHeight->setValue(scenario->flagpoleHeight);
+
+    periodEditor->clearValues();
+    for (const int value : scenario->averagingPeriods) {
+        double period = static_cast<double>(value);
+        periodEditor->addValue(period);
+    }
 }
 
 /****************************************************************************
@@ -73,11 +100,13 @@ MetDataPage::MetDataPage(Scenario *s, QWidget *parent)
 {
     leSurfaceDataFile = new QLineEdit;
     leSurfaceDataFile->setMaxLength(260); // MAX_PATH
-    btnSurfaceDataFile = new QPushButton("Browse...");
+    btnSurfaceDataFile = new QToolButton;
+    btnSurfaceDataFile->setText("...");
 
     leUpperAirDataFile = new QLineEdit;
     leUpperAirDataFile->setMaxLength(260); // MAX_PATH
-    btnUpperAirDataFile = new QPushButton("Browse...");
+    btnUpperAirDataFile = new QToolButton;
+    btnUpperAirDataFile->setText("...");
 
     sbAnemometerHeight = new QDoubleSpinBox;
     sbAnemometerHeight->setMinimum(0.1);
@@ -97,19 +126,7 @@ MetDataPage::MetDataPage(Scenario *s, QWidget *parent)
 
     lwIntervals = new QListWidget;
     lwIntervals->setSelectionMode(QAbstractItemView::NoSelection);
-
-    //StandardTableView *statsTable = new StandardTableView;
-    //QStandardItemModel *statsModel = new QStandardItemModel;
-    //statsModel->setColumnCount(4);
-    //statsModel->setHorizontalHeaderLabels(QStringList({"Interval","Total Hours","Calm Hours"}));
-    //statsTable->setModel(statsModel);
-    //
-    //QFontMetrics fm = fontMetrics();
-    //QHeaderView *header = statsTable->horizontalHeader();
-    //header->setStretchLastSection(false);
-    //header->resizeSection(0, fm.width("[2010-Jan-01 00:00:00,2012-Jan-01 00:00:00) "));
-    //header->resizeSection(1, fm.width("Total Hours"));
-    //header->resizeSection(2, fm.width("Calm Hours"));
+    lwIntervals->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
     btnDiagnostics = new QPushButton("Diagnostics...");
     btnUpdate = new QPushButton("Update");
@@ -180,8 +197,8 @@ void MetDataPage::init()
     lwIntervals->addItem("");
     lwIntervals->setFixedHeight(4 * lwIntervals->sizeHintForRow(0) + 2 * lwIntervals->frameWidth());
 
-    connect(btnSurfaceDataFile, &QPushButton::clicked, this, &MetDataPage::browseMetDataFile);
-    connect(btnUpperAirDataFile, &QPushButton::clicked, this, &MetDataPage::browseMetDataFile);
+    connect(btnSurfaceDataFile, &QToolButton::clicked, this, &MetDataPage::browseMetDataFile);
+    connect(btnUpperAirDataFile, &QToolButton::clicked, this, &MetDataPage::browseMetDataFile);
     connect(btnDiagnostics, &QPushButton::clicked, this, &MetDataPage::showInfoDialog);
     connect(btnUpdate, &QPushButton::clicked, this, &MetDataPage::update);
 
@@ -239,7 +256,6 @@ void MetDataPage::update()
 
     leSurfaceStationId->setText(QString::fromStdString(sfInfo.sfloc));
     leUpperAirStationId->setText(QString::fromStdString(sfInfo.ualoc));
-
 
     lwIntervals->clear();
     for (const std::string& i : sfInfo.intervals) {
@@ -304,101 +320,111 @@ void MetDataPage::browseMetDataFile()
 DispersionPage::DispersionPage(Scenario *s, QWidget *parent)
     : QWidget(parent), scenario(s)
 {
-    // TODO:
-    // - Allow non-sequential meteorological data files (WARNCHKD)
-    // - No date checking for met data (NOCHKD)
-
     // AERMOD Group 1: Non-DFAULT
-    QGroupBox *gbNonDefault;
-    gbNonDefault = new QGroupBox("Non-DFAULT Options");
+    QGroupBox *gbNonDefault = new QGroupBox("Non-DFAULT Options");
     gbNonDefault->setFlat(true);
     chkFlat = new QCheckBox("Assume flat terrain (FLAT)");
     chkFastArea = new QCheckBox("Optimize model runtime for area sources (FASTAREA)");
 
+    // Deposition Parameters
+    chkDryDeposition = new QCheckBox("Enable dry deposition (DDEP)");
+    chkDryDplt = new QCheckBox("Enable dry depletion processes (DRYDPLT)");
+    chkAreaDplt = new QCheckBox("Optimize plume depletion for AREA sources (AREADPLT)");
+    chkGDVelocity = new QCheckBox("Custom gas dry deposition velocity (GASDEPVD):");
+    chkWetDeposition = new QCheckBox("Enable wet deposition (WDEP)");
+    chkWetDplt = new QCheckBox("Enable wet depletion processes (WETDPLT)");
+
+    sbGDVelocity = new QDoubleSpinBox;
+    sbGDVelocity->setButtonSymbols(QAbstractSpinBox::NoButtons);
+    sbGDVelocity->setRange(0.001, 0.05);
+    sbGDVelocity->setDecimals(3);
+    sbGDVelocity->setSingleStep(0.001);
+    sbGDVelocity->setSuffix(" m/s");
+
+    QHBoxLayout *velocityLayout = new QHBoxLayout;
+    velocityLayout->setContentsMargins(0, 0, 0, 0);
+    velocityLayout->addWidget(chkGDVelocity);
+    velocityLayout->addWidget(sbGDVelocity);
+    velocityLayout->addStretch(1);
+
     // AERMOD Group 2: ALPHA
-    QGroupBox *gbAlpha;
-    gbAlpha = new QGroupBox("ALPHA Options");
+    QGroupBox *gbAlpha = new QGroupBox("ALPHA Options");
     gbAlpha->setFlat(true);
     chkLowWind = new QCheckBox("Optimize model for low wind speeds (LOW_WIND)");
 
     // Low Wind Parameters
+    //lblSVmin = new QLabel("Minimum \xcf\x83\xce\xbd:");
+    //lblWSmin = new QLabel("Minimum wind speed:");
+    //lblFRANmax = new QLabel("Maximum meander factor:");
+    lblSVmin = new QLabel("SVmin:");
+    lblWSmin = new QLabel("WSmin:");
+    lblFRANmax = new QLabel("FRANmax:");
+
     sbSVmin = new QDoubleSpinBox;
+    sbSVmin->setButtonSymbols(QAbstractSpinBox::NoButtons);
     sbSVmin->setRange(0.01, 1.0);
     sbSVmin->setDecimals(4);
     sbSVmin->setSingleStep(0.0001);
+    sbSVmin->setSuffix(" m/s");
 
     sbWSmin = new QDoubleSpinBox;
+    sbWSmin->setButtonSymbols(QAbstractSpinBox::NoButtons);
     sbWSmin->setRange(0.01, 1.0);
     sbWSmin->setDecimals(4);
     sbWSmin->setSingleStep(0.0001);
+    sbWSmin->setSuffix(" m/s");
 
     sbFRANmax = new QDoubleSpinBox;
+    sbFRANmax->setButtonSymbols(QAbstractSpinBox::NoButtons);
     sbFRANmax->setRange(0.0, 1.0);
     sbFRANmax->setDecimals(4);
     sbFRANmax->setSingleStep(0.0001);
 
-    sbSVmin->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    sbWSmin->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    sbFRANmax->setButtonSymbols(QAbstractSpinBox::NoButtons);
-
-    QGridLayout *lowWindLayout = new QGridLayout;
-    lowWindLayout->setMargin(0);
-    lowWindLayout->addWidget(new QLabel("Minimum \xcf\x83\xce\xbd (m/s): "), 0, 0, 1, 1);
-    lowWindLayout->addWidget(new QLabel("Minimum wind speed (m/s): "),       1, 0, 1, 1);
-    lowWindLayout->addWidget(new QLabel("Maximum meander factor (m/s): "),   2, 0, 1, 1);
-    lowWindLayout->addWidget(sbSVmin,      0, 1, 1, 1);
-    lowWindLayout->addWidget(sbWSmin,      1, 1, 1, 1);
-    lowWindLayout->addWidget(sbFRANmax,    2, 1, 1, 1);
-    lowWindParams = new QWidget;
-    lowWindParams->setLayout(lowWindLayout);
-    lowWindParams->setDisabled(true);
-
-    // ISCST3 Group 1: Non-DFAULT
-    gbIscNonDefault = new QGroupBox("Non-DFAULT Options");
-    gbIscNonDefault->setFlat(true);
-    chkIscNoCalm = new QCheckBox("Bypass calms processing routine (NOCALM)");
-    chkIscMsgPro = new QCheckBox("Use missing data processing routines (MSGPRO)");
-
     // Non-DFAULT Layout
     QGridLayout *gbNonDefaultLayout = new QGridLayout;
-    gbNonDefaultLayout->addWidget(chkFlat, 0, 0);
-    gbNonDefaultLayout->addWidget(chkFastArea, 1, 0);
+    gbNonDefaultLayout->setColumnMinimumWidth(0, 16);
+    gbNonDefaultLayout->setColumnMinimumWidth(1, 16);
+    gbNonDefaultLayout->setColumnStretch(0, 0);
+    gbNonDefaultLayout->setColumnStretch(1, 0);
+    gbNonDefaultLayout->addWidget(chkFlat,          0, 0, 1, 3);
+    gbNonDefaultLayout->addWidget(chkFastArea,      1, 0, 1, 3);
+    gbNonDefaultLayout->addWidget(chkDryDeposition, 2, 0, 1, 3);
+    gbNonDefaultLayout->addWidget(chkDryDplt,       3, 1, 1, 2);
+    gbNonDefaultLayout->addWidget(chkAreaDplt,      4, 2, 1, 1);
+    gbNonDefaultLayout->addLayout(velocityLayout,   5, 1, 1, 2);
+    gbNonDefaultLayout->addWidget(chkWetDeposition, 6, 0, 1, 3);
+    gbNonDefaultLayout->addWidget(chkWetDplt,       7, 1, 1, 2);
+    gbNonDefault->setLayout(gbNonDefaultLayout);
 
     // ALPHA Layout
     QGridLayout *gbAlphaLayout = new QGridLayout;
-    gbAlphaLayout->setColumnMinimumWidth(0, 15);
+    gbAlphaLayout->setColumnMinimumWidth(0, 16);
     gbAlphaLayout->setColumnStretch(0, 0);
-    gbAlphaLayout->addWidget(chkLowWind,    0, 0, 1, 2);
-    gbAlphaLayout->addWidget(lowWindParams, 1, 1, 1, 1);
-
-    QVBoxLayout *gbIscNonDefaultLayout = new QVBoxLayout;
-    gbIscNonDefaultLayout->addWidget(chkIscNoCalm);
-    gbIscNonDefaultLayout->addWidget(chkIscMsgPro);
-
-    gbNonDefault->setLayout(gbNonDefaultLayout);
+    gbAlphaLayout->setColumnStretch(1, 0);
+    gbAlphaLayout->setColumnStretch(2, 1);
+    gbAlphaLayout->setColumnStretch(3, 0);
+    gbAlphaLayout->setColumnStretch(4, 1);
+    gbAlphaLayout->setColumnStretch(5, 2);
+    gbAlphaLayout->addWidget(chkLowWind, 0, 0, 1, 5);
+    gbAlphaLayout->addWidget(lblSVmin,   1, 1, 1, 1);
+    gbAlphaLayout->addWidget(sbSVmin,    1, 2, 1, 1);
+    gbAlphaLayout->addWidget(lblWSmin,   2, 1, 1, 1);
+    gbAlphaLayout->addWidget(sbWSmin,    2, 2, 1, 1);
+    gbAlphaLayout->addWidget(lblFRANmax, 1, 3, 1, 1);
+    gbAlphaLayout->addWidget(sbFRANmax,  1, 4, 1, 1);
     gbAlpha->setLayout(gbAlphaLayout);
-    gbIscNonDefault->setLayout(gbIscNonDefaultLayout);
 
     QVBoxLayout *aermodLayout = new QVBoxLayout;
     aermodLayout->addWidget(gbNonDefault);
     aermodLayout->addWidget(gbAlpha);
     aermodLayout->addStretch(1);
 
+    // Tabs
     QWidget *aermodTab = new QWidget;
     aermodTab->setLayout(aermodLayout);
 
-    QVBoxLayout *iscLayout = new QVBoxLayout;
-    iscLayout->addWidget(gbIscNonDefault);
-    iscLayout->addStretch(1);
-
-    QWidget *iscTab = new QWidget;
-    iscTab->setLayout(iscLayout);
-
-    // Tab Widget
     QTabWidget *tabWidget = new QTabWidget;
     tabWidget->addTab(aermodTab, "AERMOD");
-    tabWidget->addTab(iscTab, "ISCST3");
-    tabWidget->setTabEnabled(1, false); // FIXME
 
     // Main Layout
     QVBoxLayout *mainLayout = new QVBoxLayout;
@@ -409,36 +435,108 @@ DispersionPage::DispersionPage(Scenario *s, QWidget *parent)
     init();
 }
 
+void DispersionPage::resetState()
+{
+    // If DDEP is unchecked, advanced options should be unchecked.
+    if (!chkDryDeposition->isChecked()) {
+        chkGDVelocity->setChecked(false);
+        chkAreaDplt->setChecked(false);
+    }
+
+    if (chkDryDeposition->isChecked()) {
+        // DRYDPLT depends on DDEP
+        chkDryDplt->setEnabled(true);
+
+        // AREADPLT depends on DRYDPLT
+        chkAreaDplt->setEnabled(chkDryDplt->isChecked());
+
+        // GASDEPVD depends on DDEP
+        // WDEP and GASDEPVD mutually exclusive
+        if (chkGDVelocity->isChecked()) {
+            chkWetDeposition->setChecked(false);
+            chkWetDeposition->setEnabled(false);
+        }
+        else {
+            chkWetDeposition->setEnabled(true);
+        }
+        if (chkWetDeposition->isChecked()) {
+            chkGDVelocity->setChecked(false);
+            chkGDVelocity->setEnabled(false);
+        }
+        else {
+            chkGDVelocity->setEnabled(true);
+        }
+    }
+    else {
+        chkDryDplt->setEnabled(false);
+        chkAreaDplt->setEnabled(false);
+        chkGDVelocity->setEnabled(false);
+        sbGDVelocity->setEnabled(false);
+        chkWetDeposition->setEnabled(true);
+    }
+
+    sbGDVelocity->setEnabled(chkGDVelocity->isEnabled());
+
+    // WETDPLT depends on WDEP
+    chkWetDplt->setEnabled(chkWetDeposition->isChecked());
+
+    // LOW_WIND parameters
+    lblSVmin->setEnabled(chkLowWind->isChecked());
+    lblWSmin->setEnabled(chkLowWind->isChecked());
+    lblFRANmax->setEnabled(chkLowWind->isChecked());
+    sbSVmin->setEnabled(chkLowWind->isChecked());
+    sbWSmin->setEnabled(chkLowWind->isChecked());
+    sbFRANmax->setEnabled(chkLowWind->isChecked());
+}
+
 void DispersionPage::init()
 {
-    connect(chkLowWind, &QCheckBox::toggled,
-        [=](bool checked) {
-        lowWindParams->setDisabled(!checked);
-    });
-
     load();
+
+    resetState();
+
+    connect(chkDryDeposition, &QCheckBox::toggled,
+            this, &DispersionPage::resetState);
+    connect(chkDryDplt, &QCheckBox::toggled,
+            this, &DispersionPage::resetState);
+    connect(chkWetDeposition, &QCheckBox::toggled,
+            this, &DispersionPage::resetState);
+    connect(chkGDVelocity, &QCheckBox::toggled,
+            this, &DispersionPage::resetState);
+    connect(chkLowWind, &QCheckBox::toggled,
+            this, &DispersionPage::resetState);
 }
 
 void DispersionPage::save()
 {
     scenario->aermodFlat = chkFlat->isChecked();
     scenario->aermodFastArea = chkFastArea->isChecked();
+    scenario->aermodDryDeposition = chkDryDeposition->isChecked();
+    scenario->aermodDryDplt = chkDryDplt->isChecked();
+    scenario->aermodAreaDplt = chkAreaDplt->isChecked();
+    scenario->aermodGDVelocityEnabled = chkGDVelocity->isChecked();
+    scenario->aermodGDVelocity = sbGDVelocity->value();
+    scenario->aermodWetDeposition = chkWetDeposition->isChecked();
+    scenario->aermodWetDplt = chkWetDplt->isChecked();
     scenario->aermodLowWind = chkLowWind->isChecked();
-    scenario->svMin = sbSVmin->value();
-    scenario->wsMin = sbWSmin->value();
-    scenario->franMax = sbFRANmax->value();
-
-    // FIXME: ISCST3
+    scenario->aermodSVmin = sbSVmin->value();
+    scenario->aermodWSmin = sbWSmin->value();
+    scenario->aermodFRANmax = sbFRANmax->value();
 }
 
 void DispersionPage::load()
 {
     chkFlat->setChecked(scenario->aermodFlat);
     chkFastArea->setChecked(scenario->aermodFastArea);
+    chkDryDeposition->setChecked(scenario->aermodDryDeposition);
+    chkDryDplt->setChecked(scenario->aermodDryDplt);
+    chkAreaDplt->setChecked(scenario->aermodAreaDplt);
+    chkGDVelocity->setChecked(scenario->aermodGDVelocityEnabled);
+    sbGDVelocity->setValue(scenario->aermodGDVelocity);
+    chkWetDeposition->setChecked(scenario->aermodWetDeposition);
+    chkWetDplt->setChecked(scenario->aermodWetDplt);
     chkLowWind->setChecked(scenario->aermodLowWind);
-    sbSVmin->setValue(scenario->svMin);
-    sbWSmin->setValue(scenario->wsMin);
-    sbFRANmax->setValue(scenario->franMax);
-
-    // FIXME: ISCST3
+    sbSVmin->setValue(scenario->aermodSVmin);
+    sbWSmin->setValue(scenario->aermodWSmin);
+    sbFRANmax->setValue(scenario->aermodFRANmax);
 }

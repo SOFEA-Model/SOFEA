@@ -30,12 +30,18 @@ struct Source
     double area() const;
 
     std::string srcid;
+    double xshift = 0; // x truncation
+    double yshift = 0; // y truncation
     double xs = 0;
     double ys = 0;
     double zs = 0;
     QDateTime appStart;
     double appRate = 0;
     double incorpDepth = 0;
+    double airDiffusion = 0;
+    double waterDiffusion = 0;
+    double cuticularResistance = 0;
+    double henryConstant = 0;
     QPolygonF geometry;
 
     virtual ~Source() {}

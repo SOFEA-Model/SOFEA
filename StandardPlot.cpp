@@ -192,8 +192,10 @@ void StandardPlot::autoScale()
             continue;
 
         const QRectF rect = item->boundingRect();
+
+        // Union the intervals.
         intv[item->xAxis()] |= QwtInterval(rect.left(), rect.right());
-        intv[item->yAxis()] |= QwtInterval(rect.top(), rect.bottom());
+        intv[item->xAxis()] |= QwtInterval(rect.top(), rect.bottom());
     }
 
     // Adjust scale for each axis.
@@ -209,7 +211,15 @@ void StandardPlot::autoScale()
     updateAxes();
 
     // Rescale axes according to RescalePolicy, if enabled.
-    if (m_rescaler != nullptr && m_rescaler->isEnabled()) {
+    if (m_rescaler != nullptr && m_rescaler->isEnabled())
+    {
+        // Set interval hints corresponding to bounding rectangles.
+        for (int axisId = 0; axisId < axisCnt; axisId++) {
+            if (intv[axisId].isValid()) {
+                m_rescaler->setIntervalHint(axisId, intv[axisId]);
+            }
+        }
+
         m_rescaler->rescale();
     }
 }

@@ -1,7 +1,7 @@
 #include "Source.h"
 #include "GeometryOp.h"
 
-#include "fmt/format.h"
+#include <fmt/format.h>
 
 double Source::area() const
 {
@@ -126,7 +126,7 @@ void AreaPolySource::setGeometry()
         ys = geometry.first().y();
     }
     else {
-        geometry = QPolygonF(3);
+        geometry = QPolygonF(4);
         xs = 0;
         ys = 0;
     }
@@ -144,7 +144,7 @@ std::string AreaPolySource::toString(int isrc) const
     w.write("   SRCPARAM S{:0=3} {} {} {}\n", isrc, aremis, relhgt, nverts);
     w.write("   AREAVERT S{:0=3}", isrc);
     for (const QPointF &p : geometry)
-        w.write(" {} {}", p.x(), p.y());
+        w.write(" {: 10.2f} {: 10.2f}", p.x(), p.y());
     w.write("\n   HOUREMIS FLUX.DAT S{:0=3}\n", isrc);
     return w.str();
 }

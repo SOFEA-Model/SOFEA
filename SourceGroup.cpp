@@ -4,7 +4,7 @@
 #include <cmath>
 #include <utility>
 
-#include "fmt/format.h"
+#include <fmt/format.h>
 
 SourceGroup::SourceGroup()
 {
@@ -19,12 +19,33 @@ SourceGroup::SourceGroup()
     appStart = QDateTime(QDate(2000, 1, 1), QTime(0, 0, 0), Qt::UTC);
     appRate = Distribution::Constant();
     incorpDepth = Distribution::Constant();
+    airDiffusion = Distribution::Constant();
+    waterDiffusion = Distribution::Constant();
+    cuticularResistance = Distribution::Constant();
+    henryConstant = Distribution::Constant();
 }
 
 void SourceGroup::initSource(Source *s)
 {
     s->appStart = appStart;
     s->appRate = appRate(&gen);
+    s->incorpDepth = incorpDepth(&gen);
+    s->airDiffusion = airDiffusion(&gen);
+    s->waterDiffusion = waterDiffusion(&gen);
+    s->cuticularResistance = cuticularResistance(&gen);
+    s->henryConstant = henryConstant(&gen);
+}
+
+void SourceGroup::initSourceAppStart(Source *s)
+{
+    s->appStart = appStart;
+}
+void SourceGroup::initSourceAppRate(Source *s)
+{
+    s->appRate = appRate(&gen);
+}
+void SourceGroup::initSourceIncorpDepth(Source *s)
+{
     s->incorpDepth = incorpDepth(&gen);
 }
 
@@ -33,23 +54,35 @@ void SourceGroup::resampleAppStart()
     for (Source &s : sources)
         s.appStart = appStart; // FIXME
 }
-
 void SourceGroup::resampleAppRate()
 {
     for (Source &s : sources)
         s.appRate = appRate(&gen);
 }
-
 void SourceGroup::resampleIncorpDepth()
 {
     for (Source &s : sources)
         s.incorpDepth = incorpDepth(&gen);
 }
-
-void SourceGroup::resetGeometry()
+void SourceGroup::resampleAirDiffusion()
 {
     for (Source &s : sources)
-        s.setGeometry();
+        s.airDiffusion = airDiffusion(&gen);
+}
+void SourceGroup::resampleWaterDiffusion()
+{
+    for (Source &s : sources)
+        s.waterDiffusion = waterDiffusion(&gen);
+}
+void SourceGroup::resampleCuticularResistance()
+{
+    for (Source &s : sources)
+        s.cuticularResistance = cuticularResistance(&gen);
+}
+void SourceGroup::resampleHenryConstant()
+{
+    for (Source &s : sources)
+        s.henryConstant = henryConstant(&gen);
 }
 
 Flux SourceGroup::fluxProfile(const Source *s) const

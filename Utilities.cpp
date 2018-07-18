@@ -2,7 +2,11 @@
 
 #include <QApplication>
 #include <QPainter>
+#include <QRect>
+#include <QResizeEvent>
 #include <QStyleOptionFrame>
+#include <QTextDocument>
+#include <QTextLayout>
 
 //-----------------------------------------------------------------------------
 // GridLayout
@@ -100,9 +104,17 @@ void DoubleLineEdit::setValue(double value)
 
 ReadOnlyLineEdit::ReadOnlyLineEdit(QWidget *parent) : QLineEdit(parent)
 {
-    currentPalette = this->palette();
+    m_defaultPalette = this->palette();
+    setAutoFillBackground(true);
     setFrame(false);
     setReadOnly(true);
+}
+
+void ReadOnlyLineEdit::setBasePalette()
+{
+    QColor bgColor = QWidget::palette().window().color();
+    m_defaultPalette.setColor(QPalette::Base, bgColor);
+    this->setPalette(m_defaultPalette);
 }
 
 void ReadOnlyLineEdit::paintEvent(QPaintEvent* event)
@@ -116,4 +128,92 @@ void ReadOnlyLineEdit::paintEvent(QPaintEvent* event)
     this->initStyleOption(&option);
     option.state = QStyle::State_Raised;
     this->style()->drawPrimitive(QStyle::PE_FrameLineEdit, &option, &painter, this);
+}
+
+//-----------------------------------------------------------------------------
+// ReadOnlyTextEdit
+//-----------------------------------------------------------------------------
+
+ReadOnlyTextEdit::ReadOnlyTextEdit(QWidget *parent) : QTextEdit(parent)
+{
+    m_defaultPalette = this->palette();
+    setAutoFillBackground(true);
+    setFrameShape(QFrame::NoFrame);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setWordWrapMode(QTextOption::NoWrap);
+    setReadOnly(true);
+}
+
+void ReadOnlyTextEdit::setRowCount(const int rows)
+{
+    QTextDocument *doc = this->document();
+    QFontMetrics fm(doc->defaultFont());
+    QMargins margins = this->contentsMargins();
+
+    int height = fm.lineSpacing() * rows +
+        (doc->documentMargin() + this->frameWidth()) * 2 +
+        margins.top() + margins.bottom();
+
+    this->setFixedHeight(height);
+}
+
+void ReadOnlyTextEdit::paintEvent(QPaintEvent* event)
+{
+    // FIXME: drawing issues on scroll.
+
+    QPainter painter(viewport());
+
+    QStyleOptionFrame option;
+    this->initStyleOption(&option);
+    option.state = QStyle::State_Raised;
+    this->style()->drawPrimitive(QStyle::PE_FrameLineEdit, &option, &painter, this);
+
+    QTextEdit::paintEvent(event);
+}
+
+//-----------------------------------------------------------------------------
+// StatusLabel
+//-----------------------------------------------------------------------------
+
+StatusLabel::StatusLabel(QWidget *parent) : QWidget(parent)
+{
+    m_iconLabel = new QLabel;
+    m_textLabel = new QLabel;
+    m_textLabel->setWordWrap(true);
+
+    QHBoxLayout *mainLayout = new QHBoxLayout;
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->addWidget(m_iconLabel, 0, Qt::AlignTop);
+    mainLayout->addWidget(m_textLabel, 1, Qt::AlignTop);
+    setLayout(mainLayout);
+}
+
+void StatusLabel::setSeverity(const int severity)
+{
+    // severity corresponds to enum severity_level in boost::log::trivial.
+
+    static const QVector<QPixmap> pixmaps = {
+        QPixmap(":/images/StatusAnnotations_Information_16xLG.png"),       // 0, trace
+        QPixmap(":/images/StatusAnnotations_Information_16xLG.png"),       // 1, debug
+        QPixmap(":/images/StatusAnnotations_Information_16xLG_color.png"), // 2, info
+        QPixmap(":/images/StatusAnnotations_Warning_16xLG_color.png"),     // 3, warning
+        QPixmap(":/images/StatusAnnotations_Invalid_16xLG_color.png"),     // 4, error
+        QPixmap(":/images/StatusAnnotations_Critical_16xLG_color.png")     // 5, fatal
+    };
+
+    int index = 0;
+    if (severity < 0)
+        index = 0;
+    else if (severity > 5)
+        index = 5;
+    else
+        index = severity;
+
+    m_iconLabel->setPixmap(pixmaps.at(index));
+}
+
+void StatusLabel::setText(const QString& text)
+{
+    m_textLabel->setText(text);
 }

@@ -4,15 +4,15 @@
 #include "MainWindow.h"
 #include "ReceptorDialog.h"
 #include "RunModelDialog.h"
-#include "AnalysisWindow.h"
 #include "Serialization.h"
 
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/smart_ptr/make_shared_object.hpp>
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/log/attributes/scoped_attribute.hpp>
 
-#include "csv/csv.h"
+#include <csv/csv.h>
 
 #include <fstream>
 
@@ -192,6 +192,8 @@ void MainWindow::createPanels()
     dwMessages->setObjectName("Messages");
     dwMessages->setAllowedAreas(Qt::BottomDockWidgetArea);
     messages = new LogWidget(dwMessages);
+    QStringList tags = QStringList{"Distribution", "Geometry", "Import", "Model", "Analysis"};
+    messages->setTags(tags);
     dwMessages->setWidget(messages);
     addDockWidget(Qt::BottomDockWidgetArea, dwMessages);
     viewMenu->addAction(dwMessages->toggleViewAction());
@@ -255,19 +257,15 @@ void MainWindow::setupLogging()
 {
     auto core = boost::log::core::get();
 
+    // Severity Filter
+    // FIXME
+    //core->set_filter(boost::log::trivial::severity >= boost::log::trivial::info);
+
     // Custom Sink
     auto backend = boost::make_shared<LogWidgetBackend>(messages);
     typedef boost::log::sinks::synchronous_sink<LogWidgetBackend> sink_t;
     auto sink = boost::make_shared<sink_t>(backend);
     core->add_sink(sink);
-
-    // Test
-    //BOOST_LOG_TRIVIAL(trace) << "Trace";
-    //BOOST_LOG_TRIVIAL(debug) << "Debug";
-    //BOOST_LOG_TRIVIAL(info) << "Info";
-    //BOOST_LOG_TRIVIAL(warning) << "Warning";
-    //BOOST_LOG_TRIVIAL(error) << "Error";
-    //BOOST_LOG_TRIVIAL(fatal) << "Fatal";
 }
 
 void MainWindow::loadSettings()
@@ -338,7 +336,6 @@ void MainWindow::openProject()
         ia(scenarios);
     } catch (const std::exception &e) {
         QMessageBox::critical(this, "Parse Error", QString::fromLocal8Bit(e.what()));
-        //BOOST_LOG_TRIVIAL(error) << e.what();
         return;
     }
 
@@ -461,6 +458,8 @@ void MainWindow::newSourceGroup(Scenario *s)
 
 void MainWindow::importValidationData(Scenario *s)
 {
+    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Import");
+
     QSettings settings;
     QString csvfile;
     QString examplesDir = qApp->applicationDirPath() + QDir::separator() + "examples";
@@ -487,10 +486,10 @@ void MainWindow::importValidationData(Scenario *s)
     std::string start;
     double incdepth;
 
-    io::CSVReader<8> in(csvfile.toStdString());
-    in.read_header(io::ignore_extra_column, "srcid", "xs", "ys", "xinit", "yinit", "apprate", "start", "incdepth");
-    while (true) {
-        try {
+    try {
+        io::CSVReader<8> in(csvfile.toStdString());
+        in.read_header(io::ignore_extra_column, "srcid", "xs", "ys", "xinit", "yinit", "apprate", "start", "incdepth");
+        while (true) {
             bool ok = in.read_row(srcid, xs, ys, xinit, yinit, apprate, start, incdepth);
             if (!ok)
                 break;
@@ -506,11 +505,11 @@ void MainWindow::importValidationData(Scenario *s)
             as->incorpDepth = incdepth;
             as->setGeometry();
             sg->sources.push_back(as);
-        } catch (const std::exception &e) {
-            QMessageBox::critical(this, "Parse Error", QString::fromLocal8Bit(e.what()));
-            //BOOST_LOG_TRIVIAL(error) << e.what();
-            break;
         }
+    }
+    catch (const std::exception &e) {
+        BOOST_LOG_TRIVIAL(error) << e.what();
+        return;
     }
 
     addSourceGroupToTree(sg, s);
@@ -643,29 +642,29 @@ void MainWindow::cloneSourceGroup(SourceGroup *sg)
 void MainWindow::showScenarioProperties(Scenario *s)
 {
     ScenarioProperties *dialog = new ScenarioProperties(s, this);
-    int rc = dialog->exec();
-    if (rc == QDialog::Accepted) {
+    connect(dialog, &ScenarioProperties::saved, [&]() {
         emit scenarioUpdated(s); // input file update
-    }
+    });
+    dialog->exec();
 }
 
 void MainWindow::showSourceGroupProperties(SourceGroup *sg)
 {
-    SourceGroupProperties *dialog = new SourceGroupProperties(sg, this);
-    int rc = dialog->exec();
-    if (rc == QDialog::Accepted) {
-        Scenario *s = sourceGroupToScenario[sg];
+    Scenario *s = sourceGroupToScenario[sg];
+    SourceGroupProperties *dialog = new SourceGroupProperties(s, sg, this);
+    connect(dialog, &SourceGroupProperties::saved, [&]() {
         emit scenarioUpdated(s); // input file update
         emit sourceGroupUpdated(sg); // source table update
-    }
+    });
+    dialog->exec();
 }
 
 void MainWindow::showReceptorEditor(SourceGroup *sg)
 {
-    ReceptorDialog *dialog = new ReceptorDialog(sg, this);
+    Scenario *s = sourceGroupToScenario[sg];
+    ReceptorDialog *dialog = new ReceptorDialog(s, sg, this);
     int rc = dialog->exec();
     if (rc == QDialog::Accepted) {
-        Scenario *s = sourceGroupToScenario[sg];
         emit scenarioUpdated(s); // input file update
     }
 }
@@ -832,9 +831,9 @@ void MainWindow::handleItemChanged(QTreeWidgetItem *item, int)
     // Handle rename, making sure name is valid.
     QString text = item->text(0); // new text
 
-    // Remove any non-alphanumeric characters and truncate to max length (8)
+    // Remove any non-alphanumeric characters and truncate to max length (100)
     text.remove(QRegExp("[^A-Za-z0-9_]+"));
-    text.truncate(8);
+    text.truncate(100);
     item->setText(0, text);
 
     if (treeWidgetToScenario.count(item) > 0) {
@@ -909,23 +908,16 @@ void MainWindow::runModel()
 
 void MainWindow::analyzeOutput()
 {
-    QSettings settings;
-    QString openFile;
-    QString currentDir;
-    if (projectDir.isEmpty() || !QDir(projectDir).exists())
-        currentDir = qApp->applicationDirPath() + QDir::separator() + "examples";
-    else
-        currentDir = projectDir;
-    openFile = QFileDialog::getOpenFileName(this,
-                                            tr("Select Output File"),
-                                            currentDir,
-                                            tr("netCDF POSTFILE (*.nc)"));
+    if (analysisWindow == nullptr) {
+        analysisWindow = new AnalysisWindow(this);
+    }
 
-    if (openFile.isEmpty())
-        return;
+    analysisWindow->show();
 
-    AnalysisWindow *dialog = new AnalysisWindow(openFile, this);
-    dialog->show();
+    // Centering
+    analysisWindow->move(window()->frameGeometry().topLeft() +
+                         window()->rect().center() -
+                         analysisWindow->rect().center());
 }
 
 void MainWindow::about()
@@ -949,8 +941,7 @@ void MainWindow::about()
 
     // Dispersion Model Info
     aboutText += "<h4>Model Version Information:</h4>";
-    aboutText += QString("AERMOD %1<br>").arg(AERMOD_VERSION_STRING);
-    //aboutText += QString("ISCST3 %1").arg(ISCST3_VERSION_STRING);
+    aboutText += QString("AERMOD %1").arg(AERMOD_VERSION_STRING);
 
     // Contributor Info
     aboutText += "<h4>Developers:</h4>";

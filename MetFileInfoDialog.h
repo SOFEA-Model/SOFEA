@@ -1,13 +1,16 @@
 #ifndef METFILEINFODIALOG_H
 #define METFILEINFODIALOG_H
 
-#include <QDialog>
-#include <QButtonGroup>
-#include <QRadioButton>
-#include <QSpinBox>
 #include <QBrush>
+#include <QButtonGroup>
+#include <QDialog>
+#include <QDoubleSpinBox>
+#include <QListView>
 #include <QPainter>
 #include <QPointF>
+#include <QRadioButton>
+#include <QSpinBox>
+#include <QStandardItemModel>
 
 #include <ctkRangeSlider.h>
 #include <qwt_polar_plot.h>
@@ -15,6 +18,8 @@
 
 #include "MetFileParser.h"
 #include "Utilities.h"
+#include "ItemDelegate.h"
+#include "StandardTableView.h"
 
 class QwtPolarGrid;
 
@@ -46,7 +51,6 @@ private:
 
 class WindRosePlot : public QwtPolarPlot
 {
-    Q_OBJECT
 public:
     explicit WindRosePlot(QWidget *parent = nullptr);
 
@@ -61,6 +65,7 @@ private:
 class MetFileInfoDialog : public QDialog
 {
     Q_OBJECT
+
 public:
     MetFileInfoDialog(std::shared_ptr<SurfaceData> sd, QWidget *parent = nullptr);
 
@@ -69,11 +74,12 @@ private:
     void drawSectors();
 
 private slots:
-    void onRangeChanged(const int min, const int max);
+    void onIntervalChanged(const int min, const int max);
+    void onSectorSizeChanged(int id);
+    void onBinCountChanged(int value);
 
 private:
     std::shared_ptr<SurfaceData> sd;
-    std::vector<WindRoseSector *> sectors;
 
     // Data Controls
     ctkRangeSlider *timeRangeSlider;
@@ -90,8 +96,13 @@ private:
     QRadioButton *rbSectorSize30;
     QSpinBox *sbBinCount;
 
-    // Plot Widgets
+    QStandardItemModel *binModel;
+    StandardTableView *binTable;
+    QListView *binEditor;
+
     WindRosePlot *wrPlot;
+    std::vector<WindRoseSector *> wrSectors;
+    std::vector<QColor> wrColors;
 
     // Wind Rose Parameters
     double azimuthSpacing = 1.5;
@@ -101,7 +112,6 @@ private:
     int wsBinCount = 5;
     double wsMin = 0;
     double wsMax = 10;
-    std::vector<QColor> colors;
 };
 
 #endif // METFILEINFODIALOG_H

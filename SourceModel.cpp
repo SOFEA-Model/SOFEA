@@ -1,37 +1,20 @@
 #include "SourceModel.h"
 #include "RunstreamParser.h"
+#include "ShapefileParser.h"
 
+#include <QApplication>
+#include <QDir>
+#include <QFileDialog>
 #include <QIcon>
+#include <QFileInfo>
+#include <QSettings>
 
 #include <boost/ptr_container/clone_allocator.hpp>
-#include "fmt/format.h"
+#include <fmt/format.h>
 
 SourceModel::SourceModel(SourceGroup *sg, QObject *parent)
     : QAbstractTableModel(parent), sgPtr(sg)
 {}
-
-void SourceModel::setDirectEditMode(bool on)
-{
-    directEdit = on;
-}
-
-void SourceModel::save()
-{
-    if (directEdit)
-        return; // already saved.
-
-    // Sources will eventually be deallocated.
-    sgPtr->sources.release();
-    sgPtr->sources = sources.clone();
-    sgPtr->resetGeometry();
-}
-
-void SourceModel::load()
-{
-    beginResetModel();
-    sources = sgPtr->sources.clone();
-    endResetModel();
-}
 
 void SourceModel::reset()
 {
@@ -39,23 +22,39 @@ void SourceModel::reset()
     endResetModel();
 }
 
-void SourceModel::import(const QString &file)
+void SourceModel::import()
 {
-    beginResetModel();
-    boost::ptr_vector<Source> imported;
-    RunstreamParser::parseSources(file, imported);
-    for (Source &s : imported)
-        sgPtr->initSource(&s);
+    QString fileFilter = QString("%1;;%2;;%3").arg(
+        "All Supported Files (*.shp *.inp *.dat)",
+        "ESRI Shapefile (*.shp)",
+        "Runstream File (*.inp *.dat)");
 
-    sources.transfer(sources.end(), imported.begin(), imported.end(), imported);
+    QSettings settings;
+    QString settingsKey = "DefaultImportDirectory";
+    QString defaultDirectory = settings.value(settingsKey, qApp->applicationDirPath()).toString();
+
+    const QString filename = QFileDialog::getOpenFileName(nullptr,
+        tr("Import Source Data"), defaultDirectory, fileFilter);
+
+    if (filename.isEmpty())
+        return;
+
+    QFileInfo fi(filename);
+    QString dir = fi.absoluteDir().absolutePath();
+    settings.setValue(settingsKey, dir);
+
+    beginResetModel();
+    QString ext = fi.completeSuffix();
+    if (ext == "shp")
+        ShapefileParser::parseSources(filename, sgPtr);
+    else if (ext == "inp" || ext == "dat")
+        RunstreamParser::parseSources(filename, sgPtr);
     endResetModel();
 }
 
 Source* SourceModel::getSource(const QModelIndex &index)
 {
-    // If directEdit==true, show data from underlying datastore.
-    Source &s = directEdit ? sgPtr->sources.at(index.row())
-                           : sources.at(index.row());
+    Source &s = sgPtr->sources.at(index.row());
     return &s;
 }
 
@@ -69,10 +68,7 @@ void SourceModel::addAreaSource()
     seqArea++;
 
     beginInsertRows(QModelIndex(), rowCount(), rowCount());
-    if (directEdit)
-        sgPtr->sources.push_back(s);
-    else
-        sources.push_back(s);
+    sgPtr->sources.push_back(s);
     endInsertRows();
 }
 
@@ -86,10 +82,7 @@ void SourceModel::addAreaCircSource()
     seqCirc++;
 
     beginInsertRows(QModelIndex(), rowCount(), rowCount());
-    if (directEdit)
-        sgPtr->sources.push_back(s);
-    else
-        sources.push_back(s);
+    sgPtr->sources.push_back(s);
     endInsertRows();
 }
 
@@ -108,20 +101,14 @@ void SourceModel::addAreaPolySource()
     seqPoly++;
 
     beginInsertRows(QModelIndex(), rowCount(), rowCount());
-    if (directEdit)
-        sgPtr->sources.push_back(s);
-    else
-        sources.push_back(s);
+    sgPtr->sources.push_back(s);
     endInsertRows();
 }
 
 int SourceModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    if (directEdit)
-        return sgPtr->sources.size();
-    else
-        return sources.size();
+    return sgPtr->sources.size();
 }
 
 int SourceModel::columnCount(const QModelIndex &parent) const
@@ -138,9 +125,7 @@ QVariant SourceModel::data(const QModelIndex &index, int role) const
     if (index.row() >= rowCount() || index.row() < 0)
         return QVariant();
 
-    // If directEdit==true, show data from underlying datastore.
-    const Source &s = directEdit ? sgPtr->sources.at(index.row())
-                                 : sources.at(index.row());
+    const Source &s = sgPtr->sources.at(index.row());
 
     if (role == Qt::UserRole) {
         return QVariant();
@@ -198,15 +183,14 @@ bool SourceModel::setData(const QModelIndex &index, const QVariant &value, int r
     if (role == Qt::EditRole && index.isValid()) {
         int row = index.row();
 
-        // If directEdit==true, commit changes directly to underlying datastore,
-        // without requiring save().
-        Source &s = directEdit ? sgPtr->sources.at(row)
-                               : sources.at(row);
+        Source &s = sgPtr->sources.at(row);
 
         switch (index.column()) {
             case 0: {
                 QString srcid = value.toString();
-                srcid.truncate(8);
+                // Remove any non-alphanumeric characters and truncate to max length (100)
+                srcid.remove(QRegExp("[^A-Za-z0-9_]+"));
+                srcid.truncate(100);
                 s.srcid = srcid.toStdString();
                 break;
             }
@@ -262,8 +246,7 @@ QVariant SourceModel::headerData(int section, Qt::Orientation orientation, int r
             if (section >= rowCount() || section < 0)
                 return QVariant();
 
-            const Source &s = directEdit ? sgPtr->sources.at(section)
-                                         : sources.at(section);
+            const Source &s = sgPtr->sources.at(section);
 
             switch (s.getType()) {
                 case SourceType::AREA:
@@ -300,15 +283,9 @@ bool SourceModel::removeRows(int row, int count, const QModelIndex &)
 {
     beginRemoveRows(QModelIndex(), row, row + count - 1);
 
-    if (directEdit) {
-        auto it = sgPtr->sources.begin() + row;
-        for (int i = 0; i < count; ++i)
-            it = sgPtr->sources.erase(it);
-    } else {
-        auto it = sources.begin() + row;
-        for (int i = 0; i < count; ++i)
-            it = sources.erase(it);
-    }
+    auto it = sgPtr->sources.begin() + row;
+    for (int i = 0; i < count; ++i)
+        it = sgPtr->sources.erase(it);
 
     endRemoveRows();
 

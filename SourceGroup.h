@@ -40,6 +40,9 @@ struct ReceptorNode
     std::string toString() const;
     double x;
     double y;
+    double zElev = 0;
+    double zHill = 0;
+    double zFlag = 0;
     QPointF point;
     QColor color;
 };
@@ -54,6 +57,9 @@ struct ReceptorGrid
     double yDelta;
     int xCount;
     int yCount;
+    double zElev = 0;
+    double zHill = 0;
+    double zFlag = 0;
     QPolygonF points;
     QColor color;
 };
@@ -62,9 +68,16 @@ struct SourceGroup
 {
     SourceGroup();
     void initSource(Source *s);
+    void initSourceAppStart(Source *s);
+    void initSourceAppRate(Source *s);
+    void initSourceIncorpDepth(Source *s);
     void resampleAppStart();
     void resampleAppRate();
     void resampleIncorpDepth();
+    void resampleAirDiffusion();
+    void resampleWaterDiffusion();
+    void resampleCuticularResistance();
+    void resampleHenryConstant();
     void resetGeometry();
     Flux fluxProfile(const Source *s) const;
 
@@ -83,7 +96,7 @@ struct SourceGroup
 
     // General
     unsigned int id;
-    std::string grpid; // length 8
+    std::string grpid;
     AppMethod appMethod;
     double appFactor;
 
@@ -92,6 +105,12 @@ struct SourceGroup
     QDateTime appStart; // FIXME
     GenericDistribution appRate;
     GenericDistribution incorpDepth;
+
+    // Deposition
+    GenericDistribution airDiffusion;
+    GenericDistribution waterDiffusion;
+    GenericDistribution cuticularResistance;
+    GenericDistribution henryConstant;
 
     // Buffer Zones
     BufferZones zones;
