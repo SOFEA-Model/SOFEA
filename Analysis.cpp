@@ -40,7 +40,7 @@ extern "C" {
 // General netCDF error handler.
 void handleError(int rc)
 {
-    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Analysis");
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Analysis");
     if (rc != NC_NOERR) {
         const char* errmsg = nc_strerror(rc);
         BOOST_LOG_TRIVIAL(error) << "netCDF: " << errmsg;
@@ -379,6 +379,8 @@ std::string Analysis::libraryVersion()
 
 void Analysis::exportTimeSeries(GeneralAnalysisOpts genOpts, const std::string& filename)
 {
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Analysis");
+
     auto vave = getAveragingPeriods();
     auto vgrp = getSourceGroups();
     size_t ntime = getTimeStepCount();
@@ -391,6 +393,7 @@ void Analysis::exportTimeSeries(GeneralAnalysisOpts genOpts, const std::string& 
         std::find(vgrp.begin(), vgrp.end(), genOpts.sourceGroup));
 
     int aveper = genOpts.avePeriod;
+    int min_aveper = *std::min_element(vave.begin(), vave.end());
 
     QProgressDialog progress("Exporting Time Series...", "Abort", 0, static_cast<int>(nrecs));
     progress.setWindowModality(Qt::ApplicationModal);
@@ -419,13 +422,13 @@ void Analysis::exportTimeSeries(GeneralAnalysisOpts genOpts, const std::string& 
                                    start, count, &values[0]));
 
     // Remove fill values. The resulting size should be:
-    // floor(ntime/aveper) * nrecs
+    // floor(ntime / (aveper / min_aveper)) * nrecs
     auto remove = std::remove(values.begin(), values.end(), NC_FILL_DOUBLE);
     values.erase(remove, values.end());
-    if (values.size() != (ntime/aveper)*nrecs) {
+    if (values.size() != (ntime / (aveper / min_aveper)) * nrecs) {
         throw std::exception("Data array has unexpected missing values.");
     }
-    ntime = ntime / aveper;
+    ntime = ntime / (aveper / min_aveper);
 
     // Rescale using user-defined scale factor.
     for (double &value : values)
@@ -468,6 +471,8 @@ void Analysis::exportTimeSeries(GeneralAnalysisOpts genOpts, const std::string& 
 
 void Analysis::calcReceptorStats(GeneralAnalysisOpts genOpts, ReceptorAnalysisOpts opts, ReceptorStats& out) const
 {
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Analysis");
+
     using namespace boost::accumulators;
 
     auto vave = getAveragingPeriods();
@@ -482,6 +487,7 @@ void Analysis::calcReceptorStats(GeneralAnalysisOpts genOpts, ReceptorAnalysisOp
         std::find(vgrp.begin(), vgrp.end(), genOpts.sourceGroup));
 
     int aveper = genOpts.avePeriod;
+    int min_aveper = *std::min_element(vave.begin(), vave.end());
 
     QProgressDialog progress("Processing...", "Abort", 0, static_cast<int>(nrecs));
     progress.setWindowModality(Qt::ApplicationModal);
@@ -505,13 +511,13 @@ void Analysis::calcReceptorStats(GeneralAnalysisOpts genOpts, ReceptorAnalysisOp
                                    start, count, &values[0]));
 
     // Remove fill values. The resulting size should be:
-    // floor(ntime/aveper) * nrecs
+    // floor(ntime / (aveper / min_aveper)) * nrecs
     auto remove = std::remove(values.begin(), values.end(), NC_FILL_DOUBLE);
     values.erase(remove, values.end());
-    if (values.size() != (ntime/aveper)*nrecs) {
+    if (values.size() != (ntime / (aveper / min_aveper)) * nrecs) {
         throw std::exception("Data array has unexpected missing values.");
     }
-    ntime = ntime / aveper;
+    ntime = ntime / (aveper / min_aveper);
 
     // Rescale using user-defined scale factor.
     for (double &value : values)
@@ -637,6 +643,8 @@ void Analysis::calcReceptorStats(GeneralAnalysisOpts genOpts, ReceptorAnalysisOp
 
 void Analysis::calcHistogram(GeneralAnalysisOpts genOpts, HistogramAnalysisOpts opts, Histogram& out) const
 {
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Analysis");
+
     using namespace boost::accumulators;
 
     auto vave = getAveragingPeriods();
@@ -655,6 +663,7 @@ void Analysis::calcHistogram(GeneralAnalysisOpts genOpts, HistogramAnalysisOpts 
         std::find(vgrp.begin(), vgrp.end(), genOpts.sourceGroup));
 
     int aveper = genOpts.avePeriod;
+    int min_aveper = *std::min_element(vave.begin(), vave.end());
 
     // Read the data array. The last dimension varies fastest.
     // (ave, grp, rec, time)
@@ -666,13 +675,13 @@ void Analysis::calcHistogram(GeneralAnalysisOpts genOpts, HistogramAnalysisOpts 
                                    start, count, &values[0]));
 
     // Remove fill values. The resulting size should be:
-    // floor(ntime/aveper) * nrecs
+    // floor(ntime / (aveper / min_aveper)) * nrecs
     auto remove = std::remove(values.begin(), values.end(), NC_FILL_DOUBLE);
     values.erase(remove, values.end());
-    if (values.size() != (ntime/aveper)*nrecs) {
+    if (values.size() != (ntime / (aveper / min_aveper)) * nrecs) {
         throw std::exception("Data array has unexpected missing values.");
     }
-    ntime = ntime / aveper;
+    ntime = ntime / (aveper / min_aveper);
 
     // Rescale using user-defined scale factor.
     for (double &value : values)

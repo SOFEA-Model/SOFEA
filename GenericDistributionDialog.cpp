@@ -675,7 +675,7 @@ void GenericDistributionDialog::setDistribution(DistributionID id)
 
 void GenericDistributionDialog::updatePlot()
 {
-    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Distribution");
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Distribution");
 
     double step;
     QVector<QPointF> samples;

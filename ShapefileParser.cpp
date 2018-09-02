@@ -38,7 +38,7 @@ std::string shapeTypeString(int shpt)
 
 void ShapefileParser::parseSources(const QString& filename, SourceGroup *sgPtr)
 {
-    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Import");
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Import");
 
     int pnEntities, pnShapeType;
     double adfMinBound[4], adfMaxBound[4]; // X, Y, Z, M

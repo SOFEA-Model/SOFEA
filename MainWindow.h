@@ -17,6 +17,7 @@
 QT_BEGIN_NAMESPACE
 class QAction;
 class QDir;
+class QDockWidget;
 class QMenu;
 class QTabWidget;
 class QTextEdit;
@@ -74,17 +75,22 @@ private:
     void showSourceTable(SourceGroup *sg);
     void exportFluxFile(Scenario *s);
 
+protected:
+    void closeEvent(QCloseEvent *event) override;
+
 private:
     QTabWidget *centralTabWidget;
-
     QMenu *fileMenu;
     QMenu *viewMenu;
     QMenu *modelMenu;
     QMenu *helpMenu;
-
     QToolBar *toolbar;
+    QDockWidget *dwProjectTree;
+    QDockWidget *dwMessages;
+    QDockWidget *dwOutput;
     QTreeWidget *projectTree;
-    LogWidget *messages;
+    LogWidget *lwMessages;
+    LogWidget *lwOutput;
     AnalysisWindow *analysisWindow = nullptr;
 
     // Scenario/SourceGroup Containers

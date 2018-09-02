@@ -565,6 +565,7 @@ void FluxProfilePage::load()
     int tsMethod = static_cast<int>(fs.tsMethod);
     int tsIndex = cboTemporalScaling->findData(tsMethod);
     cboTemporalScaling->setCurrentIndex(tsIndex);
+    temporalStack->setCurrentIndex(tsIndex);
 
     deStartDate->setDate(fs.warmSeasonStart);
     deEndDate->setDate(fs.warmSeasonEnd);

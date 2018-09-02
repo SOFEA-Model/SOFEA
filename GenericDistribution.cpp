@@ -147,7 +147,7 @@ namespace Detail
 
 void GenericDistribution::pdf(QVector<double> const& x, QVector<double> &y) const
 {
-    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Distribution");
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Distribution");
 
     y.reserve(x.size());
     try {

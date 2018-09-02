@@ -150,8 +150,10 @@ void RunModelDialog::executeJob(int i)
     if (maxThreads >= 0 && activeJobs >= maxThreads)
         return;
 
+    QDateTime timestamp = QDateTime::currentDateTime();
+
     runModel->item(i, 1)->setText("Processing");
-    runModel->item(i, 2)->setText(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss"));
+    runModel->item(i, 2)->setText(timestamp.toString("yyyy-MM-dd hh:mm:ss"));
     runModel->item(i, 3)->setText("00:00:00");
     runModel->item(i, 4)->setData(0, Qt::DisplayRole); // 0% complete
 
@@ -162,15 +164,15 @@ void RunModelDialog::executeJob(int i)
     jobs[i]->queued = false;
 
     // Create the output directory.
-    QString subDir = QString::fromStdString(jobs[i]->scenario->title) + "_" + getTimestamp();
+    jobs[i]->subDir = QString::fromStdString(jobs[i]->scenario->title) + "_" + timestamp.toString("yyyyMMddhhmmsszzz");
     QDir outputDir(workingDir);
-    if (!outputDir.mkdir(subDir)) {
+    if (!outputDir.mkdir(jobs[i]->subDir)) {
         runModel->item(i, 1)->setText(getProcessError(QProcess::WriteError));
         return;
     }
-    jobs[i]->path = QDir::cleanPath(workingDir + QDir::separator() + subDir);
+    jobs[i]->path = QDir::cleanPath(workingDir + QDir::separator() + jobs[i]->subDir);
 
-    // Update surface file info.
+    // Ensure surface file data is updated.
     jobs[i]->scenario->resetSurfaceFileInfo();
 
     // Generate the input files.
@@ -234,6 +236,9 @@ void RunModelDialog::processStarted()
     pidToJob[pid] = jobs[i];
     jobToPid[jobs[i]] = pid;
 
+    // Send output directory to IPC server for logging.
+    ipcServer->addPid(pid, jobs[i]->subDir.toStdString());
+
     // Update counters.
     activeJobs++;
 
@@ -261,6 +266,7 @@ void RunModelDialog::processFinished(int exitCode, QProcess::ExitStatus exitStat
     qint64 pid = jobToPid[jobs[i]];
     pidToJob.remove(pid);
     jobToPid.remove(jobs[i]);
+    ipcServer->removePid(pid);
 
     // Update counters.
     activeJobs--;
@@ -387,12 +393,6 @@ int RunModelDialog::indexForProcess(const QProcess *process) const
             return i;
     }
     return -1;
-}
-
-QString RunModelDialog::getTimestamp()
-{
-    QDateTime currentTime = QDateTime::currentDateTime();
-    return currentTime.toString("yyyyMMddhhmmsszzz");
 }
 
 QString RunModelDialog::getProcessState(const QProcess::ProcessState state)

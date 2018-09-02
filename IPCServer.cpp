@@ -1,11 +1,13 @@
-#include <QDataStream>
-
 #include "IPCServer.h"
+#include "IPCMessage.h"
 
+#include <QByteArray>
+
+#include <boost/algorithm/string.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/attributes/scoped_attribute.hpp>
 
-const QString PIPENAME = "\\\\.\\pipe\\AERMODProgressPipe";
+const QString PIPENAME = "\\\\.\\pipe\\AERMODStatusPipe";
 
 IPCServer::IPCServer(QObject *parent) : QObject(parent)
 {
@@ -14,7 +16,10 @@ IPCServer::IPCServer(QObject *parent) : QObject(parent)
 
 bool IPCServer::start()
 {
-    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Model");
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Model");
+
+    // QLocalServer will open a pipe for asynchronous I/O (FILE_FLAG_OVERLAPPED).
+    // See Qt sources: src/network/socket/qlocalserver_win.cpp
 
     if (!server->listen(PIPENAME)) {
         BOOST_LOG_TRIVIAL(error) << "Unable to start the IPC server: "
@@ -22,14 +27,14 @@ bool IPCServer::start()
         return false;
     }
 
-    BOOST_LOG_TRIVIAL(debug) << "IPC server started";
+    //BOOST_LOG_TRIVIAL(debug) << "IPC server started";
     connect(server, &QLocalServer::newConnection, this, &IPCServer::clientConnected);
     return true;
 }
 
 bool IPCServer::stop()
 {
-    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Model");
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Model");
 
     server->close();
     if (server->isListening()) {
@@ -38,16 +43,26 @@ bool IPCServer::stop()
         return false;
     }
 
-    BOOST_LOG_TRIVIAL(debug) << "IPC server stopped";
+    //BOOST_LOG_TRIVIAL(debug) << "IPC server stopped";
     disconnect(server, &QLocalServer::newConnection, this, &IPCServer::clientConnected);
     connections.clear();
     return true;
 }
 
+void IPCServer::addPid(const qint64 pid, const std::string& dir)
+{
+    pidToDir[pid] = dir;
+}
+
+void IPCServer::removePid(const qint64 pid)
+{
+    pidToDir.remove(pid);
+}
+
 void IPCServer::clientConnected()
 {
-    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Model");
-    BOOST_LOG_TRIVIAL(debug) << "IPC client connected";
+    //BOOST_LOG_SCOPED_THREAD_TAG("Source", "Model");
+    //BOOST_LOG_TRIVIAL(debug) << "IPC client connected";
 
     QLocalSocket *socket = server->nextPendingConnection();
     connections.push_back(socket);
@@ -57,42 +72,80 @@ void IPCServer::clientConnected()
 
 void IPCServer::clientDisconnected()
 {
-    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Model");
-    BOOST_LOG_TRIVIAL(debug) << "IPC client disconnected";
+    //BOOST_LOG_SCOPED_THREAD_TAG("Source", "Model");
+    //BOOST_LOG_TRIVIAL(debug) << "IPC client disconnected";
 
     QLocalSocket *socket = qobject_cast<QLocalSocket*>(QObject::sender());
     connections.removeAll(socket);
     socket->deleteLater();
 }
 
-static inline quint32 fromNetworkData(const char *data)
-{
-    const unsigned char *udata = (const unsigned char *)data;
-
-    // byte array is little endian.
-    return (quint32(udata[3]) << 24)
-         | (quint32(udata[2]) << 16)
-         | (quint32(udata[1]) << 8)
-         | (quint32(udata[0]));
-}
-
 void IPCServer::readMessage()
 {
+    using namespace IPCMessage;
+
     QLocalSocket *socket = qobject_cast<QLocalSocket*>(QObject::sender());
+    QByteArray buffer = socket->readAll();
 
-    if (socket->bytesAvailable() < 8)
-        socket->waitForReadyRead(100);
+    int offset = 0;
+    while (true)
+    {
+        // Read message header.
+        if (offset + sizeof(header_t) > buffer.size())
+            break;
 
-    char message[8];
-    socket->read(message, 8);
+        IPCMessage::header_t header;
+        std::memcpy(&header, buffer.constData() + offset, sizeof(header));
 
-    char pidbuf[4];
-    char msgbuf[4];
-    memcpy(&pidbuf, message,   4);
-    memcpy(&msgbuf, message+4, 4);
+        // Read full message.
+        if (offset + header.cbsize > buffer.size())
+            break;
 
-    quint32 pid = fromNetworkData(pidbuf);
-    quint32 msg = fromNetworkData(msgbuf);
+        if (header.msgtyp == 1 && header.cbsize == sizeof(errmsg_buffer_t))
+        {
+            IPCMessage::errmsg_buffer_t msgbuf;
+            std::memcpy(&msgbuf, buffer.constData() + offset, sizeof(msgbuf));
 
-    emit messageReceived(pid, msg);
+            // Fortran char arrays are not null-terminated.
+            std::string pathwy(msgbuf.pathwy, sizeof(msgbuf.pathwy));
+            std::string errcod(msgbuf.errcod, sizeof(msgbuf.errcod));
+            int lineno = msgbuf.lineno;
+            std::string modnam(msgbuf.modnam, sizeof(msgbuf.modnam));
+            std::string errmg1(msgbuf.errmg1, sizeof(msgbuf.errmg1));
+            std::string errmg2(msgbuf.errmg2, sizeof(msgbuf.errmg2));
+            boost::trim_right(errmg1);
+            boost::trim_right(errmg2);
+
+            // Set attributes.
+            std::string dir = pidToDir.value(header.procid);
+            BOOST_LOG_SCOPED_THREAD_TAG("Dir", dir);
+            BOOST_LOG_SCOPED_THREAD_TAG("Pathway", pathwy);
+            BOOST_LOG_SCOPED_THREAD_TAG("ErrorCode", errcod);
+            BOOST_LOG_SCOPED_THREAD_TAG("Line", lineno);
+            BOOST_LOG_SCOPED_THREAD_TAG("Module", modnam);
+
+            // Log the error message.
+            switch (msgbuf.errtyp) {
+            case 'E':
+                BOOST_LOG_TRIVIAL(error) << errmg1 << " " << errmg2;
+                break;
+            case 'W':
+                BOOST_LOG_TRIVIAL(warning) << errmg1 << " " << errmg2;
+                break;
+            default:
+                BOOST_LOG_TRIVIAL(info) << errmg1 << " " << errmg2;
+                break;
+            }
+        }
+        else if (header.msgtyp == 2 && header.cbsize == sizeof(tothrs_buffer_t))
+        {
+            IPCMessage::tothrs_buffer_t msgbuf;
+            std::memcpy(&msgbuf, buffer.constData() + offset, sizeof(msgbuf));
+
+            // Signal the Run Model dialog to update progress indicators.
+            emit messageReceived(msgbuf.header.procid, msgbuf.tothrs);
+        }
+
+        offset += header.cbsize;
+    }
 }

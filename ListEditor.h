@@ -74,8 +74,8 @@ public:
     void ListEditor::resetLayout()
     {
         lwEditor->setFixedHeight(lwEditor->sizeHintForRow(0) + 2 * lwEditor->frameWidth());
-        cboEditor->setFixedHeight(lwEditor->height());
-        cboEditor->setStyleSheet("font-size: 8pt;"); // stylesheet required here.
+        //cboEditor->setFixedHeight(lwEditor->height());
+        //cboEditor->setStyleSheet("font-size: 8pt;"); // stylesheet required here.
     }
 
     std::vector<double> ListEditor::values() const
@@ -128,11 +128,13 @@ public:
 
         btnAdd = new QToolButton;
         const QIcon icoAdd = QIcon(":/images/Add_grey_16x.png");
+        btnAdd->setIconSize(QSize(16, 16));
         btnAdd->setIcon(icoAdd);
         btnAdd->setToolButtonStyle(Qt::ToolButtonIconOnly);
 
         btnRemove = new QToolButton;
         const QIcon icoRemove = QIcon(":/images/Remove_grey_16x.png");
+        btnRemove->setIconSize(QSize(16, 16));
         btnRemove->setDisabled(true);
         btnRemove->setIcon(icoRemove);
         btnRemove->setToolButtonStyle(Qt::ToolButtonIconOnly);
@@ -146,9 +148,9 @@ public:
         lwEditor->setSpacing(2);
 
         // Font
-        QFont font = lwEditor->font();
-        font.setPointSize(8);
-        lwEditor->setFont(font);
+        //QFont font = lwEditor->font();
+        //font.setPointSize(8);
+        //lwEditor->setFont(font);
 
         // Connections
         connect(cboEditor, QOverload<int>::of(&QComboBox::currentIndexChanged),

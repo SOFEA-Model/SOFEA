@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QPainter>
+#include <QStylePainter>
 #include <QRect>
 #include <QResizeEvent>
 #include <QStyleOptionFrame>

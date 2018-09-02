@@ -5,7 +5,7 @@
 
 #include "ReceptorDialog.h"
 #include "Utilities.h"
-#include "GeometryOp.h"
+#include "GeosOp.h"
 
 template <typename T>
 void addStandardItem(QStandardItemModel *model, int row, int col, T value, bool editable)
@@ -537,11 +537,21 @@ void ReceptorDialog::setRingGeometry(ReceptorRing &ring) const
     double thetaD = thetaR * (180.0 / M_PI);
     int npc = (std::max)(static_cast<int>(ceil(360.0 / thetaD)), 4);
 
-    // Generate the points.
-    std::vector<QPolygonF> buffer;
-    GeometryOp::buffer(mpolygon, buffer, ring.buffer, ring.spacing, npc);
+    if (ring.spacing == 0)
+        return;
+
+    // Calculate the buffer and generate receptors along ring.
+    GeosOp geosOp;
+    std::vector<QPolygonF> merged = geosOp.unionCascaded(mpolygon);
+    std::vector<QPolygonF> buffer = geosOp.buffer(merged, ring.buffer, npc);
+    std::vector<QPolygonF> points = geosOp.measurePoints(buffer, ring.spacing);
+
+    // Set geometry.
     for (const QPolygonF &p : buffer) {
         ring.polygons.push_back(p);
+    }
+
+    for (const QPolygonF &p : points) {
         for (const QPointF &pt : p) {
             ring.points.push_back(pt);
         }

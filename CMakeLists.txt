@@ -15,11 +15,13 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Local Paths
-
 set(BOOST_ROOT "C:/boost_1_67_0")
 set(HDF5_ROOT "C:/Program Files/HDF_Group/HDF5/1.8.20")
 set(NETCDF_INCLUDE_DIR "C:/Program Files/netCDF/include")
 set(NETCDF_LIBRARY "C:/Program Files/netCDF/lib")
+
+# Options
+option(SOFEA_DEBUG "Enable verbose logging" OFF)
 
 #############################
 # Qt
@@ -132,12 +134,12 @@ link_directories(${SHAPELIB_LIBRARY_DIR})
 # geos
 #############################
 
-#set(GEOS_INCLUDE_DIR "../external/geos/include")
-#set(GEOS_LIBRARY_DIR "../external/geos/lib")
-#set(GEOS_LIBRARIES "geos_i")
+set(GEOS_INCLUDE_DIR "../external/geos/include")
+set(GEOS_LIBRARY_DIR "../external/geos/lib")
+set(GEOS_LIBRARIES "geos_c_i")
 
-#include_directories(${GEOS_INCLUDE_DIR})
-#link_directories(${GEOS_LIBRARY_DIR})
+include_directories(${GEOS_INCLUDE_DIR})
+link_directories(${GEOS_LIBRARY_DIR})
 
 #############################
 # expat
@@ -192,7 +194,7 @@ set(SOURCES
     GenericDistribution.cpp
     GenericDistributionDialog.cpp
     GeometryOp.cpp
-#   GeosOp.cpp
+    GeosOp.cpp
     InputViewer.cpp
     IPCServer.cpp
     ItemDelegate.cpp
@@ -237,8 +239,9 @@ set(HEADERS
     GenericDistribution.h
     GenericDistributionDialog.h
     GeometryOp.h
-#   GeosOp.h
+    GeosOp.h
     InputViewer.h
+    IPCMessage.h
     IPCServer.h
     ItemDelegate.h
     ListEditor.h
@@ -296,6 +299,10 @@ add_definitions(-D_USE_MATH_DEFINES)
 if(MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
+    add_definitions(-DSOFEA_DEBUG)
+if(SOFEA_DEBUG)
+
+endif()
 
 # Enable OpenMP
 #find_package(OpenMP)
@@ -313,7 +320,7 @@ target_link_libraries(${TARGET}
     ${QWTPOLAR_LIBRARIES}
     ${FMT_LIBRARIES}
     ${SHAPELIB_LIBRARIES}
-#   ${GEOS_LIBRARIES}
+    ${GEOS_LIBRARIES}
     ${EXPAT_LIBRARIES}
     ${UDUNITS2_LIBRARIES}
     ${SCINTILLA_LIBRARIES}

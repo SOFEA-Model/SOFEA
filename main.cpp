@@ -8,7 +8,7 @@
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
-    //app.setStyle(QStyleFactory::create("fusion"));
+    app.setStyle(QStyleFactory::create("fusion"));
 
     // High DPI support.
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);

@@ -108,7 +108,7 @@ bool GeometryOp::is_valid(QPolygonF const& polygon)
 
 bool GeometryOp::correct(QPolygonF &polygon)
 {
-    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Geometry");
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Geometry");
 
     boost::geometry::correct(polygon);
     std::string message;
@@ -146,7 +146,7 @@ void GeometryOp::buffer(std::vector<QPolygonF> const& mpolygon, std::vector<QPol
 
 void GeometryOp::buffer(mpolygon_t const& mpolygon, mpolygon_t& result, double distance, double min_length, std::size_t points_per_circle)
 {
-    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Geometry");
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Geometry");
 
     bg::strategy::buffer::distance_symmetric<double> distance_strategy(distance);
     bg::strategy::buffer::join_round join_strategy(points_per_circle);

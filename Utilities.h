@@ -3,16 +3,16 @@
 
 #include <string>
 
-#include <QFrame>
 #include <QDateEdit>
+#include <QFrame>
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QTextEdit>
 #include <QPalette>
 #include <QPlainTextEdit>
 #include <QStringList>
 #include <QTextEdit>
+#include <QToolButton>
 
 //-----------------------------------------------------------------------------
 // GridLayout

@@ -10,6 +10,7 @@
 #include <boost/smart_ptr/make_shared_object.hpp>
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
 #include <boost/log/attributes/scoped_attribute.hpp>
 
 #include <csv/csv.h>
@@ -41,6 +42,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     setupConnections();
     setupLogging();
     loadSettings();
+
+    //QStringList argv = QCoreApplication::arguments();
+    //if (argv.size() > 1 && QFile::exists(argv.last())) {
+    //    openProject(argv.last());
+    //}
 
     projectModified = false;
 
@@ -169,9 +175,10 @@ void MainWindow::createPanels()
     setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
 
     // Project Browser
-    QDockWidget *dwProjectTree = new QDockWidget(tr("Project Browser"), this);
+    dwProjectTree = new QDockWidget(tr("Project Browser"), this);
     dwProjectTree->setObjectName("ProjectBrowser");
     dwProjectTree->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+
     projectTree = new QTreeWidget(dwProjectTree);
     projectTree->setColumnCount(1);
     projectTree->setHeaderHidden(true);
@@ -183,20 +190,32 @@ void MainWindow::createPanels()
     //projectTree->setDragDropMode(QAbstractItemView::InternalMove);
     //projectTree->setAcceptDrops(true);
     //projectTree->setDragEnabled(true);
+
     dwProjectTree->setWidget(projectTree);
     addDockWidget(Qt::LeftDockWidgetArea, dwProjectTree);
     viewMenu->addAction(dwProjectTree->toggleViewAction());
 
-    // Log Widget
-    QDockWidget *dwMessages = new QDockWidget(tr("Messages"), this);
+    // Messages LogWidget
+    dwMessages = new QDockWidget(tr("Messages"), this);
     dwMessages->setObjectName("Messages");
     dwMessages->setAllowedAreas(Qt::BottomDockWidgetArea);
-    messages = new LogWidget(dwMessages);
-    QStringList tags = QStringList{"Distribution", "Geometry", "Import", "Model", "Analysis"};
-    messages->setTags(tags);
-    dwMessages->setWidget(messages);
+    lwMessages = new LogWidget(dwMessages);
+    dwMessages->setWidget(lwMessages);
     addDockWidget(Qt::BottomDockWidgetArea, dwMessages);
     viewMenu->addAction(dwMessages->toggleViewAction());
+
+    // Model Output LogWidget
+    dwOutput = new QDockWidget(tr("Model Output"), this);
+    dwMessages->setObjectName("Model Output");
+    dwMessages->setAllowedAreas(Qt::BottomDockWidgetArea);
+    lwOutput = new LogWidget(dwOutput);
+    dwOutput->setWidget(lwOutput);
+    addDockWidget(Qt::BottomDockWidgetArea, dwOutput);
+    viewMenu->addAction(dwOutput->toggleViewAction());
+
+    // Tabify LogWidgets
+    tabifyDockWidget(dwMessages, dwOutput);
+    dwMessages->raise();
 }
 
 void MainWindow::setupConnections()
@@ -255,17 +274,47 @@ void MainWindow::setupConnections()
 
 void MainWindow::setupLogging()
 {
+    // Configure columns and filter menu for each log widget.
+    QFontMetrics fm = fontMetrics();
+    int maxCharWidth = fm.horizontalAdvance(QChar('W'));
+    int avgCharWidth = fm.averageCharWidth();
+
+    lwMessages->setColumn(0, "Message", "", 0);
+    lwMessages->setColumn(1, "Source", "Source", avgCharWidth * 50);
+    lwMessages->setFilterKeyColumn(1);
+    lwMessages->setFilterValues(QStringList{"Distribution", "Geometry", "Import", "Model", "Analysis"});
+
+    lwOutput->setColumn(0, "Message", "", 0);
+    lwOutput->setColumn(1, "PW", "Pathway", maxCharWidth * 2);
+    lwOutput->setColumn(2, "Code", "ErrorCode", maxCharWidth * 4);
+    lwOutput->setColumn(3, "Line", "Line", maxCharWidth * 8);
+    lwOutput->setColumn(4, "Module", "Module", maxCharWidth * 12);
+    lwOutput->setColumn(5, "Directory", "Dir", avgCharWidth * 50);
+    lwOutput->setFilterKeyColumn(1);
+    lwOutput->setFilterValues(QStringList{"CO", "SO", "RE", "ME", "EV", "OU", "MX", "CN"});
+
+    // Get a pointer to the global logging core.
     auto core = boost::log::core::get();
 
-    // Severity Filter
-    // FIXME
-    //core->set_filter(boost::log::trivial::severity >= boost::log::trivial::info);
+    // Set a global severity filter.
+#ifndef SOFEA_DEBUG
+    core->set_filter(boost::log::trivial::severity >= boost::log::trivial::info);
+#endif
 
-    // Custom Sink
-    auto backend = boost::make_shared<LogWidgetBackend>(messages);
+    // Register custom sinks, with attribute presence filter on "Dir".
     typedef boost::log::sinks::synchronous_sink<LogWidgetBackend> sink_t;
-    auto sink = boost::make_shared<sink_t>(backend);
-    core->add_sink(sink);
+
+    auto messageBackend = boost::make_shared<LogWidgetBackend>(lwMessages);
+    messageBackend->setKeywords(QStringList{"Source"});
+    auto messageSink = boost::make_shared<sink_t>(messageBackend);
+    messageSink->set_filter(!boost::log::expressions::has_attr("Dir"));
+    core->add_sink(messageSink);
+
+    auto outputBackend = boost::make_shared<LogWidgetBackend>(lwOutput);
+    outputBackend->setKeywords(QStringList{"Dir", "Pathway", "ErrorCode", "Line", "Module"});
+    auto outputSink = boost::make_shared<sink_t>(outputBackend);
+    outputSink->set_filter(boost::log::expressions::has_attr("Dir"));
+    core->add_sink(outputSink);
 }
 
 void MainWindow::loadSettings()
@@ -416,14 +465,21 @@ void MainWindow::closeProject()
     projectDir.clear();
 
     // Clear messages.
-    messages->clear();
+    lwMessages->clear();
 
     // Remove all scenarios.
     for (auto it = scenarios.rbegin(); it != scenarios.rend(); ++it)
         removeScenario(&(*it));
+
+    projectModified = false;
 }
 
 void MainWindow::exitApplication()
+{
+    QApplication::closeAllWindows();
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
 {
     if (projectModified) {
         // Get user confirmation.
@@ -434,11 +490,13 @@ void MainWindow::exitApplication()
         msgBox.setDefaultButton(QMessageBox::No);
 
         int rc = msgBox.exec();
-        if (rc == QMessageBox::No)
+        if (rc == QMessageBox::No) {
+            event->ignore();
             return;
+        }
     }
 
-    QApplication::closeAllWindows();
+    event->accept();
 }
 
 void MainWindow::newScenario()
@@ -458,7 +516,7 @@ void MainWindow::newSourceGroup(Scenario *s)
 
 void MainWindow::importValidationData(Scenario *s)
 {
-    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Import");
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Import");
 
     QSettings settings;
     QString csvfile;
@@ -827,7 +885,6 @@ void MainWindow::contextMenuRequested(QPoint const& pos)
 
 void MainWindow::handleItemChanged(QTreeWidgetItem *item, int)
 {
-
     // Handle rename, making sure name is valid.
     QString text = item->text(0); // new text
 
@@ -903,6 +960,7 @@ void MainWindow::runModel()
         dialog.addScenario(&s);
     }
 
+    dwOutput->raise();
     dialog.exec();
 }
 

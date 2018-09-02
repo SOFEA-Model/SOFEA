@@ -164,7 +164,7 @@ bool parseInternalAreaVert(QTextStream& is, runstream::source::container& sc)
 
 void RunstreamParser::parseSources(const QString& filename, SourceGroup *sgPtr)
 {
-    BOOST_LOG_SCOPED_THREAD_TAG("Tag", "Import");
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Import");
 
     runstream::source::container sc;
 

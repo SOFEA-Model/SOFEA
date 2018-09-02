@@ -47,7 +47,6 @@ private:
     void executeJob(int i);
     void setupConnections();
     int indexForProcess(const QProcess *) const;
-    static QString getTimestamp();
     static QString getProcessState(const QProcess::ProcessState state);
     static QString getProcessError(const QProcess::ProcessError error);
 
@@ -60,6 +59,7 @@ private:
     struct Job {
         Scenario *scenario;
         QProcess *process = nullptr;
+        QString subDir;
         QString path;
         QDateTime startTime;
         QTime elapsedTime;

@@ -481,7 +481,7 @@ FileInfoPanel::FileInfoPanel(QWidget *parent)
     infoTree = new QTreeWidget;
     infoTree->setEditTriggers(QAbstractItemView::NoEditTriggers);
     infoTree->setRootIsDecorated(false);
-    infoTree->setAlternatingRowColors(true);
+    //infoTree->setAlternatingRowColors(true);
     infoTree->setColumnCount(2);
     infoTree->header()->setVisible(false);
     QFont font = infoTree->font();
