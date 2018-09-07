@@ -160,6 +160,12 @@ const QMultiMap<ID, ParameterInfo> parameterMap = {
     { ID::Triangle,          { "Lower: ",                   boost::none,  boost::none,  boost::none,            3,   0.01 }}
 };
 
+// Remaps parameters of the Boost.Random distribution to ParameterInfo.
+// TODO: store vector of functions? e.g.
+// std::vector<boost::function<void>> functions;
+// functions.push_back(&a));
+// functions.push_back(&b));
+
 struct ParamVisitor : public boost::static_visitor<>
 {
     void operator()(const Distribution::UniformReal d) {
@@ -293,6 +299,8 @@ struct ParamVisitor : public boost::static_visitor<>
     QList<ParameterInfo> paramList;
 };
 
+// Sets reasonable default limits for the PDF plot, based on current parameters.
+
 struct PdfLimitsVisitor : public boost::static_visitor<>
 {
     void operator()(const Distribution::UniformReal d) {
@@ -375,8 +383,8 @@ struct PdfLimitsVisitor : public boost::static_visitor<>
     void operator()(const Distribution::PiecewiseConstant d) {}
     void operator()(const Distribution::PiecewiseLinear d) {}
     void operator()(const Distribution::Triangle d) {
-        x0 = d.a();
         x1 = d.c();
+        x0 = d.a();
     }
     void operator()(const Distribution::Constant d) {}
 
@@ -384,12 +392,10 @@ struct PdfLimitsVisitor : public boost::static_visitor<>
     double x1;
 };
 
-GenericDistributionDialog::GenericDistributionDialog(GenericDistribution *d, QWidget *parent)
+GenericDistributionDialog::GenericDistributionDialog(const GenericDistribution& d, QWidget *parent)
     : QDialog(parent), currentDist(d)
 {
     setWindowTitle(tr("Define Distribution"));
-
-    newDist = *currentDist;
 
     distributionTree = new QTreeView;
     distributionTree->setHeaderHidden(true);
@@ -527,7 +533,7 @@ void GenericDistributionDialog::initializeConnections()
 void GenericDistributionDialog::resetControls()
 {
     ParamVisitor pv;
-    boost::apply_visitor(pv, newDist);
+    boost::apply_visitor(pv, currentDist);
 
     currentID = pv.id;
 
@@ -595,82 +601,86 @@ void GenericDistributionDialog::resetControls()
     }
 }
 
-
 void GenericDistributionDialog::setDistribution(DistributionID id)
 {
     // For selected distributions, set more appropriate defaults.
 
     switch (id) {
         case DistributionID::UniformInt:
-            newDist = Distribution::UniformInt(0, 10);
+            currentDist = Distribution::UniformInt(0, 10);
             break;
         case DistributionID::UniformReal:
-            newDist = Distribution::UniformReal(0, 10);
+            currentDist = Distribution::UniformReal(0, 10);
             break;
         case DistributionID::Binomial:
-            newDist = Distribution::Binomial(10, 0.5);
+            currentDist = Distribution::Binomial(10, 0.5);
             break;
         case DistributionID::Geometric:
-            newDist = Distribution::Geometric();
+            currentDist = Distribution::Geometric();
             break;
         case DistributionID::NegativeBinomial:
-            newDist = Distribution::NegativeBinomial(1, 0.5);
+            currentDist = Distribution::NegativeBinomial(1, 0.5);
             break;
         case DistributionID::Poisson:
-            newDist = Distribution::Poisson(10);
+            currentDist = Distribution::Poisson(10);
             break;
         case DistributionID::Exponential:
-            newDist = Distribution::Exponential();
+            currentDist = Distribution::Exponential();
             break;
         case DistributionID::Gamma:
-            newDist = Distribution::Gamma();
+            currentDist = Distribution::Gamma();
             break;
         case DistributionID::Weibull:
-            newDist = Distribution::Weibull(1, 1);
+            currentDist = Distribution::Weibull(1, 1);
             break;
         case DistributionID::ExtremeValue:
-            newDist = Distribution::ExtremeValue();
+            currentDist = Distribution::ExtremeValue();
             break;
         case DistributionID::Beta:
-            newDist = Distribution::Beta(0.5, 2);
+            currentDist = Distribution::Beta(0.5, 2);
             break;
         case DistributionID::Laplace:
-            newDist = Distribution::Laplace();
+            currentDist = Distribution::Laplace();
             break;
         case DistributionID::Normal:
-            newDist = Distribution::Normal();
+            currentDist = Distribution::Normal();
             break;
         case DistributionID::Lognormal:
-            newDist = Distribution::Lognormal();
+            currentDist = Distribution::Lognormal();
             break;
         case DistributionID::ChiSquared:
-            newDist = Distribution::ChiSquared(2);
+            currentDist = Distribution::ChiSquared(2);
             break;
         case DistributionID::NCChiSquared:
-            newDist = Distribution::NCChiSquared();
+            currentDist = Distribution::NCChiSquared();
             break;
         case DistributionID::Cauchy:
-            newDist = Distribution::Cauchy();
+            currentDist = Distribution::Cauchy();
             break;
         case DistributionID::FisherF:
-            newDist = Distribution::FisherF(2, 1);
+            currentDist = Distribution::FisherF(2, 1);
             break;
         case DistributionID::StudentT:
-            newDist = Distribution::StudentT();
+            currentDist = Distribution::StudentT();
             break;
         case DistributionID::Discrete:
-            newDist = Distribution::Discrete();
+            currentDist = Distribution::Discrete();
             break;
         case DistributionID::PiecewiseConstant:
-            newDist = Distribution::PiecewiseConstant();
+            currentDist = Distribution::PiecewiseConstant();
             break;
         case DistributionID::PiecewiseLinear:
-            newDist = Distribution::PiecewiseLinear();
+            currentDist = Distribution::PiecewiseLinear();
             break;
         case DistributionID::Triangle:
-            newDist = Distribution::Triangle(0.5, 1.0, 1.5);
+            currentDist = Distribution::Triangle(0.5, 1.0, 1.5);
             break;
     }
+}
+
+GenericDistribution GenericDistributionDialog::getDistribution() const
+{
+    return currentDist;
 }
 
 void GenericDistributionDialog::updatePlot()
@@ -709,7 +719,7 @@ void GenericDistributionDialog::updatePlot()
 
     // Estimate X-axis limits
     PdfLimitsVisitor pv;
-    boost::apply_visitor(pv, newDist);
+    boost::apply_visitor(pv, currentDist);
 
     // Populate independent variable vector
     for (double x = pv.x0; x < pv.x1; x += step)
@@ -718,7 +728,7 @@ void GenericDistributionDialog::updatePlot()
 
     // Evaluate the PDF at each value
     try {
-        newDist.pdf(xvec, yvec);
+        currentDist.pdf(xvec, yvec);
     } catch (const std::exception &e) {
         BOOST_LOG_TRIVIAL(warning) << e.what();
         return;
@@ -750,73 +760,73 @@ void GenericDistributionDialog::onValueChanged(double)
 
     switch (id) {
         case DistributionID::UniformInt:
-            newDist = Distribution::UniformInt(a, b);
+            currentDist = Distribution::UniformInt(a, b);
             break;
         case DistributionID::UniformReal:
-            newDist = Distribution::UniformReal(a, b);
+            currentDist = Distribution::UniformReal(a, b);
             break;
         case DistributionID::Binomial:
-            newDist = Distribution::Binomial(a, b);
+            currentDist = Distribution::Binomial(a, b);
             break;
         case DistributionID::Geometric:
-            newDist = Distribution::Geometric(a);
+            currentDist = Distribution::Geometric(a);
             break;
         case DistributionID::NegativeBinomial:
-            newDist = Distribution::NegativeBinomial(a, b);
+            currentDist = Distribution::NegativeBinomial(a, b);
             break;
         case DistributionID::Poisson:
-            newDist = Distribution::Poisson(a);
+            currentDist = Distribution::Poisson(a);
             break;
         case DistributionID::Exponential:
-            newDist = Distribution::Exponential(a);
+            currentDist = Distribution::Exponential(a);
             break;
         case DistributionID::Gamma:
-            newDist = Distribution::Gamma(a, b);
+            currentDist = Distribution::Gamma(a, b);
             break;
         case DistributionID::Weibull:
-            newDist = Distribution::Weibull(a, b);
+            currentDist = Distribution::Weibull(a, b);
             break;
         case DistributionID::ExtremeValue:
-            newDist = Distribution::ExtremeValue(a, b);
+            currentDist = Distribution::ExtremeValue(a, b);
             break;
         case DistributionID::Beta:
-            newDist = Distribution::Beta(a, b);
+            currentDist = Distribution::Beta(a, b);
             break;
         case DistributionID::Laplace:
-            newDist = Distribution::Laplace(a, b);
+            currentDist = Distribution::Laplace(a, b);
             break;
         case DistributionID::Normal:
-            newDist = Distribution::Normal(a, b);
+            currentDist = Distribution::Normal(a, b);
             break;
         case DistributionID::Lognormal:
-            newDist = Distribution::Lognormal(a, b);
+            currentDist = Distribution::Lognormal(a, b);
             break;
         case DistributionID::ChiSquared:
-            newDist = Distribution::ChiSquared(a);
+            currentDist = Distribution::ChiSquared(a);
             break;
         case DistributionID::NCChiSquared:
-            newDist = Distribution::NCChiSquared(a, b);
+            currentDist = Distribution::NCChiSquared(a, b);
             break;
         case DistributionID::Cauchy:
-            newDist = Distribution::Cauchy(a, b);
+            currentDist = Distribution::Cauchy(a, b);
             break;
         case DistributionID::FisherF:
-            newDist = Distribution::FisherF(a, b);
+            currentDist = Distribution::FisherF(a, b);
             break;
         case DistributionID::StudentT:
-            newDist = Distribution::StudentT(a);
+            currentDist = Distribution::StudentT(a);
             break;
         case DistributionID::Discrete:
-            newDist = Distribution::Discrete();
+            currentDist = Distribution::Discrete();
             break;
         case DistributionID::PiecewiseConstant:
-            newDist = Distribution::PiecewiseConstant();
+            currentDist = Distribution::PiecewiseConstant();
             break;
         case DistributionID::PiecewiseLinear:
-            newDist = Distribution::PiecewiseLinear();
+            currentDist = Distribution::PiecewiseLinear();
             break;
         case DistributionID::Triangle:
-            newDist = Distribution::Triangle(a, b, c);
+            currentDist = Distribution::Triangle(a, b, c);
             break;
     }
 

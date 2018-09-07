@@ -189,6 +189,11 @@ void LogWidget::setFilterValues(const QStringList& values)
     }
 }
 
+void LogWidget::setUniformRowHeights(bool uniform)
+{
+    logView->setUniformRowHeights(uniform);
+}
+
 void LogWidget::clear()
 {
     logModel->removeRows(0, logModel->rowCount());

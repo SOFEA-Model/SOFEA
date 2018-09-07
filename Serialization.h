@@ -9,6 +9,10 @@
 #include <QString>
 #include <QDebug>
 
+#include <boost/icl/gregorian.hpp>
+#include <boost/icl/ptime.hpp>
+#include <boost/icl/interval_set.hpp>
+#include "boost/numeric/conversion/cast.hpp"
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #define CEREAL_XML_STRING_VALUE "sofea"
@@ -24,18 +28,24 @@
 #include "SourceGroup.h"
 
 // Current version information
-CEREAL_CLASS_VERSION(FluxScaling, 1);
-CEREAL_CLASS_VERSION(ReceptorRing, 2);
-CEREAL_CLASS_VERSION(ReceptorNode, 2);
-CEREAL_CLASS_VERSION(ReceptorGrid, 2);
-CEREAL_CLASS_VERSION(AreaSource, 2);
-CEREAL_CLASS_VERSION(AreaCircSource, 2);
-CEREAL_CLASS_VERSION(AreaPolySource, 2);
-CEREAL_CLASS_VERSION(SourceGroup, 3);
-CEREAL_CLASS_VERSION(Scenario, 3);
+CEREAL_CLASS_VERSION(FluxScaling, 1)
+CEREAL_CLASS_VERSION(ReceptorRing, 3)
+CEREAL_CLASS_VERSION(ReceptorNode, 3)
+CEREAL_CLASS_VERSION(ReceptorGrid, 3)
+CEREAL_CLASS_VERSION(AreaSource, 2)
+CEREAL_CLASS_VERSION(AreaCircSource, 2)
+CEREAL_CLASS_VERSION(AreaPolySource, 2)
+CEREAL_CLASS_VERSION(SourceGroup, 4)
+CEREAL_CLASS_VERSION(Scenario, 3)
+
+namespace cereal {
+
+//-----------------------------------------------------------------------------
+// Boost.PointerContainer Types
+//-----------------------------------------------------------------------------
 
 // External save function for boost::ptr_vector<T>
-template<class Archive, class T>
+template <class Archive, class T>
 void save(Archive& ar, const boost::ptr_vector<T>& pv)
 {
     ar(pv.size());
@@ -44,7 +54,7 @@ void save(Archive& ar, const boost::ptr_vector<T>& pv)
 }
 
 // External load function for boost::ptr_vector<T>
-template<class Archive, class T>
+template <class Archive, class T>
 void load(Archive& ar, boost::ptr_vector<T>& pv)
 {
     std::size_t n;
@@ -58,7 +68,7 @@ void load(Archive& ar, boost::ptr_vector<T>& pv)
 
 // External save function for boost::ptr_vector<Source>
 // FIXME: workaround for polymorphic class serialization
-template<class Archive>
+template <class Archive>
 void save(Archive& ar, const boost::ptr_vector<Source>& pv)
 {
     ar(pv.size());
@@ -82,7 +92,7 @@ void save(Archive& ar, const boost::ptr_vector<Source>& pv)
 
 // External load function for boost::ptr_vector<Source>
 // FIXME: workaround for polymorphic class serialization
-template<class Archive>
+template <class Archive>
 void load(Archive& ar, boost::ptr_vector<Source>& pv)
 {
     std::size_t n;
@@ -109,8 +119,12 @@ void load(Archive& ar, boost::ptr_vector<Source>& pv)
     }
 }
 
+//-----------------------------------------------------------------------------
+// Qt Types
+//-----------------------------------------------------------------------------
+
 // External save function for QDateTime
-template<class Archive>
+template <class Archive>
 std::string save_minimal(Archive const&, QDateTime const& dt)
 {
     QString qs = dt.toString(Qt::ISODate);
@@ -118,7 +132,7 @@ std::string save_minimal(Archive const&, QDateTime const& dt)
 }
 
 // External load function for QDateTime
-template<class Archive>
+template <class Archive>
 void load_minimal(Archive const&, QDateTime& dt, std::string const& value)
 {
     QString qs = QString::fromStdString(value);
@@ -127,7 +141,7 @@ void load_minimal(Archive const&, QDateTime& dt, std::string const& value)
 }
 
 // External save function for QDate
-template<class Archive>
+template <class Archive>
 std::string save_minimal(Archive const&, QDate const& d)
 {
     QString qs = d.toString(Qt::ISODate);
@@ -135,7 +149,7 @@ std::string save_minimal(Archive const&, QDate const& d)
 }
 
 // External load function for QDate
-template<class Archive>
+template <class Archive>
 void load_minimal(Archive const&, QDate& d, std::string const& value)
 {
     QString qs = QString::fromStdString(value);
@@ -143,7 +157,7 @@ void load_minimal(Archive const&, QDate& d, std::string const& value)
 }
 
 // External save function for QPolygonF
-template<class Archive>
+template <class Archive>
 void save(Archive& ar, const QPolygonF& p)
 {
     ar(p.size());
@@ -152,7 +166,7 @@ void save(Archive& ar, const QPolygonF& p)
 }
 
 // External load function for QPolygonF
-template<class Archive>
+template <class Archive>
 void load(Archive& ar, QPolygonF& p)
 {
     int n;
@@ -166,27 +180,209 @@ void load(Archive& ar, QPolygonF& p)
 }
 
 // External save function for QColor
-template<class Archive>
-unsigned long long save_minimal(Archive const&, QColor const& color)
+template <class Archive>
+void save(Archive& ar, const QColor& color)
 {
     quint64 rgba = color.rgba64();
-    return rgba;
+    ar(rgba);
 }
 
 // External load function for QColor
-template<class Archive>
-void load_minimal(Archive const&, QColor& color, unsigned long long const& value)
+template <class Archive>
+void load(Archive& ar, QColor& color)
 {
-    QRgba64 rgba = qRgba64(value);
-    color = QColor::fromRgba64(rgba);
+    quint64 rgba;
+    ar(rgba);
+    color = QColor::fromRgba64(qRgba64(rgba));
 }
 
-/****************************************************************************
-** Main Classes
-****************************************************************************/
+//-----------------------------------------------------------------------------
+// Boost.DateTime Types
+//-----------------------------------------------------------------------------
+
+// External save function for boost::gregorian::date
+template<class Archive>
+void save(Archive& ar, const boost::gregorian::date& d)
+{
+    std::string ds = boost::gregorian::to_iso_string(d);
+    ar(cereal::make_nvp("date", ds));
+}
+
+// External load function for boost::gregorian::date
+template<class Archive>
+void load(Archive& ar, boost::gregorian::date& d)
+{
+    std::string ds;
+    ar(cereal::make_nvp("date", ds));
+    try {
+        d = boost::gregorian::from_undelimited_string(ds);
+    }
+    catch(boost::bad_lexical_cast&) {
+        boost::gregorian::special_values sv = boost::gregorian::special_value_from_string(ds);
+        if (sv == boost::gregorian::not_special) {
+            throw; // no match found, rethrow original exception
+        }
+        else {
+            d = boost::gregorian::date(sv);
+        }
+    }
+}
+
+// External save functions for boost::posix_time::time_duration
+template <class TimeResTraitsSize, class Archive>
+void save_td(Archive& ar, boost::posix_time::time_duration const& td)
+{
+    TimeResTraitsSize h = boost::numeric_cast<TimeResTraitsSize>(td.hours());
+    TimeResTraitsSize m = boost::numeric_cast<TimeResTraitsSize>(td.minutes());
+    TimeResTraitsSize s = boost::numeric_cast<TimeResTraitsSize>(td.seconds());
+    boost::posix_time::time_duration::fractional_seconds_type fs = td.fractional_seconds();
+    ar(cereal::make_nvp("time_duration_hours", h));
+    ar(cereal::make_nvp("time_duration_minutes", m));
+    ar(cereal::make_nvp("time_duration_seconds", s));
+    ar(cereal::make_nvp("time_duration_fractional_seconds", fs));
+}
+
+template <class Archive>
+void save(Archive& ar, boost::posix_time::time_duration const& td)
+{
+    // serialize a bool so we know how to read this back in later
+    bool is_special = td.is_special();
+    ar(cereal::make_nvp("is_special", is_special));
+    if (is_special) {
+        std::string s = to_simple_string(td);
+        ar(cereal::make_nvp("sv_time_duration", s));
+    }
+    else {
+        save_td<int64_t>(ar, td);
+    }
+}
+
+// External load functions for boost::posix_time::time_duration
+template <class TimeResTraitsSize, class Archive>
+void load_td(Archive& ar, boost::posix_time::time_duration& td)
+{
+    TimeResTraitsSize h(0);
+    TimeResTraitsSize m(0);
+    TimeResTraitsSize s(0);
+    boost::posix_time::time_duration::fractional_seconds_type fs(0);
+    ar(cereal::make_nvp("time_duration_hours", h));
+    ar(cereal::make_nvp("time_duration_minutes", m));
+    ar(cereal::make_nvp("time_duration_seconds", s));
+    ar(cereal::make_nvp("time_duration_fractional_seconds", fs));
+    td = boost::posix_time::time_duration(h, m, s, fs);
+}
+
+template <class Archive>
+void load(Archive& ar, boost::posix_time::time_duration& td)
+{
+    bool is_special = false;
+    ar(cereal::make_nvp("is_special", is_special));
+    if (is_special) {
+        std::string s;
+        ar & make_nvp("sv_time_duration", s);
+        boost::posix_time::special_values sv = boost::gregorian::special_value_from_string(s);
+        td = boost::posix_time::time_duration(sv);
+    }
+    else {
+        BOOST_STATIC_ASSERT(sizeof(boost::posix_time::time_duration::hour_type) == sizeof(boost::int64_t));
+        BOOST_STATIC_ASSERT(sizeof(boost::posix_time::time_duration::min_type) == sizeof(boost::int64_t));
+        BOOST_STATIC_ASSERT(sizeof(boost::posix_time::time_duration::sec_type) == sizeof(boost::int64_t));
+        BOOST_STATIC_ASSERT(sizeof(boost::posix_time::time_duration::fractional_seconds_type) == sizeof(boost::int64_t));
+        load_td<int64_t>(ar, td);
+    }
+}
+
+// External save function for boost::posix_time::ptime
+template <class Archive>
+void save(Archive& ar, boost::posix_time::ptime const& pt)
+{
+    // from_iso_string does not include fractional seconds
+    // therefore date and time_duration are used
+    boost::posix_time::ptime::date_type d = pt.date();
+    ar(cereal::make_nvp("ptime_date", d));
+    if (!pt.is_special()) {
+        boost::posix_time::ptime::time_duration_type td = pt.time_of_day();
+        ar(cereal::make_nvp("ptime_time_duration", td));
+    }
+}
+
+// External load function for boost::posix_time::ptime
+template <class Archive>
+void load(Archive& ar, boost::posix_time::ptime& pt)
+{
+    // from_iso_string does not include fractional seconds
+    // therefore date and time_duration are used
+    boost::posix_time::ptime::date_type d(boost::posix_time::not_a_date_time);
+    boost::posix_time::ptime::time_duration_type td;
+    ar(cereal::make_nvp("ptime_date", d));
+    if (!d.is_special()) {
+        ar(cereal::make_nvp("ptime_time_duration", td));
+        pt = boost::posix_time::ptime(d, td);
+    }
+    else {
+        pt = boost::posix_time::ptime(d.as_special());
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Boost.ICL Types
+//-----------------------------------------------------------------------------
+/*
+// External save function for boost::icl::discrete_interval<DomainT>
+template <class Archive, class DomainT>
+void save(Archive& ar, boost::icl::discrete_interval<DomainT> const& di)
+{
+    auto const& bb = di.bounds().bits();
+    auto const& l  = di.lower();
+    auto const& u  = di.upper();
+    ar(bb, l, u);
+}
+
+// External load function for boost::icl::discrete_interval<DomainT>
+template <class Archive, class DomainT>
+void load(Archive& ar, boost::icl::discrete_interval<DomainT>& di)
+{
+    auto bb = di.bounds().bits();
+    DomainT l, u;
+    ar(bb, l, u);
+    di = boost::icl::discrete_interval<DomainT>(l, u, boost::icl::interval_bounds(bb));
+}
+
+// External save function for boost::icl::interval_map<DomainT, CodomainT>
+template <class Archive>
+void save(Archive& ar, IntervalMap const& im)
+{
+    auto sz = im.iterative_size();
+    ar(sz);
+    for (auto& value : im) {
+        ar(value.first(), value.second());
+    }
+}
+
+// Enternal load function for boost::icl::interval_map<DomainT, CodomainT>
+template <class Archive>
+void load(Archive& ar, IntervalMap& im)
+{
+    im.clear();
+    size_t sz;
+    ar(sz);
+    size_t counter = sz;
+    while (counter--) {
+        typename IntervalMap::value_type value;
+        ar(value);
+        im.insert(im.end(), value);
+    }
+}
+*/
+
+} // namespace cereal
+
+//-----------------------------------------------------------------------------
+// SOFEA Classes
+//-----------------------------------------------------------------------------
 
 // External serialize function for FluxScaling
-template<class Archive>
+template <class Archive>
 void serialize(Archive& archive, FluxScaling& fs, const std::uint32_t version)
 {
     if (version >= 1) {
@@ -208,11 +404,11 @@ void serialize(Archive& archive, FluxScaling& fs, const std::uint32_t version)
 }
 
 // External serialize function for ReceptorRing
-template<class Archive>
+template <class Archive>
 void serialize(Archive& archive, ReceptorRing& rr, const std::uint32_t version)
 {
     // VERSION HISTORY:
-    // - V2:  adds support for color
+    // - V3:  adds support for color
 
     if (version >= 1) {
         archive(cereal::make_nvp("arc_id", rr.arcid),
@@ -223,23 +419,23 @@ void serialize(Archive& archive, ReceptorRing& rr, const std::uint32_t version)
                 cereal::make_nvp("zflag", rr.zFlag),
                 cereal::make_nvp("points", rr.points));
     }
-    if (version >= 2) {
+    if (version >= 3) {
         archive(cereal::make_nvp("color", rr.color));
     }
 }
 
 // External serialize function for ReceptorNode
-template<class Archive>
+template <class Archive>
 void serialize(Archive& archive, ReceptorNode& rn, const std::uint32_t version)
 {
     // VERSION HISTORY:
-    // - V2:  adds support for elevation and color
+    // - V3:  adds support for elevation and color
 
     if (version >= 1) {
         archive(cereal::make_nvp("x", rn.x),
                 cereal::make_nvp("y", rn.y));
     }
-    if (version >= 2) {
+    if (version >= 3) {
         archive(cereal::make_nvp("zelev", rn.zElev),
                 cereal::make_nvp("zhill", rn.zHill),
                 cereal::make_nvp("zflag", rn.zFlag),
@@ -248,11 +444,11 @@ void serialize(Archive& archive, ReceptorNode& rn, const std::uint32_t version)
 }
 
 // External serialize function for ReceptorGrid
-template<class Archive>
+template <class Archive>
 void serialize(Archive& archive, ReceptorGrid& rg, const std::uint32_t version)
 {
     // VERSION HISTORY:
-    // - V2:  adds support for elevation and color
+    // - V3:  adds support for elevation and color
 
     if (version >= 1) {
         archive(cereal::make_nvp("net_id", rg.netid),
@@ -264,7 +460,7 @@ void serialize(Archive& archive, ReceptorGrid& rg, const std::uint32_t version)
                 cereal::make_nvp("ycount", rg.yCount),
                 cereal::make_nvp("points", rg.points));
     }
-    if (version >= 2) {
+    if (version >= 3) {
         archive(cereal::make_nvp("zelev", rg.zElev),
                 cereal::make_nvp("zhill", rg.zHill),
                 cereal::make_nvp("zflag", rg.zFlag),
@@ -273,7 +469,7 @@ void serialize(Archive& archive, ReceptorGrid& rg, const std::uint32_t version)
 }
 
 // External serialize function for AreaSource
-template<class Archive>
+template <class Archive>
 void serialize(Archive& archive, AreaSource& s, const std::uint32_t version)
 {
     // VERSION HISTORY:
@@ -295,7 +491,7 @@ void serialize(Archive& archive, AreaSource& s, const std::uint32_t version)
                 cereal::make_nvp("angle", s.angle),
                 cereal::make_nvp("szinit", s.szinit));
     }
-    if (version == 2) {
+    if (version >= 2) {
         archive(cereal::make_nvp("xshift", s.xshift),
                 cereal::make_nvp("yshift", s.yshift),
                 cereal::make_nvp("air_diffusion", s.airDiffusion),
@@ -306,7 +502,7 @@ void serialize(Archive& archive, AreaSource& s, const std::uint32_t version)
 }
 
 // External serialize function for AreaCircSource
-template<class Archive>
+template <class Archive>
 void serialize(Archive& archive, AreaCircSource& s, const std::uint32_t version)
 {
     // VERSION HISTORY:
@@ -327,7 +523,7 @@ void serialize(Archive& archive, AreaCircSource& s, const std::uint32_t version)
                 cereal::make_nvp("nverts", s.nverts),
                 cereal::make_nvp("szinit", s.szinit));
     }
-    if (version == 2) {
+    if (version >= 2) {
         archive(cereal::make_nvp("xshift", s.xshift),
                 cereal::make_nvp("yshift", s.yshift),
                 cereal::make_nvp("air_diffusion", s.airDiffusion),
@@ -338,7 +534,7 @@ void serialize(Archive& archive, AreaCircSource& s, const std::uint32_t version)
 }
 
 // External serialize function for AreaPolySource
-template<class Archive>
+template <class Archive>
 void serialize(Archive& archive, AreaPolySource& s, const std::uint32_t version)
 {
     // VERSION HISTORY:
@@ -357,7 +553,7 @@ void serialize(Archive& archive, AreaPolySource& s, const std::uint32_t version)
                 cereal::make_nvp("relhgt", s.relhgt),
                 cereal::make_nvp("szinit", s.szinit));
     }
-    if (version == 2) {
+    if (version >= 2) {
         archive(cereal::make_nvp("xshift", s.xshift),
                 cereal::make_nvp("yshift", s.yshift),
                 cereal::make_nvp("air_diffusion", s.airDiffusion),
@@ -368,23 +564,28 @@ void serialize(Archive& archive, AreaPolySource& s, const std::uint32_t version)
 }
 
 // External serialize function for SourceGroup
-template<class Archive>
+template <class Archive>
 void serialize(Archive& archive, SourceGroup& sg, const std::uint32_t version)
 {
     // VERSION HISTORY:
     // - V2:  adds support for discrete receptors
     // - V3:  adds support for deposition
+    // - V4:  adds support for app. start distribution
 
     if (version >= 1) {
         archive(cereal::make_nvp("group_id", sg.grpid),
                 cereal::make_nvp("app_method", sg.appMethod),
                 cereal::make_nvp("app_factor", sg.appFactor),
-                cereal::make_nvp("validation_mode", sg.validationMode),
-                cereal::make_nvp("dist_app_start", sg.appStart),
-                cereal::make_nvp("dist_app_rate", sg.appRate),
+                cereal::make_nvp("validation_mode", sg.validationMode));
+    }
+    if (version >= 4) {
+        archive(cereal::make_nvp("dist_app_start", sg.appStart));
+    }
+    if (version >= 1) {
+        archive(cereal::make_nvp("dist_app_rate", sg.appRate),
                 cereal::make_nvp("dist_inc_depth", sg.incorpDepth));
     }
-    if (version == 3) {
+    if (version >= 3) {
         archive(cereal::make_nvp("air_diffusion", sg.airDiffusion),
                 cereal::make_nvp("water_diffusion", sg.waterDiffusion),
                 cereal::make_nvp("cuticular_resistance", sg.cuticularResistance),
@@ -404,7 +605,7 @@ void serialize(Archive& archive, SourceGroup& sg, const std::uint32_t version)
 }
 
 // External serialize function for Scenario
-template<class Archive>
+template <class Archive>
 void serialize(Archive& archive, Scenario& s, const std::uint32_t version)
 {
     // VERSION HISTORY:
@@ -419,7 +620,7 @@ void serialize(Archive& archive, Scenario& s, const std::uint32_t version)
     if (version >= 2) {
         archive(cereal::make_nvp("flagpole_height", s.flagpoleHeight));
     }
-    if (version == 3) {
+    if (version >= 3) {
         archive(cereal::make_nvp("averaging_periods", s.averagingPeriods));
     }
     if (version >= 1) {
@@ -434,7 +635,7 @@ void serialize(Archive& archive, Scenario& s, const std::uint32_t version)
                 cereal::make_nvp("aermod_flat", s.aermodFlat),
                 cereal::make_nvp("aermod_fast_area", s.aermodFastArea));
     }
-    if (version == 3) {
+    if (version >= 3) {
         archive(cereal::make_nvp("aermod_dry_deposition", s.aermodDryDeposition),
                 cereal::make_nvp("aermod_dry_depletion", s.aermodDryDplt),
                 cereal::make_nvp("aermod_area_depletion", s.aermodAreaDplt),

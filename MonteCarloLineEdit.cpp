@@ -1,7 +1,5 @@
-#include <QIcon>
-#include <QAction>
 #include <QApplication>
-#include <QKeyEvent>
+#include <QIcon>
 
 #include <sstream>
 
@@ -58,14 +56,21 @@ MonteCarloLineEdit::MonteCarloLineEdit(QWidget *parent)
     connect(this, &MonteCarloLineEdit::textEdited, this, &MonteCarloLineEdit::onTextEdited);
     connect(this, &MonteCarloLineEdit::cursorPositionChanged, this, &MonteCarloLineEdit::onCursorPositionChanged);
 
-    installEventFilter(this);
-
     init();
 }
 
 void MonteCarloLineEdit::init()
 {
     clear();
+    resetState();
+
+    m_distributionText = getDistributionText();
+    setText(m_distributionText);
+}
+
+void MonteCarloLineEdit::resetState()
+{
+    // Reset palette and validator.
 
     if (m_distributionSet) {
         QPalette palette = this->palette();
@@ -78,9 +83,6 @@ void MonteCarloLineEdit::init()
         setPalette(palette);
         setValidator(m_validator);
     }
-
-    m_distributionText = getDistributionText();
-    setText(m_distributionText);
 }
 
 void MonteCarloLineEdit::clearDistribution()
@@ -90,9 +92,8 @@ void MonteCarloLineEdit::clearDistribution()
     m_distribution = Distribution::Constant();
     m_distributionSet = false;
     m_distributionText = QString("");
-    QPalette palette = QApplication::palette(this);
-    setPalette(palette);
-    setValidator(m_validator);
+
+    resetState();
 }
 
 QString MonteCarloLineEdit::getDistributionText() const
@@ -124,20 +125,17 @@ QString MonteCarloLineEdit::getDistributionText() const
 
 void MonteCarloLineEdit::onSelectDistribution()
 {
-    GenericDistributionDialog dialog(&m_distribution);
+    GenericDistributionDialog dialog(m_distribution);
 
     if (QDialog::Accepted == dialog.exec())
     {
         QString oldText = m_distributionText;
 
-        m_distribution = dialog.newDist;
+        m_distribution = dialog.getDistribution();
         m_distributionText = getDistributionText();
         m_distributionSet = true;
 
-        QPalette palette = this->palette();
-        palette.setColor(QPalette::Text, Qt::blue);
-        setPalette(palette);
-        setValidator(0);
+        resetState();
         setText(m_distributionText); // resets modified flag to false
 
         // Check whether the distribution actually changed
@@ -178,8 +176,6 @@ void MonteCarloLineEdit::onTextEdited(const QString &text)
         else
             setModified(true); // value changed
     }
-
-    return;
 }
 
 void MonteCarloLineEdit::focusInEvent(QFocusEvent *event)
@@ -211,18 +207,6 @@ void MonteCarloLineEdit::keyPressEvent(QKeyEvent *event)
     }
 
     QLineEdit::keyPressEvent(event);
-}
-
-bool MonteCarloLineEdit::eventFilter(QObject *obj, QEvent *event)
-{
-    if (event->type() == QEvent::ReadOnlyChange) {
-        if (isReadOnly())
-            removeAction(m_selectDistributionAct);
-        else
-            addAction(m_selectDistributionAct, QLineEdit::TrailingPosition);
-    }
-
-    return QLineEdit::eventFilter(obj, event);
 }
 
 // Public

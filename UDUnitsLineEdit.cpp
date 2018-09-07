@@ -11,7 +11,7 @@ UDUnitsLineEdit::UDUnitsLineEdit(QWidget *parent)
 {
     setMaxLength(256);
     setAutoFillBackground(true);
-    setFrame(false);
+    //setFrame(false);
 
     m_defaultPalette = this->palette();
     m_errorPalette = this->palette();
@@ -102,9 +102,9 @@ void UDUnitsLineEdit::paintEvent(QPaintEvent* event)
 {
     QLineEdit::paintEvent(event);
 
-    QPainter painter(this);
-    QStyleOptionFrame option;
-    this->initStyleOption(&option);
-    option.state = QStyle::State_Raised;
-    this->style()->drawPrimitive(QStyle::PE_FrameLineEdit, &option, &painter, this);
+    //QPainter painter(this);
+    //QStyleOptionFrame option;
+    //this->initStyleOption(&option);
+    //option.state = QStyle::State_Raised;
+    //this->style()->drawPrimitive(QStyle::PE_FrameLineEdit, &option, &painter, this);
 }

@@ -63,6 +63,7 @@ public:
     void setColumn(int column, const QString& label, const QString& attribute, int size = 0, bool hide = false);
     void setFilterKeyColumn(int column);
     void setFilterValues(const QStringList& values);
+    void setUniformRowHeights(bool uniform);
     void clear();
 
 private:

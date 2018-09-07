@@ -13,9 +13,11 @@
 #include <boost/log/attributes/scoped_attribute.hpp>
 
 // FIXME: allow reading without SO STARTING / SO FINISHED
-// TODO: add DISCCART and EVALCART receptor parsing
+// TODO:
+// - add DISCCART and EVALCART receptor parsing
+// - use variant visitation and operator>> for parsing
 
-bool parseInternalLocation(QTextStream& is, runstream::source::container& sc)
+bool parseInternalLocation(QTextStream& is, runstream::source::container& sc, int iline)
 {
     QString srcid;
     QString st;
@@ -25,7 +27,43 @@ bool parseInternalLocation(QTextStream& is, runstream::source::container& sc)
     if (is.status() != QTextStream::Ok)
         return false; // read failure
 
-    if (st == "AREA") {
+    if (st == "POINT") {
+        runstream::source::point s;
+        is >> s.xs >> s.ys;
+        if (is.status() != QTextStream::Ok)
+            return false; // read failure
+        is >> s.zs;
+        runstream::source::kvp kvp(srcid, s);
+        sc.push_back(kvp);
+    }
+    else if (st == "POINTCAP") {
+        runstream::source::pointcap s;
+        is >> s.xs >> s.ys;
+        if (is.status() != QTextStream::Ok)
+            return false; // read failure
+        is >> s.zs;
+        runstream::source::kvp kvp(srcid, s);
+        sc.push_back(kvp);
+    }
+    else if (st == "POINTHOR") {
+        runstream::source::pointhor s;
+        is >> s.xs >> s.ys;
+        if (is.status() != QTextStream::Ok)
+            return false; // read failure
+        is >> s.zs;
+        runstream::source::kvp kvp(srcid, s);
+        sc.push_back(kvp);
+    }
+    else if (st == "VOLUME") {
+        runstream::source::volume s;
+        is >> s.xs >> s.ys;
+        if (is.status() != QTextStream::Ok)
+            return false; // read failure
+        is >> s.zs;
+        runstream::source::kvp kvp(srcid, s);
+        sc.push_back(kvp);
+    }
+    else if (st == "AREA") {
         runstream::source::area s;
         is >> s.xs >> s.ys;
         if (is.status() != QTextStream::Ok)
@@ -52,11 +90,41 @@ bool parseInternalLocation(QTextStream& is, runstream::source::container& sc)
         runstream::source::kvp kvp(srcid, s);
         sc.push_back(kvp);
     }
+    else if (st == "OPENPIT") {
+        runstream::source::openpit s;
+        is >> s.xs >> s.ys;
+        if (is.status() != QTextStream::Ok)
+            return false; // read failure
+        is >> s.zs;
+        runstream::source::kvp kvp(srcid, s);
+        sc.push_back(kvp);
+    }
+    else if (st == "LINE") {
+        runstream::source::line s;
+        is >> s.xs1 >> s.ys1 >> s.xs2 >> s.ys2;
+        if (is.status() != QTextStream::Ok)
+            return false; // read failure
+        is >> s.zs;
+        runstream::source::kvp kvp(srcid, s);
+        sc.push_back(kvp);
+    }
+    else if (st == "BUOYLINE") {
+        runstream::source::buoyline s;
+        is >> s.xs1 >> s.ys1 >> s.xs2 >> s.ys2;
+        if (is.status() != QTextStream::Ok)
+            return false; // read failure
+        is >> s.zs;
+        runstream::source::kvp kvp(srcid, s);
+        sc.push_back(kvp);
+    }
+    else {
+        return false; // read failure
+    }
 
     return true;
 }
 
-bool parseInternalSrcParam(QTextStream& is, runstream::source::container& sc)
+bool parseInternalSrcParam(QTextStream& is, runstream::source::container& sc, int iline)
 {
     typedef runstream::source::container::nth_index<1>::type indexed_view;
 
@@ -124,7 +192,7 @@ bool parseInternalSrcParam(QTextStream& is, runstream::source::container& sc)
     return true;
 }
 
-bool parseInternalAreaVert(QTextStream& is, runstream::source::container& sc)
+bool parseInternalAreaVert(QTextStream& is, runstream::source::container& sc, int iline)
 {
     typedef runstream::source::container::nth_index<1>::type indexed_view;
 
@@ -215,18 +283,18 @@ void RunstreamParser::parseSources(const QString& filename, SourceGroup *sgPtr)
             }
 
             if (keyword == "LOCATION") {
-                bool ok = parseInternalLocation(is, sc);
+                bool ok = parseInternalLocation(is, sc, iline);
                 if (!ok)
                     BOOST_LOG_TRIVIAL(error) << "LOCATION parse failure at line " << iline;
             }
             else if (keyword == "SRCPARAM") {
-                bool ok = parseInternalSrcParam(is, sc);
+                bool ok = parseInternalSrcParam(is, sc, iline);
                 if (!ok)
                     BOOST_LOG_TRIVIAL(error) << "SRCPARAM parse failure at line " << iline;
 
             }
             else if (keyword == "AREAVERT") {
-                bool ok = parseInternalAreaVert(is, sc);
+                bool ok = parseInternalAreaVert(is, sc, iline);
                 if (!ok)
                     BOOST_LOG_TRIVIAL(error) << "LOCATION parse failure at line " << iline;
             }

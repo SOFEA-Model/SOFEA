@@ -33,6 +33,10 @@ namespace Detail
 {
     namespace bm = boost::math;
 
+    // TODO: bind Boost.Random parameters to Boost.Math constructor.
+    // See boost::value_factory, e.g.
+    // boost::value_factory<bm::uniform_distribution>()(d.a(), d.b())
+
     struct pdf_visitor : boost::static_visitor<>
     {
         pdf_visitor(QVector<double> const& x, QVector<double>& y) :

@@ -44,9 +44,10 @@ enum class DistributionID
 class GenericDistributionDialog : public QDialog
 {
     Q_OBJECT
+
 public:
-    GenericDistributionDialog(GenericDistribution *d, QWidget *parent = nullptr);
-    GenericDistribution newDist;
+    GenericDistributionDialog(const GenericDistribution &d, QWidget *parent = nullptr);
+    GenericDistribution getDistribution() const;
 
 private:
     void initializeModel();
@@ -59,7 +60,7 @@ private slots:
     void onValueChanged(double);
 
 private:
-    GenericDistribution *currentDist;
+    GenericDistribution currentDist;
     DistributionID currentID;
 
     QStandardItemModel *distributionModel;

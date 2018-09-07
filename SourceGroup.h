@@ -11,6 +11,7 @@
 #include <QPolygonF>
 #include <QColor>
 
+#include "DateTimeDistribution.h"
 #include "GenericDistribution.h"
 #include "Source.h"
 #include "FluxScaling.h"
@@ -102,7 +103,7 @@ struct SourceGroup
 
     // Monte Carlo Parameters
     bool validationMode;
-    QDateTime appStart; // FIXME
+    DateTimeDistribution appStart;
     GenericDistribution appRate;
     GenericDistribution incorpDepth;
 

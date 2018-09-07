@@ -107,7 +107,7 @@ ReadOnlyLineEdit::ReadOnlyLineEdit(QWidget *parent) : QLineEdit(parent)
 {
     m_defaultPalette = this->palette();
     setAutoFillBackground(true);
-    setFrame(false);
+    //setFrame(false);
     setReadOnly(true);
 }
 
@@ -120,15 +120,13 @@ void ReadOnlyLineEdit::setBasePalette()
 
 void ReadOnlyLineEdit::paintEvent(QPaintEvent* event)
 {
-    // Disable the frame in constructor, call base paintEvent, then redraw custom frame.
-
     QLineEdit::paintEvent(event);
 
-    QPainter painter(this);
-    QStyleOptionFrame option;
-    this->initStyleOption(&option);
-    option.state = QStyle::State_Raised;
-    this->style()->drawPrimitive(QStyle::PE_FrameLineEdit, &option, &painter, this);
+    //QPainter painter(this);
+    //QStyleOptionFrame option;
+    //this->initStyleOption(&option);
+    //option.state = QStyle::State_Raised;
+    //this->style()->drawPrimitive(QStyle::PE_FrameLineEdit, &option, &painter, this);
 }
 
 //-----------------------------------------------------------------------------

@@ -86,7 +86,7 @@ void Scenario::resetSurfaceFileInfo()
     upperAirId = sfInfo.ualoc;
 }
 
-inline std::string aermodTimeString(const QDateTime t)
+inline std::string aermodTimeString(const QDateTime& t)
 {
     int hour = t.time().hour() + 1; // AERMOD uses 01-24
     QString hourPart = QString("%1").arg(hour, 2, 10, QChar('0'));

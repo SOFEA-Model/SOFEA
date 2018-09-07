@@ -1,10 +1,10 @@
 #include <QtWidgets>
 
 #include "Common.h"
+#include "Serialization.h"
 #include "MainWindow.h"
 #include "ReceptorDialog.h"
 #include "RunModelDialog.h"
-#include "Serialization.h"
 
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/smart_ptr/make_shared_object.hpp>
@@ -292,6 +292,7 @@ void MainWindow::setupLogging()
     lwOutput->setColumn(5, "Directory", "Dir", avgCharWidth * 50);
     lwOutput->setFilterKeyColumn(1);
     lwOutput->setFilterValues(QStringList{"CO", "SO", "RE", "ME", "EV", "OU", "MX", "CN"});
+    lwOutput->setUniformRowHeights(true);
 
     // Get a pointer to the global logging core.
     auto core = boost::log::core::get();

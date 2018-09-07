@@ -191,6 +191,7 @@ set(SOURCES
     Analysis.cpp
     AnalysisWindow.cpp
     CurveTracker.cpp
+    DateTimeDistributionDialog.cpp
     GenericDistribution.cpp
     GenericDistributionDialog.cpp
     GeometryOp.cpp
@@ -236,6 +237,8 @@ set(HEADERS
     AnalysisWindow.h
     CurveTracker.h
     FluxScaling.h
+    DateTimeDistribution.h
+    DateTimeDistributionDialog.h
     GenericDistribution.h
     GenericDistributionDialog.h
     GeometryOp.h

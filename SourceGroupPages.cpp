@@ -115,7 +115,7 @@ void ApplicationPage::save()
     sgPtr->appMethod = static_cast<SourceGroup::AppMethod>(cboAppMethod->currentIndex());
     sgPtr->appFactor = sbAppFactor->value();
     sgPtr->validationMode = radioValidation->isChecked();
-    sgPtr->appStart = mcAppStart->dateTime(); // FIXME: mcAppStart->getDistribution();
+    sgPtr->appStart = mcAppStart->getDistribution();
     sgPtr->appRate = mcAppRate->getDistribution();
     sgPtr->incorpDepth = mcIncorpDepth->getDistribution();
 }
@@ -128,7 +128,7 @@ void ApplicationPage::load()
         radioValidation->setChecked(true);
     else
         radioProspective->setChecked(true);
-    mcAppStart->setDateTime(sgPtr->appStart); // FIXME: mcAppStart->setDistribution(sgPtr->appStart);
+    mcAppStart->setDistribution(sgPtr->appStart);
     mcAppRate->setDistribution(sgPtr->appRate);
     mcIncorpDepth->setDistribution(sgPtr->incorpDepth);
 }
@@ -267,7 +267,7 @@ FluxProfilePage::FluxProfilePage(SourceGroup *sg, QWidget *parent)
     deRefDate = new QDateTimeEdit;
     deRefDate->setTimeSpec(Qt::UTC);
     deRefDate->setDisplayFormat("yyyy-MM-dd HH:mm");
-    deRefDate->setDate(QDate(2000, 1, 1));
+    deRefDate->setDateTime(QDateTime(QDate(2000, 1, 1), QTime(0, 0, 0), Qt::UTC));
 
     // Temporal Scaling - Linear
     deStartDate = new QDateEdit;

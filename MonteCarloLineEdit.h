@@ -1,10 +1,13 @@
 #ifndef MONTECARLOLINEEDIT_H
 #define MONTECARLOLINEEDIT_H
 
-#include "GenericDistribution.h"
-
+#include <QAction>
+#include <QEvent>
+#include <QKeyEvent>
 #include <QLineEdit>
 #include <QDoubleValidator>
+
+#include "GenericDistribution.h"
 
 class MonteCarloLineEdit : public QLineEdit
 {
@@ -27,6 +30,7 @@ private:
     double m_previousValue;
 
     void init();
+    void resetState();
     void clearDistribution();
     QString getDistributionText() const;
 
@@ -38,7 +42,6 @@ private slots:
 protected:
     void focusInEvent(QFocusEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
-    bool eventFilter(QObject *obj, QEvent *event) override;
 };
 
 #endif // MONTECARLOLINEEDIT_H

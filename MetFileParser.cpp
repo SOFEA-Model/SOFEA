@@ -1,22 +1,19 @@
 #include "MetFileParser.h"
 
+#include <iostream>
 #include <fstream>
 #include <sstream>
+#include <locale>
 #include <memory>
 #include <vector>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-
 #include <boost/icl/gregorian.hpp>
 #include <boost/icl/ptime.hpp>
 #include <boost/icl/interval_set.hpp>
 
 #include <fmt/format.h>
-
-using namespace boost::gregorian;
-using namespace boost::posix_time;
-using namespace boost::icl;
 
 inline bool checkCalm(const SurfaceData::SurfaceRecord& sr)
 {
@@ -71,6 +68,10 @@ inline bool checkMiss(const SurfaceData::SurfaceRecord& sr)
 
 MetFileParser::MetFileParser(const std::string& filename)
 {
+    using namespace boost::gregorian;
+    using namespace boost::posix_time;
+    using namespace boost::icl;
+
     std::ifstream ifs(filename, std::ios_base::in);
     if (!ifs)
         return;
@@ -129,6 +130,10 @@ MetFileParser::MetFileParser(const std::string& filename)
 
 SurfaceInfo MetFileParser::getSurfaceInfo() const
 {
+    using namespace boost::gregorian;
+    using namespace boost::posix_time;
+    using namespace boost::icl;
+
     SurfaceInfo info;
 
     if (sd == nullptr)
@@ -149,9 +154,22 @@ SurfaceInfo MetFileParser::getSurfaceInfo() const
     info.ncalm = sd->ncalm;
     info.nmiss = sd->nmiss;
 
-    for (const auto &interval : sd->intervals) {
+    // Intervals
+    for (const discrete_interval<ptime>& i : sd->intervals) {
         std::ostringstream oss;
-        oss << interval;
+        ptime lower = i.lower();
+        ptime upper = i.upper();
+        time_period period(lower, upper);
+
+        // I/O Setup
+        time_facet *facet = new time_facet(); // std::locale handles destruction
+        facet->format("%Y-%m-%d %H:%M");
+        period_formatter formatter(period_formatter::AS_OPEN_RANGE, ", ", "[", ")", "]");
+        facet->period_formatter(formatter);
+        oss.imbue(std::locale(std::locale::classic(), facet));
+
+        // Output
+        oss << period;
         info.intervals.push_back(oss.str());
     }
 

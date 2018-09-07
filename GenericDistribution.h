@@ -36,7 +36,13 @@
 
 #include <boost/bind.hpp>
 #include <boost/mpl/list.hpp>
+
+// Workaround to disable perfect forwarding for Boost.Variant derived class.
+#ifndef BOOST_NO_CXX11_RVALUE_REFERENCES
+#define BOOST_NO_CXX11_RVALUE_REFERENCES
 #include <boost/variant.hpp>
+#undef BOOST_NO_CXX11_RVALUE_REFERENCES
+#endif
 
 #include <QVector>
 
@@ -53,6 +59,18 @@
         std::istringstream iss(value);                                  \
         iss >> *this;                                                   \
     }
+
+// TODO: use MP11 to generate a type list, e.g.
+//
+//template<class T>
+//struct wrapped: public T {
+//    using Base = T;
+//    using Base::Base;
+//    DISTRIBUTION_SERIALIZATION
+//};
+//
+//using types = mp11::mp_list<br::binomial_distribution<>, br::poisson_distribution<>, [...]>
+//using Variant = mp11::mp_rename<mp11::mp_transform<wrapped, types>, boost::variant>;
 
 namespace Distribution
 {

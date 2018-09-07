@@ -16,6 +16,13 @@ SourceGroup::SourceGroup()
     appMethod = AppMethod::Other;
     appFactor = 1.0;
     validationMode = false;
+
+    Distribution::ConstantDateTime appStartDist;
+    appStartDist.setTimeSpec(Qt::UTC);
+    appStartDist.setDate(QDate(2000, 1, 1));
+    appStartDist.setTime(QTime(0, 0, 0));
+
+    appStart = appStartDist;
     appStart = QDateTime(QDate(2000, 1, 1), QTime(0, 0, 0), Qt::UTC);
     appRate = Distribution::Constant();
     incorpDepth = Distribution::Constant();
@@ -27,7 +34,7 @@ SourceGroup::SourceGroup()
 
 void SourceGroup::initSource(Source *s)
 {
-    s->appStart = appStart;
+    s->appStart = appStart(&gen);
     s->appRate = appRate(&gen);
     s->incorpDepth = incorpDepth(&gen);
     s->airDiffusion = airDiffusion(&gen);
@@ -38,7 +45,7 @@ void SourceGroup::initSource(Source *s)
 
 void SourceGroup::initSourceAppStart(Source *s)
 {
-    s->appStart = appStart;
+    s->appStart = appStart(&gen);
 }
 void SourceGroup::initSourceAppRate(Source *s)
 {
@@ -52,7 +59,7 @@ void SourceGroup::initSourceIncorpDepth(Source *s)
 void SourceGroup::resampleAppStart()
 {
     for (Source &s : sources)
-        s.appStart = appStart; // FIXME
+        s.appStart = appStart(&gen);
 }
 void SourceGroup::resampleAppRate()
 {
