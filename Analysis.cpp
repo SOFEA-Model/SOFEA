@@ -450,7 +450,7 @@ void Analysis::exportTimeSeries(GeneralAnalysisOpts genOpts, const std::string& 
 
         fmt::MemoryWriter w;
         for (int t = 0; t < ntime; ++t) {
-            double timeval = static_cast<double>(time.at(t * aveper));
+            double timeval = static_cast<double>(time.at(t * aveper / min_aveper));
             double val = values.at(i * ntime + t);
             std::string timestr = getTimeString(timeval);
             if (aveper == 1) {
