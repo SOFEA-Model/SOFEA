@@ -1,12 +1,13 @@
 #pragma once
 
 #include <cmath>
+#include <memory>
 #include <string>
 
 #include <QDateTime>
 #include <QPolygonF>
 
-struct SourceGroup;
+#include "FluxProfile.h"
 
 enum class SourceType
 {
@@ -24,10 +25,15 @@ enum class SourceType
 
 struct Source
 {
+    Source() {}
+    virtual ~Source() {}
+
+    double area() const;
+
     virtual void setGeometry() = 0;
     virtual std::string toString(int isrc) const = 0;
     virtual SourceType getType() const = 0;
-    double area() const;
+    virtual Source* clone() const = 0;
 
     std::string srcid;
     double xshift = 0; // x truncation
@@ -43,9 +49,7 @@ struct Source
     double cuticularResistance = 0;
     double henryConstant = 0;
     QPolygonF geometry;
-
-    virtual ~Source() {}
-    virtual Source* clone() const = 0;
+    std::weak_ptr<FluxProfile> fluxProfile;
 };
 
 // Implement clonable concept for boost::ptr_vector
@@ -107,6 +111,8 @@ struct AreaCircSource : Source
 
 struct AreaPolySource : Source
 {
+    using Source::Source;
+
     void setGeometry();
     std::string toString(int isrc) const;
     SourceType getType() const {

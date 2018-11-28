@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QColorDialog>
+#include <QComboBox>
 #include <QDateTimeEdit>
 #include <QDoubleSpinBox>
 #include <QLineEdit>
@@ -300,6 +301,48 @@ void DateTimeEditDelegate::updateEditorGeometry(QWidget *editor,
     const QModelIndex &) const
 {
     editor->setGeometry(option.rect);
+}
+
+//-----------------------------------------------------------------------------
+// ComboBoxDelegate
+//-----------------------------------------------------------------------------
+
+ComboBoxDelegate::ComboBoxDelegate(QAbstractItemModel *sourceModel, QObject *parent)
+    : QStyledItemDelegate(parent), m_sourceModel(sourceModel)
+{
+}
+
+QWidget* ComboBoxDelegate::createEditor(QWidget *parent,
+    const QStyleOptionViewItem& option,
+    const QModelIndex& index) const
+{
+    QComboBox *cb = new QComboBox(parent);
+    cb->setModel(m_sourceModel);
+    return cb;
+}
+
+void ComboBoxDelegate::setEditorData(QWidget *editor,
+    const QModelIndex& index) const
+{
+    if (QComboBox *cb = qobject_cast<QComboBox*>(editor)) {
+       QString currentText = index.data(Qt::EditRole).toString();
+       int cbIndex = cb->findText(currentText);
+       if (cbIndex >= 0)
+           cb->setCurrentIndex(cbIndex);
+    } else {
+        QStyledItemDelegate::setEditorData(editor, index);
+    }
+}
+
+void ComboBoxDelegate::setModelData(QWidget *editor,
+    QAbstractItemModel *model,
+    const QModelIndex& index) const
+{
+    if (QComboBox *cb = qobject_cast<QComboBox*>(editor))
+        // save the current text of the combo box as the current value of the item
+        model->setData(index, cb->currentText(), Qt::EditRole);
+    else
+        QStyledItemDelegate::setModelData(editor, model, index);
 }
 
 //-----------------------------------------------------------------------------

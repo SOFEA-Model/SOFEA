@@ -49,14 +49,14 @@ ReceptorRingTab::ReceptorRingTab(QStandardItemModel *model, QWidget *parent)
     ringTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     ringTable->setSelectionMode(QAbstractItemView::ContiguousSelection);
 
-    ringEditor = new StandardTableEditor(QBoxLayout::LeftToRight);
+    ringEditor = new StandardTableEditor(Qt::Horizontal);
 
     // Connections
     connect(ringEditor->btnAdd,    &QPushButton::clicked, this, &ReceptorRingTab::onAddRingClicked);
     connect(ringEditor->btnRemove, &QPushButton::clicked, this, &ReceptorRingTab::onRemoveRingClicked);
-
     ringEditor->init(ringTable);
-    ringEditor->disconnectActions();
+    disconnect(ringEditor->btnAdd,    &QPushButton::clicked, ringEditor, &StandardTableEditor::onAddItemClicked);
+    disconnect(ringEditor->btnRemove, &QPushButton::clicked, ringEditor, &StandardTableEditor::onRemoveItemClicked);
 
     // Layout
     QGridLayout *ringInputLayout = new QGridLayout;
@@ -67,11 +67,11 @@ ReceptorRingTab::ReceptorRingTab(QStandardItemModel *model, QWidget *parent)
     ringInputLayout->addWidget(new QLabel("Receptor spacing (m): "), 1, 0);
     ringInputLayout->addWidget(sbRingBuffer, 0, 1);
     ringInputLayout->addWidget(sbRingSpacing, 1, 1);
-    ringInputLayout->setRowMinimumHeight(2, 5);
-    ringInputLayout->addWidget(ringEditor, 3, 1);
 
     QVBoxLayout *ringTableLayout = new QVBoxLayout;
     ringTableLayout->setContentsMargins(0, 0, 0, 0);
+    ringTableLayout->addWidget(ringEditor);
+    ringTableLayout->addSpacing(5);
     ringTableLayout->addWidget(ringTable);
 
     // Main Layout
@@ -127,39 +127,47 @@ ReceptorNodeTab::ReceptorNodeTab(QStandardItemModel *model, QWidget *parent)
     leNodeY->setValue(0);
     leNodeY->setFixedWidth(90);
 
+    leNodeZ = new DoubleLineEdit(0, 10000, 2);
+    leNodeZ->setValue(0);
+    leNodeZ->setFixedWidth(90);
+
     nodeTable = new StandardTableView;
     nodeTable->setModel(nodeModel);
     nodeTable->setMinimumWidth(400);
     nodeTable->setItemDelegateForColumn(0, new ColorPickerDelegate);
     nodeTable->setDoubleLineEditForColumn(1, -10000000, 10000000, 11, false);
     nodeTable->setDoubleLineEditForColumn(2, -10000000, 10000000, 11, false);
+    nodeTable->setDoubleLineEditForColumn(3, 0, 10000, 8, false);
     nodeTable->horizontalHeader()->setStretchLastSection(false);
     nodeTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     nodeTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     nodeTable->setSelectionMode(QAbstractItemView::ContiguousSelection);
 
-    nodeEditor = new StandardTableEditor(QBoxLayout::LeftToRight);
+    nodeEditor = new StandardTableEditor(Qt::Horizontal);
 
     // Connections
     connect(nodeEditor->btnAdd,    &QPushButton::clicked, this, &ReceptorNodeTab::onAddNodeClicked);
     connect(nodeEditor->btnRemove, &QPushButton::clicked, this, &ReceptorNodeTab::onRemoveNodeClicked);
-
     nodeEditor->init(nodeTable);
-    nodeEditor->disconnectActions();
+    disconnect(nodeEditor->btnAdd,    &QPushButton::clicked, nodeEditor, &StandardTableEditor::onAddItemClicked);
+    disconnect(nodeEditor->btnRemove, &QPushButton::clicked, nodeEditor, &StandardTableEditor::onRemoveItemClicked);
 
     // Layout
     QGridLayout *nodeInputLayout = new QGridLayout;
     nodeInputLayout->setColumnMinimumWidth(0, 200);
     nodeInputLayout->setColumnStretch(0, 0);
     nodeInputLayout->setColumnStretch(1, 1);
+    nodeInputLayout->setColumnStretch(2, 1);
     nodeInputLayout->addWidget(new QLabel("Receptor coordinates (m): "), 0, 0);
     nodeInputLayout->addWidget(leNodeX, 0, 1);
     nodeInputLayout->addWidget(leNodeY, 0, 2);
-    nodeInputLayout->setRowMinimumHeight(1, 5);
-    nodeInputLayout->addWidget(nodeEditor, 2, 1, 1, 2);
+    nodeInputLayout->addWidget(new QLabel("Terrain elevation (m): "), 1, 0);
+    nodeInputLayout->addWidget(leNodeZ, 1, 1, 1, 2);
 
     QVBoxLayout *nodeTableLayout = new QVBoxLayout;
     nodeTableLayout->setContentsMargins(0, 0, 0, 0);
+    nodeTableLayout->addWidget(nodeEditor);
+    nodeTableLayout->addSpacing(5);
     nodeTableLayout->addWidget(nodeTable);
 
     // Main Layout
@@ -180,6 +188,7 @@ void ReceptorNodeTab::onAddNodeClicked()
     addStandardItem(nodeModel, currentRow, 0, color, true);
     addStandardItem(nodeModel, currentRow, 1, leNodeX->value(), false);
     addStandardItem(nodeModel, currentRow, 2, leNodeY->value(), false);
+    addStandardItem(nodeModel, currentRow, 3, leNodeZ->value(), false);
 }
 
 void ReceptorNodeTab::onRemoveNodeClicked()
@@ -230,14 +239,14 @@ ReceptorGridTab::ReceptorGridTab(QStandardItemModel *model, QWidget *parent)
     gridTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     gridTable->setSelectionMode(QAbstractItemView::ContiguousSelection);
 
-    gridEditor = new StandardTableEditor(QBoxLayout::LeftToRight);
+    gridEditor = new StandardTableEditor(Qt::Horizontal);
 
     // Connections
     connect(gridEditor->btnAdd,    &QPushButton::clicked, this, &ReceptorGridTab::onAddGridClicked);
     connect(gridEditor->btnRemove, &QPushButton::clicked, this, &ReceptorGridTab::onRemoveGridClicked);
-
     gridEditor->init(gridTable);
-    gridEditor->disconnectActions();
+    disconnect(gridEditor->btnAdd,    &QPushButton::clicked, gridEditor, &StandardTableEditor::onAddItemClicked);
+    disconnect(gridEditor->btnRemove, &QPushButton::clicked, gridEditor, &StandardTableEditor::onRemoveItemClicked);
 
     // Layout
     QGridLayout *gridInputLayout = new QGridLayout;
@@ -254,11 +263,11 @@ ReceptorGridTab::ReceptorGridTab(QStandardItemModel *model, QWidget *parent)
     gridInputLayout->addWidget(sbGridYCount, 1, 2);
     gridInputLayout->addWidget(sbGridXDelta, 2, 1);
     gridInputLayout->addWidget(sbGridYDelta, 2, 2);
-    gridInputLayout->setRowMinimumHeight(3, 5);
-    gridInputLayout->addWidget(gridEditor, 4, 1, 1, 2);
 
     QVBoxLayout *gridTableLayout = new QVBoxLayout;
     gridTableLayout->setContentsMargins(0, 0, 0, 0);
+    gridTableLayout->addWidget(gridEditor);
+    gridTableLayout->addSpacing(5);
     gridTableLayout->addWidget(gridTable);
 
     // Main Layout
@@ -306,8 +315,8 @@ ReceptorDialog::ReceptorDialog(Scenario *s, SourceGroup *sg, QWidget *parent)
     ringModel->setHorizontalHeaderLabels(QStringList{"", "Distance (m)", "Spacing (m)"});
 
     nodeModel = new QStandardItemModel;
-    nodeModel->setColumnCount(3);
-    nodeModel->setHorizontalHeaderLabels(QStringList{"", "X (m)", "Y (m)"});
+    nodeModel->setColumnCount(4);
+    nodeModel->setHorizontalHeaderLabels(QStringList{"", "X (m)", "Y (m)", "Z (m)"});
 
     gridModel = new QStandardItemModel;
     gridModel->setColumnCount(4);
@@ -444,6 +453,7 @@ void ReceptorDialog::load()
         addStandardItem(nodeModel, currentRow, 0, node.color, true);
         addStandardItem(nodeModel, currentRow, 1, node.x, false);
         addStandardItem(nodeModel, currentRow, 2, node.y, false);
+        addStandardItem(nodeModel, currentRow, 3, node.zElev, false);
     }
 
     // Reset grid table
@@ -493,6 +503,9 @@ std::vector<ReceptorNode> ReceptorDialog::nodeData() const
         node.color = nodeModel->index(row, 0).data().value<QColor>();
         node.x = nodeModel->index(row, 1).data().value<double>();
         node.y = nodeModel->index(row, 2).data().value<double>();
+        double z = nodeModel->index(row, 3).data().value<double>();
+        node.zElev = z;
+        node.zHill = z;
         node.point = QPointF(node.x, node.y);
 
         res.push_back(node);

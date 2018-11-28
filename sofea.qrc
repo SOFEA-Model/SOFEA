@@ -82,5 +82,6 @@
         <file>images/SyncArrow_16x.png</file>
         <file>images/SyncArrow_32x.png</file>
         <file>images/KagiChart_16x.png</file>
+        <file>images/MeasureCalculate_16x.png</file>
     </qresource>
 </RCC>

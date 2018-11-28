@@ -28,7 +28,7 @@
 #include "SourceGroup.h"
 
 // Current version information
-CEREAL_CLASS_VERSION(FluxScaling, 1)
+CEREAL_CLASS_VERSION(FluxProfile, 1)
 CEREAL_CLASS_VERSION(ReceptorRing, 3)
 CEREAL_CLASS_VERSION(ReceptorNode, 3)
 CEREAL_CLASS_VERSION(ReceptorGrid, 3)
@@ -381,25 +381,26 @@ void load(Archive& ar, IntervalMap& im)
 // SOFEA Classes
 //-----------------------------------------------------------------------------
 
-// External serialize function for FluxScaling
+// External serialize function for FluxProfile
 template <class Archive>
-void serialize(Archive& archive, FluxScaling& fs, const std::uint32_t version)
+void serialize(Archive& archive, FluxProfile& fp, const std::uint32_t version)
 {
     if (version >= 1) {
-        archive(cereal::make_nvp("ts_method", fs.tsMethod),
-                cereal::make_nvp("ds_method", fs.dsMethod),
-                cereal::make_nvp("ref_app_rate", fs.refAppRate),
-                cereal::make_nvp("ref_start", fs.refStart),
-                cereal::make_nvp("ref_depth", fs.refDepth),
-                cereal::make_nvp("ref_vol_loss", fs.refVL),
-                cereal::make_nvp("max_vol_loss", fs.maxVL),
-                cereal::make_nvp("warm_season_start", fs.warmSeasonStart),
-                cereal::make_nvp("warm_season_end", fs.warmSeasonEnd),
-                cereal::make_nvp("warm_season_sf", fs.warmSeasonSF),
-                cereal::make_nvp("amplitude", fs.amplitude),
-                cereal::make_nvp("center_amplitude", fs.centerAmplitude),
-                cereal::make_nvp("phase", fs.phase),
-                cereal::make_nvp("wavelength", fs.wavelength));
+        archive(cereal::make_nvp("ts_method", fp.tsMethod),
+                cereal::make_nvp("ds_method", fp.dsMethod),
+                cereal::make_nvp("ref_flux", fp.refFlux),
+                cereal::make_nvp("ref_app_rate", fp.refAppRate),
+                cereal::make_nvp("ref_start", fp.refStart),
+                cereal::make_nvp("ref_depth", fp.refDepth),
+                cereal::make_nvp("ref_vol_loss", fp.refVL),
+                cereal::make_nvp("max_vol_loss", fp.maxVL),
+                cereal::make_nvp("warm_season_start", fp.warmSeasonStart),
+                cereal::make_nvp("warm_season_end", fp.warmSeasonEnd),
+                cereal::make_nvp("warm_season_sf", fp.warmSeasonSF),
+                cereal::make_nvp("amplitude", fp.amplitude),
+                cereal::make_nvp("center_amplitude", fp.centerAmplitude),
+                cereal::make_nvp("phase", fp.phase),
+                cereal::make_nvp("wavelength", fp.wavelength));
     }
 }
 
@@ -416,7 +417,6 @@ void serialize(Archive& archive, ReceptorRing& rr, const std::uint32_t version)
                 cereal::make_nvp("spacing", rr.spacing),
                 cereal::make_nvp("zelev", rr.zElev),
                 cereal::make_nvp("zhill", rr.zHill),
-                cereal::make_nvp("zflag", rr.zFlag),
                 cereal::make_nvp("points", rr.points));
     }
     if (version >= 3) {
@@ -438,7 +438,6 @@ void serialize(Archive& archive, ReceptorNode& rn, const std::uint32_t version)
     if (version >= 3) {
         archive(cereal::make_nvp("zelev", rn.zElev),
                 cereal::make_nvp("zhill", rn.zHill),
-                cereal::make_nvp("zflag", rn.zFlag),
                 cereal::make_nvp("color", rn.color));
     }
 }
@@ -463,7 +462,6 @@ void serialize(Archive& archive, ReceptorGrid& rg, const std::uint32_t version)
     if (version >= 3) {
         archive(cereal::make_nvp("zelev", rg.zElev),
                 cereal::make_nvp("zhill", rg.zHill),
-                cereal::make_nvp("zflag", rg.zFlag),
                 cereal::make_nvp("color", rg.color));
     }
 }
@@ -592,9 +590,7 @@ void serialize(Archive& archive, SourceGroup& sg, const std::uint32_t version)
                 cereal::make_nvp("henrys_law_constant", sg.henryConstant));
     }
     if (version >= 1) {
-        archive(cereal::make_nvp("flux_profile", sg.refFlux),
-                cereal::make_nvp("flux_scaling", sg.fluxScaling),
-                cereal::make_nvp("sources", sg.sources),
+        archive(cereal::make_nvp("sources", sg.sources),
                 cereal::make_nvp("buffer_zones", sg.zones),
                 cereal::make_nvp("receptor_rings", sg.rings),
                 cereal::make_nvp("receptor_grids", sg.grids));
@@ -611,6 +607,7 @@ void serialize(Archive& archive, Scenario& s, const std::uint32_t version)
     // VERSION HISTORY:
     // - V2:  adds support for flagpole height
     // - V3:  adds support for deposition, averaging periods
+    // - V4:  adds support for flux profiles
 
     if (version >= 1) {
         archive(cereal::make_nvp("title", s.title),

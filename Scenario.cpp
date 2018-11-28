@@ -2,12 +2,15 @@
 #include "MetFileParser.h"
 #include "Common.h"
 
-#include <fmt/format.h>
-
 #include <algorithm>
 #include <iterator>
 #include <numeric>
 #include <fstream>
+
+#include <boost/log/trivial.hpp>
+#include <boost/log/attributes/scoped_attribute.hpp>
+
+#include <fmt/format.h>
 
 const std::map<int, std::string> Scenario::chemicalMap = {
     {0, "1,3-Dichloropropene"},
@@ -252,7 +255,11 @@ std::string Scenario::writeInput() const
         for (const ReceptorGrid& grid : sg.grids) {
             w.write("** Source Group {} (G{:0=3}), Grid C{:0=3}\n",
                     sg.grpid, igrp, inet);
-            w << grid.toString(igrp, inet);
+            w.write("   GRIDCART G{:0=3}C{:0=3} STA\n", igrp, inet);
+            w.write("   GRIDCART G{:0=3}C{:0=3} XYINC ", igrp, inet);
+            w.write("{} {} {} ",  grid.xInit, grid.xCount, grid.xDelta);
+            w.write("{} {} {}\n", grid.yInit, grid.yCount, grid.yDelta);
+            w.write("   GRIDCART G{:0=3}C{:0=3} END\n", igrp, inet);
             inet++;
         }
 
@@ -260,7 +267,8 @@ std::string Scenario::writeInput() const
         if (sg.nodes.size() > 0) {
             w.write("** Source Group {} (G{:0=3}), Discrete\n", sg.grpid, igrp);
             for (const ReceptorNode& node : sg.nodes) {
-                w << node.toString();
+                w.write("   DISCCART {: 10.2f} {: 10.2f} ", node.x, node.y);
+                w.write("{: 6.2f} {: 6.2f}\n", node.zElev, node.zHill);
             }
         }
 
@@ -269,7 +277,12 @@ std::string Scenario::writeInput() const
         for (const ReceptorRing& ring : sg.rings) {
             w.write("** Source Group {} (G{:0=3}), Ring R{:0=3}\n",
                     sg.grpid, igrp, iarc);
-            w << ring.toString(igrp, iarc);
+            w.write("** Distance = {}, Spacing = {}\n", ring.buffer, ring.spacing);
+            for (const auto &p : ring.points) {
+                w.write("   EVALCART {: 10.2f} {: 10.2f} ", p.x(), p.y());
+                w.write("{: 6.2f} {: 6.2f} {: 6.2f} G{:0=3}R{:0=3}\n",
+                        ring.zElev, ring.zHill, flagpoleHeight, igrp, iarc);
+            }
             iarc++;
         }
 
@@ -330,7 +343,25 @@ void Scenario::writeInputFile(const std::string& path) const
 
 void Scenario::writeFluxFile(const std::string& path) const
 {
-    if (!minTime.isValid() || !maxTime.isValid())
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Model");
+
+    if (!minTime.isValid() || !maxTime.isValid()) {
+        BOOST_LOG_TRIVIAL(error) << "Invalid time range";
+        return;
+    }
+
+    // Make sure that each source has a valid flux profile.
+    bool missingProfile = false;
+    for (const SourceGroup &sg : sourceGroups) {
+        for (const Source &s : sg.sources) {
+            if (s.fluxProfile.expired()) {
+                BOOST_LOG_TRIVIAL(error) << "Missing flux profile for source " << s.srcid;
+                missingProfile = true;
+            }
+        }
+    }
+
+    if (missingProfile)
         return;
 
     fmt::MemoryWriter w;
@@ -346,18 +377,18 @@ void Scenario::writeFluxFile(const std::string& path) const
         t = t.addSecs(60 * 60);
     }
 
-    // Generate and store the expanded reference flux profile for each source group.
-    std::map<const SourceGroup *, std::vector<double>> xrFluxMap;
+    // Generate and cache all expanded reference flux profiles.
+    std::map<std::shared_ptr<FluxProfile>, std::vector<double>> exRefFluxMap;
 
-    for (const SourceGroup& sg : sourceGroups)
+    for (const auto fp : fluxProfiles)
     {
         // Expand the reference flux profile to one point per hour.
-        std::vector<double> xrFlux;
-        for (const auto& xy : sg.refFlux) {
-            std::fill_n(std::back_inserter(xrFlux), xy.first, xy.second);
+        std::vector<double> exRefFlux;
+        for (const auto& xy : fp->refFlux) {
+            std::fill_n(std::back_inserter(exRefFlux), xy.first, xy.second);
         }
 
-        xrFluxMap[&sg] = xrFlux;
+        exRefFluxMap[fp] = exRefFlux;
     }
 
     // Determine the overall number of sources across source groups.
@@ -379,16 +410,22 @@ void Scenario::writeFluxFile(const std::string& path) const
 
         for (const SourceGroup &sg : sourceGroups)
         {
-            // Get the stored reference flux profile for this source group.
-            std::vector<double> xrFlux = xrFluxMap[&sg];
-
-            // Determine the number of hours in the expanded flux profile.
-            int n = xrFlux.size();
-
             for (const Source &s : sg.sources)
             {
+                const auto fp = s.fluxProfile.lock();
+                if (!fp) {
+                    BOOST_LOG_TRIVIAL(error) << "Failed to acquire read lock";
+                    return;
+                }
+
                 // Calculate the overall flux scale factor.
-                double sf = sg.fluxScaling.fluxScaleFactor(s.appRate, s.appStart, s.incorpDepth);
+                double sf = fp->fluxScaleFactor(s.appRate, s.appStart, s.incorpDepth);
+
+                // Get the cached reference flux profile for this source.
+                std::vector<double> exRefFlux = exRefFluxMap.at(fp);
+
+                // Determine the number of hours in the expanded flux profile.
+                int n = exRefFlux.size();
 
                 // Calculate flux.
                 double flux;
@@ -396,7 +433,7 @@ void Scenario::writeFluxFile(const std::string& path) const
                     started[isrc] = true;
                 }
                 if (started[isrc] && index[isrc] < n) {
-                    flux = xrFlux[index[isrc]] * sf;
+                    flux = exRefFlux[index[isrc]] * sf;
                     index[isrc]++;
                 }
                 else {

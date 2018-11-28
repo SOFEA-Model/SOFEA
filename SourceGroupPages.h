@@ -3,12 +3,15 @@
 
 #include <QWidget>
 
+#include "FluxProfileModel.h"
+#include "SamplingDistributionEditor.h"
 #include "MonteCarloLineEdit.h"
 #include "MonteCarloDateTimeEdit.h"
 #include "StandardTableView.h"
 #include "StandardTableEditor.h"
 #include "Utilities.h"
 
+#include "Scenario.h"
 #include "SourceGroup.h"
 
 QT_BEGIN_NAMESPACE
@@ -93,54 +96,17 @@ class FluxProfilePage : public QWidget
 {
     Q_OBJECT
 public:
-    FluxProfilePage(SourceGroup *sg, QWidget *parent = nullptr);
+    FluxProfilePage(Scenario *s, SourceGroup *sg, QWidget *parent = nullptr);
     void init();
     void save();
     void load();
 
 private:
+    Scenario *sPtr;
     SourceGroup *sgPtr;
 
-    static const QMap<FluxScaling::TSMethod, QString> tsMethodMap;
-    static const QMap<FluxScaling::DSMethod, QString> dsMethodMap;
-
-    // Reference
-    QDateTimeEdit *deRefDate;
-    QDoubleSpinBox *sbRefAppRate;
-    QDoubleSpinBox *sbRefDepth;
-    QDoubleSpinBox *sbRefVL;
-    QDoubleSpinBox *sbMaxVL;
-    QStandardItemModel *refModel;
-    StandardTableView *refTable;
-    StandardTableEditor *refEditor;
-
-    // Temporal Scaling
-    QComboBox *cboTemporalScaling;
-    QStackedWidget *temporalStack;
-
-    // Temporal Scaling - CDPR
-    QDateEdit *deStartDate;
-    QDateEdit *deEndDate;
-    QDoubleSpinBox *sbScaleFactor;
-
-    // Temporal Scaling - Sinusoidal
-    QDoubleSpinBox *sbAmplitude;
-    QDoubleSpinBox *sbCenterAmplitude;
-    QDoubleSpinBox *sbPhase;
-    QDoubleSpinBox *sbWavelength;
-    QPushButton *btnCalcPhase;
-    QPushButton *btnPlotTS;
-
-    // Incorporation Depth Scaling
-    QComboBox *cboDepthScaling;
-    QPushButton *btnPlotDS;
-
-private slots:
-    void onRowsInserted(const QModelIndex& parent, int first, int last);
-    void importFluxProfile();
-    void calcPhase();
-    void plotTemporalScaling();
-    void plotDepthScaling();
+    FluxProfileModel *model;
+    SamplingDistributionEditor *editor;
 };
 
 /****************************************************************************

@@ -313,6 +313,7 @@ void LogWidgetBackend::consume(const boost::log::record_view& rec, const string_
 
     // Extract the record text.
     QString text = QString::fromStdString(fstring);
+    text = text.simplified();
 
     // Extract severity attribute.
     boost::log::value_ref<severity_level> severity = boost::log::extract<severity_level>("Severity", rec);

@@ -12,10 +12,12 @@ ScenarioProperties::ScenarioProperties(Scenario *s, QWidget *parent)
 
     generalPage = new GeneralPage(s);
     metDataPage = new MetDataPage(s);
+    fluxProfilesPage = new FluxProfilesPage(s);
     dispersionPage = new DispersionPage(s);
 
     addPage("General Settings", generalPage);
     addPage("Meteorological Data", metDataPage);
+    addPage("Flux Profiles", fluxProfilesPage);
     addPage("Dispersion Model", dispersionPage);
 
     connect(buttonBox, &QDialogButtonBox::accepted, this, &ScenarioProperties::accept);
@@ -26,6 +28,7 @@ void ScenarioProperties::accept()
 {
     generalPage->save();
     metDataPage->save();
+    fluxProfilesPage->save();
     dispersionPage->save();
 
     _saved = true;

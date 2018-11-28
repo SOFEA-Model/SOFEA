@@ -3,6 +3,7 @@
 #include "ScenarioPages.h"
 #include "MetFileParser.h"
 #include "MetFileInfoDialog.h"
+#include "FluxProfileDialog.h"
 
 /****************************************************************************
 ** General
@@ -54,7 +55,7 @@ GeneralPage::GeneralPage(Scenario *s, QWidget *parent)
 
 void GeneralPage::init()
 {
-    for (auto const& item : scenario->chemicalMap) {
+    for (const auto& item : scenario->chemicalMap) {
         QString text = QString::fromStdString(item.second);
         cboFumigant->addItem(text, item.first); // ID
     }
@@ -310,6 +311,76 @@ void MetDataPage::browseMetDataFile()
 
         // update line edit
         metFileLineEdit->setText(metFile);
+    }
+}
+
+/****************************************************************************
+** Flux Profiles
+****************************************************************************/
+
+FluxProfilesPage::FluxProfilesPage(Scenario *s, QWidget *parent)
+    : QWidget(parent), scenario(s)
+{
+    model = new FluxProfileModel;
+
+    table = new StandardTableView;
+    table->setSelectionMode(QAbstractItemView::SingleSelection);
+    table->setModel(model);
+
+    table->horizontalHeader()->setStretchLastSection(false);
+    table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
+    table->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Fixed);
+    table->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Fixed);
+
+    int startingWidth = table->font().pointSize();
+    table->setColumnWidth(1, startingWidth * 8);
+    table->setColumnWidth(2, startingWidth * 18);
+    table->setColumnWidth(3, startingWidth * 18);
+
+    StandardTableEditor::StandardButtons editorOpts = StandardTableEditor::All;
+    editor = new StandardTableEditor(Qt::Vertical, editorOpts);
+    editor->init(table);
+
+    connect(editor, &StandardTableEditor::moveRequested, model, &FluxProfileModel::moveRows);
+    connect(editor, &StandardTableEditor::editRequested, this, &FluxProfilesPage::editFluxProfile);
+
+    QHBoxLayout *mainLayout = new QHBoxLayout;
+    mainLayout->addWidget(table);
+    mainLayout->addWidget(editor);
+
+    BackgroundFrame *frame = new BackgroundFrame;
+    frame->setLayout(mainLayout);
+    QVBoxLayout *frameLayout = new QVBoxLayout;
+    frameLayout->addWidget(frame);
+    frameLayout->setMargin(0);
+
+    setLayout(frameLayout);
+    init();
+}
+
+void FluxProfilesPage::init()
+{
+    load();
+}
+
+void FluxProfilesPage::save()
+{
+    model->save(scenario->fluxProfiles);
+}
+
+void FluxProfilesPage::load()
+{
+    model->load(scenario->fluxProfiles);
+}
+
+void FluxProfilesPage::editFluxProfile(const QModelIndex& index)
+{
+    auto fp = model->fluxProfileFromIndex(index);
+    FluxProfileDialog dialog(fp, this);
+    int rc = dialog.exec();
+    if (rc == QDialog::Accepted) {
+        emit model->dataChanged(index, index);
     }
 }
 

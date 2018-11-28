@@ -43,7 +43,10 @@ private:
     QAction *actEdit;
     QAction *actFlux;
     QAction *actRemove;
-    QAction *actRefresh;
+    QAction *actResampleAppStart;
+    QAction *actResampleAppRate;
+    QAction *actResampleIncorpDepth;
+    QAction *actResampleFluxProfile;
 };
 
 #endif // SOURCETABLE_H

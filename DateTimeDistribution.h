@@ -10,7 +10,6 @@
 #include <utility>
 
 #include <QDateTime>
-#include <QVector>
 
 #include <boost/bind.hpp>
 #include <boost/icl/gregorian.hpp>
@@ -52,18 +51,13 @@ typedef boost::icl::interval_map<
     boost::icl::inplace_assign    // Combine
 > IntervalMap;
 
-//-----------------------------------------------------------------------------
-// IntervalMap Serialization
-//-----------------------------------------------------------------------------
-
 namespace Distribution
 {
 using ConstantDateTime = QDateTime;
 
-struct DiscreteDateTime : IntervalMap
+struct DiscreteDateTime : public IntervalMap
 {
-    using Base = IntervalMap;
-    using Base::Base;
+    using IntervalMap::IntervalMap;
 
     bool operator==(const DiscreteDateTime& rhs) const {
         return ((IntervalMap)*this == (IntervalMap)rhs);

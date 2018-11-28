@@ -1,5 +1,7 @@
 #pragma once
 
+#include <map>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -13,24 +15,19 @@
 
 #include "DateTimeDistribution.h"
 #include "GenericDistribution.h"
+#include "SamplingDistribution.h"
 #include "Source.h"
-#include "FluxScaling.h"
+#include "FluxProfile.h"
 
 struct Scenario;
 
-typedef std::vector<std::pair<double, int>> BufferZones;    // distance, hours
-typedef std::vector<std::pair<int, double>> ReferenceFlux;  // hours, flux
-typedef std::vector<std::pair<QDateTime, double>> Flux;     // time, flux
-
 struct ReceptorRing
 {
-    std::string toString(int igrp, int iarc) const;
     std::string arcid; // length 8
     double buffer;
     double spacing;
     double zElev = 0;
     double zHill = 0;
-    double zFlag = 0;
     QPolygonF points;
     std::vector<QPolygonF> polygons;
     QColor color;
@@ -38,19 +35,16 @@ struct ReceptorRing
 
 struct ReceptorNode
 {
-    std::string toString() const;
     double x;
     double y;
     double zElev = 0;
     double zHill = 0;
-    double zFlag = 0;
     QPointF point;
     QColor color;
 };
 
 struct ReceptorGrid
 {
-    std::string toString(int igrp, int inet) const;
     std::string netid; // length 8
     double xInit;
     double yInit;
@@ -60,7 +54,6 @@ struct ReceptorGrid
     int yCount;
     double zElev = 0;
     double zHill = 0;
-    double zFlag = 0;
     QPolygonF points;
     QColor color;
 };
@@ -68,10 +61,17 @@ struct ReceptorGrid
 struct SourceGroup
 {
     SourceGroup();
+
     void initSource(Source *s);
     void initSourceAppStart(Source *s);
     void initSourceAppRate(Source *s);
     void initSourceIncorpDepth(Source *s);
+    void initSourceAirDiffusion(Source *s);
+    void initSourceWaterDiffusion(Source *s);
+    void initSourceCuticularResistance(Source *s);
+    void initSourceHenryConstant(Source *s);
+    void initSourceFluxProfile(Source *s);
+
     void resampleAppStart();
     void resampleAppRate();
     void resampleIncorpDepth();
@@ -79,8 +79,9 @@ struct SourceGroup
     void resampleWaterDiffusion();
     void resampleCuticularResistance();
     void resampleHenryConstant();
+    void resampleFluxProfile();
+
     void resetGeometry();
-    Flux fluxProfile(const Source *s) const;
 
     enum class AppMethod {
         Other,
@@ -114,13 +115,11 @@ struct SourceGroup
     GenericDistribution henryConstant;
 
     // Buffer Zones
-    BufferZones zones;
+    std::vector<std::pair<double, int>> zones; // distance, hours
 
     // Flux Profile
-    ReferenceFlux refFlux;
-
-    // Flux Scaling
-    FluxScaling fluxScaling;
+    using FluxProfileDistribution = SamplingDistribution<std::shared_ptr<FluxProfile>>;
+    FluxProfileDistribution fluxProfile;
 
     // Containers
     boost::ptr_vector<Source> sources;
@@ -128,3 +127,4 @@ struct SourceGroup
     std::vector<ReceptorNode> nodes;
     std::vector<ReceptorGrid> grids;
 };
+

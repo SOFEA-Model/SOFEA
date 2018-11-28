@@ -1,10 +1,17 @@
 #pragma once
 
-#include <QDateTime>
+#include <string>
+#include <utility>
+#include <vector>
 
-struct FluxScaling
+#include <fmt/format.h>
+
+#include <QDateTime>
+#include <QMetaType>
+
+struct FluxProfile
 {
-    FluxScaling() :
+    FluxProfile() :
         tsMethod(TSMethod::Disabled),
         dsMethod(DSMethod::Disabled),
         refStart(QDate(2000, 1, 1), QTime(0, 0, 0), Qt::UTC),
@@ -19,13 +26,22 @@ struct FluxScaling
         centerAmplitude(1.3),
         phase(270),
         wavelength(365.25)
-    {}
+    {
+        static unsigned int sequenceNumber = 1;
+        id = sequenceNumber;
+        sequenceNumber++;
+        name = fmt::format("Profile{:0=2}", id);
+    }
+
+    using ReferenceFlux = std::vector<std::pair<int, double>>;
+    using GeneratedFlux = std::vector<std::pair<QDateTime, double>>;
 
     enum class TSMethod {
         Disabled,
         Seasonal,
         Sinusoidal
     };
+
     enum class DSMethod {
         Disabled,
         LinearCDPR,
@@ -33,25 +49,30 @@ struct FluxScaling
         Nonlinear
     };
 
+    // General
+    unsigned int id;
+    std::string name;
+
+    // Reference
+    ReferenceFlux refFlux;
+    double refAppRate;
+
+    // Time Scaling
     TSMethod tsMethod;
+    QDateTime refStart;
+    QDate warmSeasonStart;
+    QDate warmSeasonEnd;
+    double warmSeasonSF;
+    double amplitude;
+    double centerAmplitude;
+    double phase;
+    double wavelength;
+
+    // Depth Scaling
     DSMethod dsMethod;
-
-    double refAppRate;       // FS
-    QDateTime refStart;      // TS
-    QDate warmSeasonStart;   // TS
-    QDate warmSeasonEnd;     // TS
-    double warmSeasonSF;     // TS
-    double amplitude;        // TS
-    double centerAmplitude;  // TS
-    double phase;            // TS
-    double wavelength;       // TS
-    double refDepth;         // DS
-    double refVL;            // DS
-    double maxVL;            // DS
-
-    //-------------------------------------------------------------------------
-    // Time Scale Factor
-    //-------------------------------------------------------------------------
+    double refDepth;
+    double refVL;
+    double maxVL;
 
     inline double timeScaleFactor(QDateTime dt) const
     {
@@ -114,10 +135,6 @@ struct FluxScaling
         }
     }
 
-    //-------------------------------------------------------------------------
-    // Depth Scale Factor
-    //-------------------------------------------------------------------------
-
     inline double depthScaleFactor(double depth) const
     {
         if ((refVL <= 0) || (refDepth <= 0))
@@ -164,10 +181,6 @@ struct FluxScaling
         }
     }
 
-    //-------------------------------------------------------------------------
-    // Flux Scale Factor
-    //-------------------------------------------------------------------------
-
     inline double fluxScaleFactor(double appRate, QDateTime dt, double depth) const
     {
         double sf;
@@ -176,5 +189,49 @@ struct FluxScaling
         else
             sf = 1;
         return sf;
+    }
+
+    int totalHours() const
+    {
+        const int sum = std::accumulate(refFlux.begin(), refFlux.end(), 0,
+            [](auto &i, auto &xy) { return i + xy.first; });
+
+        return sum;
+    }
+
+    GeneratedFlux expandedFlux(QDateTime appStart) const
+    {
+        // Expand the reference flux profile to one point per hour.
+        std::vector<double> exRefFlux;
+        for (const auto& xy : refFlux) {
+            std::fill_n(std::back_inserter(exRefFlux), xy.first, xy.second);
+        }
+
+        // Determine the number of hours in the flux profile.
+        std::size_t n = exRefFlux.size();
+
+        // Generate the flux profile.
+        GeneratedFlux flux;
+        flux.reserve(n);
+        for (int t = 0; t < n; ++t) {
+            QDateTime dt = appStart.addSecs(t * 60 * 60);
+            flux.push_back(std::make_pair(dt, exRefFlux[t]));
+        }
+
+        return flux;
+    }
+
+    GeneratedFlux scaledFlux(double appRate, QDateTime appStart, double incorpDepth) const
+    {
+        // Get the expanded reference flux profile.
+        GeneratedFlux flux = expandedFlux(appStart);
+
+        // Calculate and apply the scale factor.
+        double sf = fluxScaleFactor(appRate, appStart, incorpDepth);
+        for (auto&& xy : flux) {
+            xy.second *= sf;
+        }
+
+        return flux;
     }
 };

@@ -15,10 +15,13 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Local Paths
-set(BOOST_ROOT "C:/boost_1_67_0")
-set(HDF5_ROOT "C:/Program Files/HDF_Group/HDF5/1.8.20")
-set(NETCDF_INCLUDE_DIR "C:/Program Files/netCDF/include")
-set(NETCDF_LIBRARY "C:/Program Files/netCDF/lib")
+set(BOOST_ROOT "D:/Lib/boost-1.68.0")
+set(SZIP_LIBRARY_DIR "D:/Lib/szip-2.1.1-vc141-md-x64/lib")
+set(ZLIB_LIBRARY_DIR "D:/Lib/zlib-1.2.11-vc141-md-x64/lib")
+set(CURL_LIBRARY_DIR "D:/Lib/curl-7.62.0-vc141-md-x64/lib")
+set(HDF5_DIR "D:/Lib/hdf5-1.8.21-vc141-md-x64/cmake/hdf5")
+set(NETCDF_INCLUDE_DIR "D:/Lib/netcdf-c-4.6.2/include")
+set(NETCDF_LIBRARY "D:/Lib/netcdf-c-4.6.2-vc141-md-x64/lib")
 
 # Options
 option(SOFEA_DEBUG "Enable verbose logging" OFF)
@@ -45,30 +48,38 @@ set(BOOST_USE_STATIC_LIBS ON)
 set(BOOST_USE_MULTITHREADED ON)
 set(BOOST_USE_STATIC_RUNTIME OFF)
 
-find_package(Boost 1.67.0)
+find_package(Boost 1.68.0)
 
 include_directories(${Boost_INCLUDE_DIRS})
-link_directories(${Boost_LIBRARY_DIRS})
+link_directories(${BOOST_LIBRARYDIR})
+
+#############################
+# netCDF Dependencies
+#############################
+
+set(SZIP_LIBRARY "libszip")
+set(ZLIB_LIBRARY "zlib")
+set(CURL_LIBRARY "libcurl_a")
+link_directories(${SZIP_LIBRARY_DIR})
+link_directories(${ZLIB_LIBRARY_DIR})
+link_directories(${CURL_LIBRARY_DIR})
 
 #############################
 # HDF5
 #############################
 
-find_package(HDF5 COMPONENTS C HL NO_MODULE REQUIRED static)
-
-include_directories(${HDF5_INCLUDE_DIRS})
-link_directories(${HDF5_C_LIBRARY_DIRS})
+set(HDF5_USE_STATIC_LIBRARIES ON)
+find_package(HDF5 COMPONENTS C HL REQUIRED)
+set(HDF5_LIBRARIES ${HDF5_C_LIBRARY} ${HDF5_C_HL_LIBRARY})
+include_directories(${HDF5_INCLUDE_DIR})
 
 #############################
 # netCDF
 #############################
 
-set(NETCDF_C "YES")
-find_package(NetCDF REQUIRED)
-set(NETCDF_LIBRARIES "netcdf")
-
 include_directories(${NETCDF_INCLUDE_DIR})
 link_directories(${NETCDF_LIBRARY})
+set(NETCDF_LIBRARIES "netcdf")
 
 #############################
 # Qwt
@@ -77,7 +88,6 @@ link_directories(${NETCDF_LIBRARY})
 set(QWT_INCLUDE_DIR "../external/qwt/include")
 set(QWT_LIBRARY_DIR "../external/qwt/lib")
 set(QWT_LIBRARIES "qwt")
-
 include_directories(${QWT_INCLUDE_DIR})
 link_directories(${QWT_LIBRARY_DIR})
 
@@ -88,7 +98,6 @@ link_directories(${QWT_LIBRARY_DIR})
 set(QWTPOLAR_INCLUDE_DIR "../external/qwtpolar/include")
 set(QWTPOLAR_LIBRARY_DIR "../external/qwtpolar/lib")
 set(QWTPOLAR_LIBRARIES "qwtpolar")
-
 include_directories(${QWTPOLAR_INCLUDE_DIR})
 link_directories(${QWTPOLAR_LIBRARY_DIR})
 
@@ -97,7 +106,6 @@ link_directories(${QWTPOLAR_LIBRARY_DIR})
 #############################
 
 set(CEREAL_INCLUDE_DIR "../external/cereal/include")
-
 include_directories(${CEREAL_INCLUDE_DIR})
 
 #############################
@@ -105,7 +113,6 @@ include_directories(${CEREAL_INCLUDE_DIR})
 #############################
 
 set(CSV_INCLUDE_DIR "../external/csv/include")
-
 include_directories(${CSV_INCLUDE_DIR})
 
 #############################
@@ -115,7 +122,6 @@ include_directories(${CSV_INCLUDE_DIR})
 set(FMT_INCLUDE_DIR "../external/fmt/include")
 set(FMT_LIBRARY_DIR "../external/fmt/lib")
 set(FMT_LIBRARIES "fmt")
-
 include_directories(${FMT_INCLUDE_DIR})
 link_directories(${FMT_LIBRARY_DIR})
 
@@ -126,7 +132,6 @@ link_directories(${FMT_LIBRARY_DIR})
 set(SHAPELIB_INCLUDE_DIR "../external/shapelib/include")
 set(SHAPELIB_LIBRARY_DIR "../external/shapelib/lib")
 set(SHAPELIB_LIBRARIES "shapelib")
-
 include_directories(${SHAPELIB_INCLUDE_DIR})
 link_directories(${SHAPELIB_LIBRARY_DIR})
 
@@ -137,7 +142,6 @@ link_directories(${SHAPELIB_LIBRARY_DIR})
 set(GEOS_INCLUDE_DIR "../external/geos/include")
 set(GEOS_LIBRARY_DIR "../external/geos/lib")
 set(GEOS_LIBRARIES "geos_c_i")
-
 include_directories(${GEOS_INCLUDE_DIR})
 link_directories(${GEOS_LIBRARY_DIR})
 
@@ -148,7 +152,6 @@ link_directories(${GEOS_LIBRARY_DIR})
 set(EXPAT_INCLUDE_DIR "../external/expat/include")
 set(EXPAT_LIBRARY_DIR "../external/expat/lib")
 set(EXPAT_LIBRARIES "expat")
-
 include_directories(${EXPAT_INCLUDE_DIR})
 link_directories(${EXPAT_LIBRARY_DIR})
 
@@ -159,7 +162,6 @@ link_directories(${EXPAT_LIBRARY_DIR})
 set(UDUNITS2_INCLUDE_DIR "../external/udunits2/include")
 set(UDUNITS2_LIBRARY_DIR "../external/udunits2/lib")
 set(UDUNITS2_LIBRARIES "udunits2")
-
 include_directories(${UDUNITS2_INCLUDE_DIR})
 link_directories(${UDUNITS2_LIBRARY_DIR})
 
@@ -170,7 +172,6 @@ link_directories(${UDUNITS2_LIBRARY_DIR})
 set(SCINTILLA_ROOT "../external/scintilla")
 set(SCINTILLA_LIBRARY_DIR "../external/scintilla/lib")
 set(SCINTILLA_LIBRARIES "ScintillaEditBase")
-
 include_directories(
     ${SCINTILLA_ROOT}/qt/ScintillaEditBase
     ${SCINTILLA_ROOT}/include
@@ -192,6 +193,8 @@ set(SOURCES
     AnalysisWindow.cpp
     CurveTracker.cpp
     DateTimeDistributionDialog.cpp
+    FluxProfileDialog.cpp
+    FluxProfileModel.cpp
     GenericDistribution.cpp
     GenericDistributionDialog.cpp
     GeometryOp.cpp
@@ -208,6 +211,8 @@ set(SOURCES
     ReceptorDialog.cpp
     RunModelDialog.cpp
     RunstreamParser.cpp
+    SamplingDistributionEditor.cpp
+    SamplingProxyModel.cpp
     Scenario.cpp
     ScenarioPages.cpp
     ScenarioProperties.cpp
@@ -236,7 +241,9 @@ set(HEADERS
     Analysis.h
     AnalysisWindow.h
     CurveTracker.h
-    FluxScaling.h
+    FluxProfile.h
+    FluxProfileDialog.h
+    FluxProfileModel.h
     DateTimeDistribution.h
     DateTimeDistributionDialog.h
     GenericDistribution.h
@@ -258,6 +265,9 @@ set(HEADERS
     RunModelDialog.h
     Runstream.h
     RunstreamParser.h
+    SamplingDistribution.h
+    SamplingDistributionEditor.h
+    SamplingProxyModel.h
     Scenario.h
     ScenarioPages.h
     ScenarioProperties.h
@@ -281,8 +291,7 @@ set(HEADERS
     Utilities.h
 )
 
-# Add WIN32 after ${TARGET} in add_executable to turn off console window
-# ${HEADERS} in add_executable for Qt Creator support
+
 
 qt5_wrap_ui(UI_GENERATED_HEADERS)
 add_definitions(-DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
@@ -302,20 +311,28 @@ add_definitions(-D_USE_MATH_DEFINES)
 if(MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
-    add_definitions(-DSOFEA_DEBUG)
-if(SOFEA_DEBUG)
 
+if(SOFEA_DEBUG)
+    add_definitions(-DSOFEA_DEBUG)
 endif()
 
 # Enable OpenMP
 #find_package(OpenMP)
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
+set(EXTRA_LIBS "crypt32.lib" "wldap32.lib" "normaliz.lib" "wsock32.lib" "ws2_32.lib")
+
+# Add WIN32 after ${TARGET} in add_executable to turn off console window
+# ${HEADERS} in add_executable for Qt Creator support
 add_executable(${TARGET} WIN32 ${SOURCES} ${HEADERS} ${UI_GENERATED_HEADERS})
 
 target_link_libraries(${TARGET}
+    ${EXTRA_LIBS}
     ${Boost_LOG_LIBRARY}
     ${Boost_DATE_TIME_LIBRARY}
+    ${SZIP_LIBRARY}
+    ${ZLIB_LIBRARY}
+    ${CURL_LIBRARY}
     ${HDF5_LIBRARIES}
     ${NETCDF_LIBRARIES}
     ${QT5_LIBRARIES}

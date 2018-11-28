@@ -23,6 +23,7 @@ private:
     Scenario *sPtr;
     GeneralPage *generalPage;
     MetDataPage *metDataPage;
+    FluxProfilesPage *fluxProfilesPage;
     DispersionPage *dispersionPage;
     bool _saved;
 };

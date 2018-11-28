@@ -7,12 +7,13 @@
 
 int main(int argc, char *argv[])
 {
+    // High DPI support.
+    QCoreApplication::setAttribute(Qt::AA_DisableHighDpiScaling);
+    //QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    //QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+
     QApplication app(argc, argv);
     app.setStyle(QStyleFactory::create("fusion"));
-
-    // High DPI support.
-    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 
     QCoreApplication::setOrganizationName("Corteva Agriscience");
     QCoreApplication::setOrganizationDomain("corteva.com");

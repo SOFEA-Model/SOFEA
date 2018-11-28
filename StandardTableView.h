@@ -18,6 +18,7 @@ public:
     void addRow();
     void selectLastRow();
     void removeSelectedRows();
+    bool moveSelectedRows(int offset);
     void copyClipboard();
     void setDoubleLineEdit(double min, double max, int decimals, bool fixed = false);
     void setDoubleLineEditForColumn(int column, double min, double max, int decimals, bool fixed = false);

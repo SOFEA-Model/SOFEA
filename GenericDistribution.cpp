@@ -45,81 +45,81 @@ namespace Detail
         // Uniform Distributions
         void operator()(UniformInt const& d) const {
             auto m = bm::uniform_distribution<>(d.a(), d.b());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         void operator()(UniformReal const& d) const {
             auto m = bm::uniform_distribution<>(d.a(), d.b());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         void operator()(Binomial const& d) const {
             auto m = bm::binomial_distribution<>(d.t(), d.p());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         void operator()(Geometric const& d) const {
             auto m = bm::geometric_distribution<>(d.p());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         void operator()(NegativeBinomial const& d) const {
             auto m = bm::negative_binomial_distribution<>(d.k(), d.p());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         // Poisson Distributions
         void operator()(Poisson const& d) const {
             auto m = bm::poisson_distribution<>(d.mean());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         void operator()(Exponential const& d) const {
             auto m = bm::exponential_distribution<>(d.lambda());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         void operator()(Gamma const& d) const {
             auto m = bm::gamma_distribution<>(d.alpha(), d.beta());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         void operator()(Weibull const& d) const {
             auto m = bm::weibull_distribution<>(d.a(), d.b());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         void operator()(ExtremeValue const& d) const {
             auto m = bm::extreme_value_distribution<>(d.a(), d.b());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         void operator()(Beta const& d) const {
             auto m = bm::beta_distribution<>(d.alpha(), d.beta());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         void operator()(Laplace const& d) const {
             auto m = bm::laplace_distribution<>(d.mean(), d.beta());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         // Normal Distributions
         void operator()(Normal const& d) const {
             auto m = bm::normal_distribution<>(d.mean(), d.sigma());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         void operator()(Lognormal const& d) const {
             auto m = bm::lognormal_distribution<>(d.m(), d.s());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         void operator()(ChiSquared const& d) const {
             auto m = bm::chi_squared_distribution<>(d.n());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         void operator()(NCChiSquared const& d) const {
             auto m = bm::non_central_chi_squared_distribution<>(d.k(), d.lambda());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         void operator()(Cauchy const& d) const {
             auto m = bm::cauchy_distribution<>(d.median(), d.sigma());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         void operator()(FisherF const& d) const {
             auto m = bm::fisher_f_distribution<>(d.m(), d.n());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         void operator()(StudentT const& d) const {
             auto m = bm::students_t_distribution<>(d.n());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         // Sampling Distributions
         void operator()(Discrete const& d) const {
@@ -134,16 +134,16 @@ namespace Detail
         // Miscellaneous Distributions
         void operator()(Triangle const& d) const {
             auto m = bm::triangular_distribution<>(d.a(), d.b(), d.c());
-            for(const auto &x : _x) _y.push_back(bm::pdf(m, x));
+            for(const auto& x : _x) _y.push_back(bm::pdf(m, x));
         }
         // Placeholder
         void operator()(Constant const& d) const {
-            for(const auto &x : _x) _y.push_back(d.a());
+            for(const auto& x : _x) _y.push_back(d.a());
         }
         
     private:
-        const QVector<double> &_x;
-        QVector<double> &_y;
+        const QVector<double>& _x;
+        QVector<double>& _y;
     };
 
 } // namespace Distribution

@@ -4,6 +4,7 @@
 #include <QClipboard>
 #include <QHeaderView>
 #include <QModelIndex>
+#include <QStandardItem>
 
 StandardTableView::StandardTableView(QWidget *parent) : QTableView(parent)
 {
@@ -22,6 +23,7 @@ StandardTableView::StandardTableView(QWidget *parent) : QTableView(parent)
     vHeader->setDefaultSectionSize(24);
     vHeader->setVisible(false);
 
+    setSelectionMode(QAbstractItemView::ContiguousSelection);
     setSelectionBehavior(QAbstractItemView::SelectRows);
 }
 
@@ -51,19 +53,83 @@ void StandardTableView::removeSelectedRows()
 
     QModelIndexList selectedIndexes = selectionModel()->selectedIndexes();
 
+    // Sort in descending order.
     std::sort(selectedIndexes.begin(), selectedIndexes.end(),
         [](const QModelIndex& a, const QModelIndex& b)->bool {
-        return b.row() < a.row();
+        return a.row() > b.row();
     });
 
-    QSet<int> deletedRows;
-    for (auto i = selectedIndexes.constBegin(); i != selectedIndexes.constEnd(); ++i)
-    {
-        if (deletedRows.contains(i->row()))
-            continue; // row already deleted
-        if (model()->removeRow(i->row(), i->parent())) // try to delete the row
-            deletedRows << i->row(); // add to deleted set
+    // Keep unique rows.
+    auto it = std::unique(selectedIndexes.begin(), selectedIndexes.end(),
+        [](const QModelIndex& a, const QModelIndex& b)->bool {
+        return a.row() == b.row();
+    });
+    selectedIndexes.erase(it, selectedIndexes.end());
+
+    // Update the model.
+    for (const QModelIndex& i : selectedIndexes) {
+        model()->removeRow(i.row(), i.parent());
     }
+}
+
+bool StandardTableView::moveSelectedRows(int offset)
+{
+    // TODO: Derive from StandardItemModel and implement moveRows
+
+    if (offset == 0)
+        return false;
+
+    if (!model() || !selectionModel())
+        return false;
+
+    // Only QStandardItemModel supported.
+    QStandardItemModel *siModel = qobject_cast<QStandardItemModel *>(model());
+    if (siModel == nullptr)
+        return false;
+
+    QModelIndexList selectedRows = selectionModel()->selectedRows();
+
+    if (offset < 0) {
+        // Sort ascending for move up.
+        std::sort(selectedRows.begin(), selectedRows.end(),
+            [](const QModelIndex& a, const QModelIndex& b)->bool {
+            return a.row() < b.row();
+        });
+
+        // Check for valid move up.
+        int start = selectedRows.first().row();
+        if (start + offset < 0)
+            return false;
+    }
+    else {
+        // Sort descending for move down.
+        std::sort(selectedRows.begin(), selectedRows.end(),
+            [](const QModelIndex& a, const QModelIndex& b)->bool {
+            return a.row() > b.row();
+        });
+
+        // Check for valid move down.
+        int start = selectedRows.first().row();
+        int nrows = siModel->rowCount();
+        if (start + offset >= nrows)
+            return false;
+    }
+
+    // Move each row in the selection.
+    for (const QModelIndex& i : selectedRows) {
+        int row = i.row();
+        QList<QStandardItem *> items = siModel->takeRow(row);
+        siModel->insertRow(row + offset, items);
+    }
+
+    // Move the selection.
+    selectionModel()->clearSelection();
+    for (const QModelIndex& i : selectedRows) {
+        const QModelIndex j = i.siblingAtRow(i.row() + offset);
+        selectionModel()->select(j, QItemSelectionModel::Select);
+    }
+
+    return true;
 }
 
 void StandardTableView::copyClipboard()

@@ -5,8 +5,10 @@
 
 #include "Scenario.h"
 #include "StandardTableView.h"
+#include "StandardTableEditor.h"
 #include "ListEditor.h"
 #include "Utilities.h"
+#include "FluxProfileModel.h"
 
 QT_BEGIN_NAMESPACE
 class QAction;
@@ -22,6 +24,7 @@ class QListWidget;
 class QPushButton;
 class QRadioButton;
 class QSpinBox;
+class QStandardItemModel;
 class QToolButton;
 QT_END_NAMESPACE
 
@@ -81,6 +84,32 @@ private:
     QPushButton *btnDiagnostics;
     QPushButton *btnUpdate;
 };
+
+/****************************************************************************
+** Flux Profiles
+****************************************************************************/
+
+class FluxProfilesPage : public QWidget
+{
+    Q_OBJECT
+
+public:
+    FluxProfilesPage(Scenario *s, QWidget *parent = nullptr);
+    void init();
+    void save();
+    void load();
+
+private slots:
+    void editFluxProfile(const QModelIndex& index);
+
+private:
+    Scenario *scenario;
+
+    FluxProfileModel *model;
+    StandardTableView *table;
+    StandardTableEditor *editor;
+};
+
 
 /****************************************************************************
 ** Dispersion Model

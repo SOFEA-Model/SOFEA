@@ -282,7 +282,7 @@ void MainWindow::setupLogging()
     lwMessages->setColumn(0, "Message", "", 0);
     lwMessages->setColumn(1, "Source", "Source", avgCharWidth * 50);
     lwMessages->setFilterKeyColumn(1);
-    lwMessages->setFilterValues(QStringList{"Distribution", "Geometry", "Import", "Model", "Analysis"});
+    lwMessages->setFilterValues(QStringList{"Distribution", "Geometry", "Import", "Export", "Model", "Analysis"});
 
     lwOutput->setColumn(0, "Message", "", 0);
     lwOutput->setColumn(1, "PW", "Pathway", maxCharWidth * 2);
@@ -303,6 +303,7 @@ void MainWindow::setupLogging()
 #endif
 
     // Register custom sinks, with attribute presence filter on "Dir".
+    // The Dir attribute should be present for all model output messages.
     typedef boost::log::sinks::synchronous_sink<LogWidgetBackend> sink_t;
 
     auto messageBackend = boost::make_shared<LogWidgetBackend>(lwMessages);

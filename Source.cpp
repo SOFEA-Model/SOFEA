@@ -11,7 +11,7 @@ double Source::area() const
 }
 
 /****************************************************************************
-** AREA Source
+** AREA
 ****************************************************************************/
 
 void AreaSource::setGeometry()
@@ -64,7 +64,7 @@ std::string AreaSource::toString(int isrc) const
 }
 
 /****************************************************************************
-** AREACIRC Source
+** AREACIRC
 ****************************************************************************/
 
 void AreaCircSource::setGeometry()
@@ -109,7 +109,7 @@ std::string AreaCircSource::toString(int isrc) const
 }
 
 /****************************************************************************
-** AREAPOLY Source
+** AREAPOLY
 ****************************************************************************/
 
 void AreaPolySource::setGeometry()

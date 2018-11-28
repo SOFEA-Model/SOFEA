@@ -153,6 +153,29 @@ private:
 };
 
 //-----------------------------------------------------------------------------
+// ComboBoxDelegate
+//-----------------------------------------------------------------------------
+
+class ComboBoxDelegate : public QStyledItemDelegate
+{
+    Q_OBJECT
+
+public:
+    ComboBoxDelegate(QAbstractItemModel *sourceModel, QObject *parent = nullptr);
+
+    QWidget *createEditor(QWidget *parent,
+        const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+
+    virtual void setEditorData(QWidget *editor, const QModelIndex& index) const override;
+
+    virtual void setModelData(QWidget *editor,
+        QAbstractItemModel *model, const QModelIndex& index) const override;
+
+private:
+    QAbstractItemModel *m_sourceModel;
+};
+
+//-----------------------------------------------------------------------------
 // PointDelegate
 //-----------------------------------------------------------------------------
 

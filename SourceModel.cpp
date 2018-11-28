@@ -52,7 +52,7 @@ void SourceModel::import()
     endResetModel();
 }
 
-Source* SourceModel::getSource(const QModelIndex &index)
+Source* SourceModel::sourceFromIndex(const QModelIndex &index) const
 {
     Source &s = sgPtr->sources.at(index.row());
     return &s;
@@ -114,7 +114,7 @@ int SourceModel::rowCount(const QModelIndex &parent) const
 int SourceModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return 11;
+    return 12;
 }
 
 QVariant SourceModel::data(const QModelIndex &index, int role) const
@@ -127,11 +127,8 @@ QVariant SourceModel::data(const QModelIndex &index, int role) const
 
     const Source &s = sgPtr->sources.at(index.row());
 
-    if (role == Qt::UserRole) {
-        return QVariant();
-    }
-
-    if (role == Qt::EditRole) {
+    if (role == Qt::EditRole)
+    {
         switch (index.column()) {
             case 0:  return QString::fromStdString(s.srcid);
             case 4:  return s.appStart;
@@ -141,7 +138,21 @@ QVariant SourceModel::data(const QModelIndex &index, int role) const
         }
     }
 
-    if (role == Qt::DisplayRole) {
+    if (role == Qt::DisplayRole)
+    {
+        QVariant fluxProfileName;
+        QVariant timeScaleFactor;
+        QVariant depthScaleFactor;
+        QVariant fluxScaleFactor;
+
+        const auto fp = s.fluxProfile.lock();
+        if (fp) {
+            fluxProfileName = QString::fromStdString(fp->name);
+            timeScaleFactor = fp->timeScaleFactor(s.appStart);
+            depthScaleFactor = fp->depthScaleFactor(s.incorpDepth);
+            fluxScaleFactor = fp->fluxScaleFactor(s.appRate, s.appStart, s.incorpDepth);
+        }
+
         switch (index.column()) {
             case 0:  return QString::fromStdString(s.srcid);
             case 1:  return s.xs;
@@ -151,13 +162,16 @@ QVariant SourceModel::data(const QModelIndex &index, int role) const
             case 5:  return s.appRate;
             case 6:  return s.incorpDepth;
             case 7:  return s.appRate * s.area() * sgPtr->appFactor;
-            case 8:  return sgPtr->fluxScaling.timeScaleFactor(s.appStart);
-            case 9:  return sgPtr->fluxScaling.depthScaleFactor(s.incorpDepth);
-            case 10: return sgPtr->fluxScaling.fluxScaleFactor(s.appRate, s.appStart, s.incorpDepth);
+            case 8:  return fluxProfileName;
+            case 9:  return timeScaleFactor;
+            case 10: return depthScaleFactor;
+            case 11: return fluxScaleFactor;
+            default: return QVariant();
         }
     }
 
-    if (role == Qt::ForegroundRole) {
+    if (role == Qt::ForegroundRole)
+    {
         // Monte Carlo parameters: blue
         // Calculated parameters: red
         switch (index.column()) {
@@ -169,10 +183,17 @@ QVariant SourceModel::data(const QModelIndex &index, int role) const
             case 5:  return QVariant(QColor(Qt::blue));
             case 6:  return QVariant(QColor(Qt::blue));
             case 7:  return QVariant(QColor(Qt::red));
-            case 8:  return QVariant(QColor(Qt::red));
+            case 8:  return QVariant(QColor(Qt::blue));
             case 9:  return QVariant(QColor(Qt::red));
             case 10: return QVariant(QColor(Qt::red));
+            case 11: return QVariant(QColor(Qt::red));
+            default: return QVariant();
         }
+    }
+
+    if (role == Qt::UserRole)
+    {
+        return QVariant();
     }
 
     return QVariant();
@@ -233,9 +254,10 @@ QVariant SourceModel::headerData(int section, Qt::Orientation orientation, int r
                 case 5:  return QString("App. Rate (kg/ha)");
                 case 6:  return QString("Inc. Depth (cm)");
                 case 7:  return QLatin1String("Mass \xd7 AF (kg)");
-                case 8:  return QString("Time SF");
-                case 9:  return QString("Depth SF");
-                case 10: return QString("Overall SF");
+                case 8:  return QString("Flux Profile");
+                case 9:  return QString("Time SF");
+                case 10: return QString("Depth SF");
+                case 11: return QString("Overall SF");
                 default: return QVariant();
             }
         }

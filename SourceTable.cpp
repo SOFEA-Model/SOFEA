@@ -39,6 +39,7 @@ SourceTable::SourceTable(SourceGroup *sg, QWidget *parent)
     model = new SourceModel(sgPtr, this);
 
     table = new StandardTableView;
+    table->setSelectionBehavior(QAbstractItemView::SelectRows);
     table->setSelectionMode(QAbstractItemView::ContiguousSelection);
     table->verticalHeader()->setVisible(true);
     table->horizontalHeader()->setVisible(true);
@@ -48,7 +49,7 @@ SourceTable::SourceTable(SourceGroup *sg, QWidget *parent)
     table->setContextMenuPolicy(Qt::CustomContextMenu);
     table->setModel(model);
 
-    // NOTE: format should be the same as SourceGroupPages
+    // NOTE: Format should be the same as ReceptorDialog and SourceGroupPages
     table->setDoubleSpinBoxForColumn(1, -10000000, 10000000, 2, true);
     table->setDoubleSpinBoxForColumn(2, -10000000, 10000000, 2, true);
     table->setDateTimeEditForColumn(4);
@@ -65,7 +66,7 @@ SourceTable::SourceTable(SourceGroup *sg, QWidget *parent)
     const QIcon icoImport = QIcon(":/images/Import_grey_16x.png");
     const QIcon icoEdit = QIcon(":/images/Edit_grey_16x.png");
     const QIcon icoFlux = QIcon(":/images/KagiChart_16x.png");
-    const QIcon icoRefresh = QIcon(":/images/Refresh_16x.png");
+
     actAddArea = new QAction(icoArea, "Area", this);
     actAddAreaCirc = new QAction(icoAreaCirc, "Circular", this);
     actAddAreaPoly = new QAction(icoAreaPoly, "Polygon", this);
@@ -73,7 +74,10 @@ SourceTable::SourceTable(SourceGroup *sg, QWidget *parent)
     actEdit = new QAction(icoEdit, tr("Edit Geometry"), this);
     actFlux = new QAction(icoFlux, tr("Flux Profile"), this);
     actRemove = new QAction(tr("Remove"), this);
-    actRefresh = new QAction(icoRefresh, tr("Refresh"), this);
+    actResampleAppStart = new QAction(tr("Application Start"), this);
+    actResampleAppRate = new QAction(tr("Application Rate"), this);
+    actResampleIncorpDepth = new QAction(tr("Incorporation Depth"), this);
+    actResampleFluxProfile = new QAction(tr("Flux Profile"), this);
 
     // Connections
     connect(table, SIGNAL(customContextMenuRequested(const QPoint &)),
@@ -102,10 +106,16 @@ double SourceTable::getTotalMass() const
 
 void SourceTable::showFluxProfile(const Source *s)
 {
-    if (sgPtr->refFlux.size() == 0)
+    using GeneratedFlux = FluxProfile::GeneratedFlux;
+
+    std::shared_ptr<FluxProfile> fp = s->fluxProfile.lock();
+    if (!fp)
         return;
 
-    Flux flux = sgPtr->fluxProfile(s);
+    if (fp->refFlux.empty())
+        return;
+
+    GeneratedFlux flux = fp->scaledFlux(s->appRate, s->appStart, s->incorpDepth);
 
     QVector<QPointF> series;
     series.reserve(flux.size() + 1);
@@ -170,44 +180,43 @@ void SourceTable::showContextMenu(const QPoint &pos)
 {
     QMenu *contextMenu = new QMenu(this);
     const QIcon icoAdd = QIcon(":/images/Add_grey_16x.png");
+    const QIcon icoResample = QIcon(":/MeasureCalculate_16x.png");
     QMenu *addSourceMenu = contextMenu->addMenu(icoAdd, "Add Source");
     addSourceMenu->addAction(actAddArea);
     addSourceMenu->addAction(actAddAreaCirc);
     addSourceMenu->addAction(actAddAreaPoly);
+    QMenu *resampleMenu = contextMenu->addMenu(icoResample, "Resample");
+    resampleMenu->addAction(actResampleAppStart);
+    resampleMenu->addAction(actResampleAppRate);
+    resampleMenu->addAction(actResampleIncorpDepth);
+    resampleMenu->addAction(actResampleFluxProfile);
     contextMenu->addAction(actImport);
     contextMenu->addAction(actEdit);
     contextMenu->addAction(actFlux);
     contextMenu->addSeparator();
     contextMenu->addAction(actRemove);
-    contextMenu->addSeparator();
-    contextMenu->addAction(actRefresh);
 
     QModelIndexList selected = table->selectionModel()->selectedIndexes();
     QModelIndexList selectedRows = table->selectionModel()->selectedRows();
     QModelIndex index = table->indexAt(pos);
-    if (index.isValid() && selected.contains(index)) {
-        actRemove->setDisabled(false);
-        if (selectedRows.size() == 1) {
-            actEdit->setDisabled(false);
-            actFlux->setDisabled(false);
-        }
-        else {
-            actEdit->setDisabled(true);
-            actFlux->setDisabled(true);
-        }
-    }
-    else {
-        actRemove->setDisabled(true);
-        actEdit->setDisabled(true);
-        actFlux->setDisabled(true);
-    }
 
-    if (sgPtr->refFlux.size() == 0)
-        actFlux->setDisabled(true);
+    // Source at the current index.
+    Source *currentSource = model->sourceFromIndex(index);
+    auto fp = currentSource->fluxProfile.lock();
+
+    bool validSelection = index.isValid() && selected.contains(index);
+    bool singleSelection = selectedRows.size() == 1;
+    bool validFlux = fp && !fp->refFlux.empty();
+
+    resampleMenu->setEnabled(validSelection);
+    actRemove->setEnabled(validSelection);
+    actEdit->setEnabled(validSelection && singleSelection);
+    actFlux->setEnabled(validSelection && singleSelection && validFlux);
 
     // Execute the context menu.
     QPoint globalPos = table->viewport()->mapToGlobal(pos);
     QAction *selectedItem = contextMenu->exec(globalPos);
+
     if (selectedItem && selectedItem == actAddArea) {
         model->addAreaSource();
     }
@@ -217,25 +226,44 @@ void SourceTable::showContextMenu(const QPoint &pos)
     else if (selectedItem && selectedItem == actAddAreaPoly) {
         model->addAreaPolySource();
     }
+    else if (selectedItem && selectedItem == actResampleAppStart) {
+        for (const QModelIndex& index : selectedRows) {
+            Source *s = model->sourceFromIndex(index);
+            sgPtr->initSourceAppStart(s);
+        }
+    }
+    else if (selectedItem && selectedItem == actResampleAppRate) {
+        for (const QModelIndex& index : selectedRows) {
+            Source *s = model->sourceFromIndex(index);
+            sgPtr->initSourceAppRate(s);
+        }
+    }
+    else if (selectedItem && selectedItem == actResampleIncorpDepth) {
+        for (const QModelIndex& index : selectedRows) {
+            Source *s = model->sourceFromIndex(index);
+            sgPtr->initSourceIncorpDepth(s);
+        }
+    }
+    else if (selectedItem && selectedItem == actResampleFluxProfile) {
+        for (const QModelIndex& index : selectedRows) {
+            Source *s = model->sourceFromIndex(index);
+            sgPtr->initSourceFluxProfile(s);
+        }
+    }
     else if (selectedItem && selectedItem == actImport) {
         model->import();
     }
     else if (selectedItem && selectedItem == actEdit) {
-        Source *s = model->getSource(selectedRows.first());
-        SourceEditorDialog *dialog = new SourceEditorDialog(s, this);
+        SourceEditorDialog *dialog = new SourceEditorDialog(currentSource, this);
         dialog->exec();
-        s->setGeometry();
+        currentSource->setGeometry();
         emit dataChanged();
     }
     else if (selectedItem && selectedItem == actFlux) {
-        Source *s = model->getSource(selectedRows.first());
-        showFluxProfile(s);
+        showFluxProfile(currentSource);
     }
     else if (selectedItem && selectedItem == actRemove) {
         table->removeSelectedRows();
-    }
-    else if (selectedItem && selectedItem == actRefresh) {
-        refresh();
     }
 
     contextMenu->deleteLater();

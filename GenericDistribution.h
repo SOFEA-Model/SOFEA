@@ -282,14 +282,14 @@ namespace Detail
 
     struct vgen_generic_visitor : boost::static_visitor<double> {
         template <typename Dist, typename Engine>
-        typename Dist::result_type operator()(Dist const& d, Engine const& rng) const {
+        typename Dist::result_type operator()(const Dist& d, const Engine& rng) const {
             br::variate_generator<Engine, Dist> vgen(rng, d);
             return vgen();
         }
     };
     
     template <typename... Dist, typename Engine>
-    auto vgen_generic(Engine const& rng, boost::variant<Dist...> const& operand)
+    auto vgen_generic(const Engine& rng, const boost::variant<Dist...>& operand)
     {    
         auto f = boost::bind(vgen_generic_visitor(), ::_1, rng);
         return boost::apply_visitor(f, operand);
@@ -333,7 +333,7 @@ public:
     using Base::Base;
     
     template <typename Engine>
-    QVector<double> sample(Engine const& rng, std::size_t const n) const
+    QVector<double> sample(const Engine& rng, std::size_t const n) const
     {
         QVector<double> rv(static_cast<int>(n));
         for (auto&& x : rv)
@@ -342,10 +342,10 @@ public:
     }
     
     template <typename Engine>
-    double operator()(Engine const& rng)
+    double operator()(const Engine& rng)
     {
         return Distribution::Detail::vgen_generic(rng, *this);
     }
     
-    void pdf(QVector<double> const& x, QVector<double> &y) const;
+    void pdf(const QVector<double>& x, QVector<double> &y) const;
 };

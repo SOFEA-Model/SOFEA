@@ -96,10 +96,8 @@ DateTimeDistributionDialog::DateTimeDistributionDialog(const DateTimeDistributio
 
     view = new StandardTableView;
     view->setModel(model);
-    view->setMinimumWidth(400);
-    view->setDateTimeEditForColumn(0);
-    view->setDateTimeEditForColumn(1);
-    view->setDoubleLineEditForColumn(2, 0.0001, 1, 4, false);
+    view->setMinimumWidth(450);
+    view->setDoubleSpinBoxForColumn(1, 0.0001, 1, 4, true);
     view->setSelectionMode(QAbstractItemView::ContiguousSelection);
     view->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
@@ -107,7 +105,7 @@ DateTimeDistributionDialog::DateTimeDistributionDialog(const DateTimeDistributio
     header->setStretchLastSection(false);
     header->setSectionResizeMode(0, QHeaderView::Stretch);
     header->setSectionResizeMode(1, QHeaderView::Fixed);
-    header->resizeSection(1, 90);
+    header->resizeSection(1, 100);
 
     btnAdd = new QPushButton("Add");
     btnClear = new QPushButton("Clear");

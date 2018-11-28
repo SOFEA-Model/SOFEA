@@ -11,9 +11,10 @@ SourceGroupProperties::SourceGroupProperties(Scenario *s, SourceGroup *sg, QWidg
 
     applicationPage = new ApplicationPage(sg);
     depositionPage = new DepositionPage(sg);
-    fluxProfilePage = new FluxProfilePage(sg);
+    fluxProfilePage = new FluxProfilePage(s, sg);
     bufferZonePage = new BufferZonePage(sg);
 
+    // Data from parent scenario.
     if (!s->aermodDryDeposition && !s->aermodWetDeposition) {
         depositionPage->warnDepoNotEnabled();
     }
@@ -38,6 +39,7 @@ void SourceGroupProperties::accept()
     bufferZonePage->save();
 
     // Recalculate source values if distribution is modified and in prospective mode.
+    // TODO: remove isModified when random seed support is added. Add a menu option to explicitly resample selected parameters.
     if (!sgPtr->validationMode)
     {
         if (applicationPage->mcAppStart->isModified())

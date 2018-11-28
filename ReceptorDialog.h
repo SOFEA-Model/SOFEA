@@ -52,6 +52,7 @@ private slots:
 private:
     DoubleLineEdit *leNodeX;
     DoubleLineEdit *leNodeY;
+    DoubleLineEdit *leNodeZ;
     QStandardItemModel *nodeModel;
     StandardTableView *nodeTable;
     StandardTableEditor *nodeEditor;
@@ -121,7 +122,7 @@ private:
     QDialogButtonBox *buttonBox;
 
 protected:
-    bool eventFilter(QObject *obj, QEvent *event);
+    bool eventFilter(QObject *obj, QEvent *event) override;
 };
 
 #endif // RECEPTORDIALOG_H

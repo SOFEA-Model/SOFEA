@@ -2,15 +2,17 @@
 
 #include <array>
 #include <map>
+#include <memory>
 #include <string>
+#include <vector>
 
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include <QDateTime>
 
+#include "FluxProfile.h"
 #include "SourceGroup.h"
 
 struct SurfaceInfo
@@ -88,6 +90,12 @@ struct Scenario
     // Output
     std::vector<int> averagingPeriods;
 
-    // SourceGroup Container
+    // Receptors
+    //std::vector<ReceptorRing> rings;
+    //std::vector<ReceptorNode> nodes;
+    //std::vector<ReceptorGrid> grids;
+
+    // Containers
+    std::vector<std::shared_ptr<FluxProfile>> fluxProfiles;
     boost::ptr_vector<SourceGroup> sourceGroups;
 };
