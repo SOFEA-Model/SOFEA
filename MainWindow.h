@@ -3,12 +3,13 @@
 
 #include <QMainWindow>
 
-#include "LogWidget.h"
-#include "SourceGroupProperties.h"
-#include "ScenarioProperties.h"
-#include "InputViewer.h"
-#include "SourceTable.h"
 #include "AnalysisWindow.h"
+#include "InputViewer.h"
+#include "LogWidget.h"
+#include "ScenarioProperties.h"
+#include "SourceGroupProperties.h"
+#include "SourceTable.h"
+#include "Utilities.h"
 
 #include <boost/ptr_container/ptr_vector.hpp>
 
@@ -17,13 +18,13 @@
 QT_BEGIN_NAMESPACE
 class QAction;
 class QDir;
-class QDockWidget;
 class QMenu;
 class QTabWidget;
 class QTextEdit;
 class QToolBar;
 class QTreeWidget;
 class QTreeWidgetItem;
+class QWinTaskbarButton;
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
@@ -49,6 +50,8 @@ private slots:
     void contextMenuRequested(QPoint const& pos);
     void handleItemChanged(QTreeWidgetItem *item, int);
     void deleteTab(int index);
+    void onScenarioUpdated(Scenario *s);
+    void onSourceGroupUpdated(SourceGroup *s);
 
 private:
     void createActions();
@@ -59,6 +62,8 @@ private:
     void setupLogging();
     void loadSettings();
     void saveSettings();
+    void openProjectFile(const QString& openFile);
+    void saveProjectFile(const QString& saveFile);
 
     void newSourceGroup(Scenario *s);
     void importValidationData(Scenario *s);
@@ -76,18 +81,24 @@ private:
     void exportFluxFile(Scenario *s);
 
 protected:
+    void showEvent(QShowEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dragMoveEvent(QDragMoveEvent *event) override;
+    void dragLeaveEvent(QDragLeaveEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
 
 private:
+    QWinTaskbarButton *taskbarButton;
     QTabWidget *centralTabWidget;
     QMenu *fileMenu;
     QMenu *viewMenu;
     QMenu *modelMenu;
     QMenu *helpMenu;
     QToolBar *toolbar;
-    QDockWidget *dwProjectTree;
-    QDockWidget *dwMessages;
-    QDockWidget *dwOutput;
+    DockWidget *dwProjectTree;
+    DockWidget *dwMessages;
+    DockWidget *dwOutput;
     QTreeWidget *projectTree;
     LogWidget *lwMessages;
     LogWidget *lwOutput;
@@ -113,7 +124,7 @@ private:
     // Project Properties
     QString projectFile;
     QString projectDir;
-    bool projectModified;
+    mutable bool projectModified;
 
     // Main Actions
     QAction *newAct;

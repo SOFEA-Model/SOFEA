@@ -172,44 +172,29 @@ void StandardTableView::copyClipboard()
     QApplication::clipboard()->setText(clipboardString);
 }
 
-void StandardTableView::setDoubleLineEdit(double min, double max, int decimals, bool fixed)
-{
-    setItemDelegate(new DoubleItemDelegate(min, max, decimals, fixed));
-}
-
 void StandardTableView::setDoubleLineEditForColumn(int column, double min, double max, int decimals, bool fixed)
 {
     setItemDelegateForColumn(column, new DoubleItemDelegate(min, max, decimals, fixed));
 }
 
-void StandardTableView::setSpinBox(int min, int max)
+void StandardTableView::setSpinBoxForColumn(int column, int min, int max, int singleStep)
 {
-    setItemDelegate(new SpinBoxDelegate(min, max));
+    setItemDelegateForColumn(column, new SpinBoxDelegate(min, max, singleStep));
 }
 
-void StandardTableView::setSpinBoxForColumn(int column, int min, int max)
+void StandardTableView::setDoubleSpinBoxForColumn(int column, double min, double max, int decimals, double singleStep)
 {
-    setItemDelegateForColumn(column, new SpinBoxDelegate(min, max));
-}
-
-void StandardTableView::setDoubleSpinBox(double min, double max, int decimals, bool fixed)
-{
-    setItemDelegate(new DoubleSpinBoxDelegate(min, max, decimals, fixed));
-}
-
-void StandardTableView::setDoubleSpinBoxForColumn(int column, double min, double max, int decimals, bool fixed)
-{
-    setItemDelegateForColumn(column, new DoubleSpinBoxDelegate(min, max, decimals, fixed));
-}
-
-void StandardTableView::setDateTimeEdit(QDateTime min, QDateTime max)
-{
-    setItemDelegate(new DateTimeEditDelegate(min, max));
+    setItemDelegateForColumn(column, new DoubleSpinBoxDelegate(min, max, decimals, singleStep));
 }
 
 void StandardTableView::setDateTimeEditForColumn(int column, QDateTime min, QDateTime max)
 {
     setItemDelegateForColumn(column, new DateTimeEditDelegate(min, max));
+}
+
+void StandardTableView::setComboBoxForColumn(int column, QAbstractItemModel *model, int modelColumn)
+{
+    setItemDelegateForColumn(column, new ComboBoxDelegate(model, modelColumn));
 }
 
 std::vector<double> StandardTableView::getNumericColumn(int j)

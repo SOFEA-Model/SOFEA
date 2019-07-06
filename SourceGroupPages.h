@@ -3,6 +3,7 @@
 
 #include <QWidget>
 
+#include "BufferZoneModel.h"
 #include "FluxProfileModel.h"
 #include "SamplingDistributionEditor.h"
 #include "MonteCarloLineEdit.h"
@@ -125,15 +126,15 @@ public:
 private slots:
     void onAddZoneClicked();
     void onRemoveZoneClicked();
+    void importBufferZoneTable(const QString& filename);
 
 private:
     SourceGroup *sgPtr;
 
-    std::vector<std::pair<double, int>> zones;
-
-    QDoubleSpinBox *sbBuffer;
-    QSpinBox *sbReentry;
-    QStandardItemModel *zoneModel;
+    QCheckBox *chkEnable;
+    QDoubleSpinBox *sbAreaThreshold;
+    QDoubleSpinBox *sbAppRateThreshold;
+    BufferZoneModel *zoneModel;
     StandardTableView *zoneTable;
     StandardTableEditor *zoneEditor;
 };

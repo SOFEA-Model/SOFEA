@@ -42,7 +42,9 @@ StandardTableEditor::StandardTableEditor(Qt::Orientation orientation, StandardBu
         mainLayout->addWidget(btnRename);
     }
 
-    mainLayout->addSpacing(10);
+    if (buttons.testFlag(MoveUp) | buttons.testFlag(MoveDown)) {
+        mainLayout->addSpacing(10);
+    }
 
     if (buttons.testFlag(MoveUp)) {
         btnMoveUp = new QPushButton("Move Up");
@@ -53,7 +55,9 @@ StandardTableEditor::StandardTableEditor(Qt::Orientation orientation, StandardBu
         mainLayout->addWidget(btnMoveDown);
     }
 
-    mainLayout->addSpacing(10);
+    if (buttons.testFlag(Edit) | buttons.testFlag(Import)) {
+        mainLayout->addSpacing(10);
+    }
 
     if (buttons.testFlag(Edit)) {
         btnEdit = new QPushButton("Edit...");
@@ -107,11 +111,6 @@ void StandardTableEditor::setImportFilter(const QString& filter)
 void StandardTableEditor::setImportCaption(const QString& caption)
 {
     m_importCaption = caption;
-}
-
-QString StandardTableEditor::importFile()
-{
-    return m_importFile;
 }
 
 void StandardTableEditor::onAddItemClicked()
@@ -193,17 +192,16 @@ void StandardTableEditor::onImportClicked()
         return;
 
     QSettings settings;
-    QString currentDir = settings.value("DefaultDirectory", QDir::rootPath()).toString();
-    QString file = QFileDialog::getOpenFileName(this,
-                   m_importCaption,
-                   currentDir,
-                   m_importFilter);
+    QString currentDir = settings.value("DefaultDirectory", QDir::currentPath()).toString();
+    QString filename = QFileDialog::getOpenFileName(this,
+                       m_importCaption,
+                       currentDir,
+                       m_importFilter);
 
-    if (file.isEmpty())
+    if (filename.isEmpty())
         return;
 
-    m_importFile = file;
-    emit importRequested();
+    emit importRequested(filename);
 }
 
 void StandardTableEditor::onSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected)

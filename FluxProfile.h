@@ -4,8 +4,6 @@
 #include <utility>
 #include <vector>
 
-#include <fmt/format.h>
-
 #include <QDateTime>
 #include <QMetaType>
 
@@ -14,6 +12,7 @@ struct FluxProfile
     FluxProfile() :
         tsMethod(TSMethod::Disabled),
         dsMethod(DSMethod::Disabled),
+        constantFlux(false),
         refStart(QDate(2000, 1, 1), QTime(0, 0, 0), Qt::UTC),
         refAppRate(0),
         refDepth(2.54),
@@ -26,12 +25,7 @@ struct FluxProfile
         centerAmplitude(1.3),
         phase(270),
         wavelength(365.25)
-    {
-        static unsigned int sequenceNumber = 1;
-        id = sequenceNumber;
-        sequenceNumber++;
-        name = fmt::format("Profile{:0=2}", id);
-    }
+    {}
 
     using ReferenceFlux = std::vector<std::pair<int, double>>;
     using GeneratedFlux = std::vector<std::pair<QDateTime, double>>;
@@ -50,8 +44,8 @@ struct FluxProfile
     };
 
     // General
-    unsigned int id;
     std::string name;
+    bool constantFlux;
 
     // Reference
     ReferenceFlux refFlux;
@@ -194,7 +188,7 @@ struct FluxProfile
     int totalHours() const
     {
         const int sum = std::accumulate(refFlux.begin(), refFlux.end(), 0,
-            [](auto &i, auto &xy) { return i + xy.first; });
+            [](auto i, const auto &xy) { return i + xy.first; });
 
         return sum;
     }
@@ -233,5 +227,17 @@ struct FluxProfile
         }
 
         return flux;
+    }
+
+    double meanScaledFlux(double appRate, QDateTime appStart, double incorpDepth) const
+    {
+        GeneratedFlux flux = scaledFlux(appRate, appStart, incorpDepth);
+        if (flux.empty())
+            return 0;
+
+        const double sum = std::accumulate(flux.begin(), flux.end(), 0.0,
+            [](auto i, const auto &xy) { return i + xy.second; });
+
+        return sum / flux.size();
     }
 };

@@ -106,6 +106,13 @@ void RunModelDialog::setWorkingDirectory(const QString& path)
     leWorkingDir->setText(workingDir);
 }
 
+void RunModelDialog::setTaskbarButton(QWinTaskbarButton *button)
+{
+    taskbarButton = button;
+    taskbarProgress = taskbarButton->progress();
+    taskbarProgress->setVisible(true);
+}
+
 void RunModelDialog::addScenario(Scenario *s)
 {
     Job *job = new Job;
@@ -322,6 +329,10 @@ void RunModelDialog::updateProgress(quint32 pid, quint32 msg)
             int progress = std::lrint(percent * 100);
             progress = std::min(std::max(progress, 0), 100);
             runModel->item(i, 4)->setData(progress, Qt::DisplayRole);
+
+            if (taskbarProgress) {
+                taskbarProgress->setValue(progress);
+            }
         }
     }
 }
@@ -363,6 +374,11 @@ void RunModelDialog::reject()
         }
     }
 
+    // Clear the progress indicator.
+    if (taskbarProgress) {
+        taskbarProgress->setVisible(false);
+    }
+
     QDialog::reject();
 }
 
@@ -371,15 +387,15 @@ bool RunModelDialog::eventFilter(QObject *obj, QEvent *event)
     if (event->type() == QEvent::KeyPress) {
         QKeyEvent* ke = static_cast<QKeyEvent*>(event);
         // Ignore escape key
-        if (ke->key() != Qt::Key_Escape)
-            return QObject::eventFilter(obj, event);
-
-        return true;
+        if (ke->key() == Qt::Key_Escape) {
+            return true;
+        }
     }
     else {
         return QObject::eventFilter(obj, event);
     }
-    return false;
+
+    return QObject::eventFilter(obj, event);
 }
 
 /****************************************************************************

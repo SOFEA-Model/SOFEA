@@ -1,6 +1,7 @@
 #include "Utilities.h"
 
 #include <QApplication>
+#include <QIcon>
 #include <QPainter>
 #include <QStylePainter>
 #include <QRect>
@@ -10,12 +11,102 @@
 #include <QTextLayout>
 
 //-----------------------------------------------------------------------------
+// DockWidget
+//-----------------------------------------------------------------------------
+
+DockWidgetProxyStyle::DockWidgetProxyStyle(QStyle *style)
+    : QProxyStyle(style)
+{}
+
+int DockWidgetProxyStyle::pixelMetric(PixelMetric which,
+    const QStyleOption *option, const QWidget *widget) const
+{
+    // Set the title margins and icon size.
+    switch (which) {
+    case QStyle::PM_DockWidgetTitleMargin:
+        return 6;
+    case QStyle::PM_SmallIconSize:
+        return 24;
+    default:
+        return QProxyStyle::pixelMetric(which, option, widget);
+    }
+}
+
+QIcon DockWidgetProxyStyle::standardIcon(QStyle::StandardPixmap icon,
+    const QStyleOption *option, const QWidget *widget) const
+{
+    // Set custom float and close button icons.
+    const QIcon floatIcon = QIcon(":/images/Restore_NoHalo_24x.png");
+    const QIcon closeIcon = QIcon(":/images/Close_NoHalo_24x.png");
+
+    switch (icon) {
+    case QStyle::SP_TitleBarNormalButton:
+        return floatIcon;
+    case QStyle::SP_TitleBarCloseButton:
+        return closeIcon;
+    default:
+        return QProxyStyle::standardIcon(icon, option, widget);
+    }
+}
+
+void DockWidgetProxyStyle::drawControl(QStyle::ControlElement element,
+    const QStyleOption *option, QPainter *painter, const QWidget *widget) const
+{
+    const QStyleOptionDockWidget *dwOption;
+    const QDockWidget *dw;
+
+    if (element == CE_DockWidgetTitle &&
+       (dwOption = qstyleoption_cast<const QStyleOptionDockWidget *>(option)) &&
+       (dw = qobject_cast<const QDockWidget *>(widget)) &&
+       !dw->titleBarWidget())
+    {
+        // Calculate the title bar height.
+        int iconSize = dw->style()->pixelMetric(QStyle::PM_SmallIconSize, nullptr, dw);
+        int buttonMargin = dw->style()->pixelMetric(QStyle::PM_DockWidgetTitleBarButtonMargin, nullptr, dw);
+        int buttonHeight = iconSize + 2+buttonMargin;
+        QFontMetrics titleFontMetrics = dw->fontMetrics();
+        int titleMargin = dw->style()->pixelMetric(QStyle::PM_DockWidgetTitleMargin, nullptr, dw);
+        int titleHeight = qMax(buttonHeight + 2, titleFontMetrics.height() + 2*titleMargin);
+
+        // Draw a background rectangle for the title bar.
+        QColor bgColor = dwOption->palette.window().color().darker(104);
+        QRect bgRect = dwOption->rect;
+        bgRect.setHeight(titleHeight);
+        painter->fillRect(bgRect, bgColor);
+
+        // Add some left padding to the title text.
+        QStyleOptionDockWidget customOption = *dwOption;
+        customOption.rect.setLeft(5);
+
+        QProxyStyle::drawControl(element, &customOption, painter, widget);
+        return;
+    }
+
+    QProxyStyle::drawControl(element, option, painter, widget);
+}
+
+DockWidget::DockWidget(const QString& title, QWidget *parent, Qt::WindowFlags flags)
+{
+    setWindowTitle(title);
+    proxyStyle = new DockWidgetProxyStyle(style());
+    setStyle(proxyStyle);
+}
+
+DockWidget::DockWidget(QWidget *parent, Qt::WindowFlags flags)
+{
+    proxyStyle = new DockWidgetProxyStyle(style());
+    setStyle(proxyStyle);
+}
+
+//-----------------------------------------------------------------------------
 // GridLayout
 //-----------------------------------------------------------------------------
 
 GridLayout::GridLayout() {
-    setColumnMinimumWidth(0, 175);
+    setColumnMinimumWidth(0, 225);
     setColumnMinimumWidth(1, 175);
+    setColumnStretch(0, 1);
+    setColumnStretch(1, 2);
 }
 
 //-----------------------------------------------------------------------------
@@ -105,17 +196,16 @@ void DoubleLineEdit::setValue(double value)
 
 ReadOnlyLineEdit::ReadOnlyLineEdit(QWidget *parent) : QLineEdit(parent)
 {
-    m_defaultPalette = this->palette();
     setAutoFillBackground(true);
-    //setFrame(false);
     setReadOnly(true);
 }
 
 void ReadOnlyLineEdit::setBasePalette()
 {
-    QColor bgColor = QWidget::palette().window().color();
-    m_defaultPalette.setColor(QPalette::Base, bgColor);
-    this->setPalette(m_defaultPalette);
+    QPalette palette = this->palette();
+    QColor windowColor = QWidget::palette().window().color();
+    palette.setColor(QPalette::Base, windowColor);
+    this->setPalette(palette);
 }
 
 void ReadOnlyLineEdit::paintEvent(QPaintEvent* event)
@@ -135,40 +225,28 @@ void ReadOnlyLineEdit::paintEvent(QPaintEvent* event)
 
 ReadOnlyTextEdit::ReadOnlyTextEdit(QWidget *parent) : QTextEdit(parent)
 {
-    m_defaultPalette = this->palette();
-    setAutoFillBackground(true);
-    setFrameShape(QFrame::NoFrame);
-    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    setWordWrapMode(QTextOption::NoWrap);
     setReadOnly(true);
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setAutoFillBackground(true);
+
+    QPalette palette = this->palette();
+    QColor baseColor = QWidget::palette().window().color().lighter(104);
+    palette.setColor(QPalette::Base, baseColor);
+    this->setPalette(palette);
 }
 
-void ReadOnlyTextEdit::setRowCount(const int rows)
+void ReadOnlyTextEdit::setLineCount(const int rows)
 {
-    QTextDocument *doc = this->document();
-    QFontMetrics fm(doc->defaultFont());
-    QMargins margins = this->contentsMargins();
+    const QTextDocument *doc = this->document();
+    const QFontMetrics fm(doc->defaultFont());
+    const QMargins margins = this->contentsMargins();
 
     int height = fm.lineSpacing() * rows +
         (doc->documentMargin() + this->frameWidth()) * 2 +
         margins.top() + margins.bottom();
 
     this->setFixedHeight(height);
-}
-
-void ReadOnlyTextEdit::paintEvent(QPaintEvent* event)
-{
-    // FIXME: drawing issues on scroll.
-
-    QPainter painter(viewport());
-
-    QStyleOptionFrame option;
-    this->initStyleOption(&option);
-    option.state = QStyle::State_Raised;
-    this->style()->drawPrimitive(QStyle::PE_FrameLineEdit, &option, &painter, this);
-
-    QTextEdit::paintEvent(event);
 }
 
 //-----------------------------------------------------------------------------

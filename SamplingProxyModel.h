@@ -4,6 +4,7 @@
 #include <map>
 
 #include <QIdentityProxyModel>
+#include <QItemSelection>
 
 class SamplingProxyModel : public QIdentityProxyModel
 {
@@ -33,7 +34,7 @@ public slots:
 private:
     bool normalizeInternal(std::map<QModelIndex, double>& map) const;
 
-    std::map<QModelIndex, double> modelData;
+    std::map<QModelIndex, double> m_modelData;
 };
 
 #endif // SAMPLINGPROXYMODEL_H

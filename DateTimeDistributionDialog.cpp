@@ -73,6 +73,8 @@ DateTimeDistributionDialog::DateTimeDistributionDialog(const DateTimeDistributio
     : QDialog(parent), currentDist(d)
 {
     setWindowTitle(tr("Define Distribution"));
+    setWindowFlag(Qt::Tool);
+    setWindowIcon(QIcon(":/images/Effects_32x.png"));
 
     dteLower = new QDateTimeEdit;
     dteLower->setDisplayFormat("yyyy-MM-dd HH:mm");
@@ -84,12 +86,6 @@ DateTimeDistributionDialog::DateTimeDistributionDialog(const DateTimeDistributio
     dteUpper->setTimeSpec(Qt::UTC);
     dteUpper->setDateTime(QDateTime(QDate(2000, 1, 1), QTime(0, 0, 0), Qt::UTC));
 
-    sbProbability = new QDoubleSpinBox;
-    sbProbability->setRange(0.0001, 1);
-    sbProbability->setValue(1);
-    sbProbability->setDecimals(4);
-    sbProbability->setSingleStep(0.01);
-
     model = new QStandardItemModel;
     model->setColumnCount(2);
     model->setHorizontalHeaderLabels(QStringList{"Interval", "Probability"});
@@ -97,9 +93,10 @@ DateTimeDistributionDialog::DateTimeDistributionDialog(const DateTimeDistributio
     view = new StandardTableView;
     view->setModel(model);
     view->setMinimumWidth(450);
-    view->setDoubleSpinBoxForColumn(1, 0.0001, 1, 4, true);
-    view->setSelectionMode(QAbstractItemView::ContiguousSelection);
-    view->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    view->setDoubleSpinBoxForColumn(1, 0.0001, 1, 4, 0.1);
+    view->setSelectionBehavior(QAbstractItemView::SelectItems);
+    view->setSelectionMode(QAbstractItemView::SingleSelection);
+    view->setEditTriggers(QAbstractItemView::AllEditTriggers);
 
     QHeaderView *header = view->horizontalHeader();
     header->setStretchLastSection(false);
@@ -117,14 +114,14 @@ DateTimeDistributionDialog::DateTimeDistributionDialog(const DateTimeDistributio
     lblStatus->setText("Probabilities have been normalized.");
     lblStatus->hide();
 
-    buttonBox = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Close);
+    buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Apply);
+    connect(buttonBox->button(QDialogButtonBox::Apply), &QPushButton::clicked, this, &DateTimeDistributionDialog::apply);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &DateTimeDistributionDialog::accept);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &DateTimeDistributionDialog::reject);
 
     QFormLayout *inputLayout = new QFormLayout;
     inputLayout->addRow(new QLabel("Lower:"), dteLower);
     inputLayout->addRow(new QLabel("Upper:"), dteUpper);
-    inputLayout->addRow(new QLabel("Probability:"), sbProbability);
 
     QVBoxLayout *controlsLayout = new QVBoxLayout;
     controlsLayout->setMargin(0);
@@ -195,7 +192,7 @@ void DateTimeDistributionDialog::onAddClicked()
 
     QDateTime dtlower = dteLower->dateTime();
     QDateTime dtupper = dteUpper->dateTime();
-    double probability = sbProbability->value();
+    double probability = 1.0;
 
     // Update the interval map.
     ptime ptlower = asPosixTime(dtlower);
@@ -226,12 +223,13 @@ void DateTimeDistributionDialog::resetTable()
         item1->setData(i.second, Qt::DisplayRole);
         model->setItem(currentRow, 0, item0);
         model->setItem(currentRow, 1, item1);
+        item0->setFlags(item0->flags() & ~Qt::ItemIsEnabled);
     }
 
     lblStatus->hide();
 }
 
-void DateTimeDistributionDialog::accept()
+void DateTimeDistributionDialog::apply()
 {
     // If interval map is empty, set constant distribution from lower bound.
     if (intervals.empty()) {
@@ -240,7 +238,6 @@ void DateTimeDistributionDialog::accept()
         d.setDate(dteLower->date());
         d.setTime(dteLower->time());
         currentDist = d;
-        saved = true;
         return;
     }
 
@@ -255,13 +252,15 @@ void DateTimeDistributionDialog::accept()
     if (sum != 1) lblStatus->show();
 
     currentDist = Distribution::DiscreteDateTime(intervals);
-    saved = true;
+}
+
+void DateTimeDistributionDialog::accept()
+{
+    apply();
+    QDialog::done(QDialog::Accepted);
 }
 
 void DateTimeDistributionDialog::reject()
 {
-    if (saved)
-        QDialog::done(QDialog::Accepted);
-    else
-        QDialog::done(QDialog::Rejected);
+    QDialog::done(QDialog::Rejected);
 }

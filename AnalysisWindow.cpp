@@ -11,7 +11,7 @@ ReceptorAnalysisTool::ReceptorAnalysisTool(QWidget *parent)
 {
     lblWarning = new StatusLabel;
     lblWarning->setSeverity(2);
-    lblWarning->setText("Averages calculated on the 1-hour time series will include zero concentrations for calm and missing hours.");
+    lblWarning->setText("Summary statistics calculated on the 1-hour time series will include zero concentrations for calm and missing hours.");
 
     cbMean = new QCheckBox("Mean");
     cbMean->setChecked(true);
@@ -36,11 +36,15 @@ ReceptorAnalysisTool::ReceptorAnalysisTool(QWidget *parent)
     btnCalc = new QPushButton("Calculate");
 
     // Layout
-    QHBoxLayout *layout1 = new QHBoxLayout;
-    layout1->addWidget(cbMean);
-    layout1->addWidget(cbMax);
-    layout1->addWidget(cbStdDev);
-    layout1->addStretch(1);
+    QHBoxLayout *cbLayout = new QHBoxLayout;
+    cbLayout->addWidget(cbMean);
+    cbLayout->addWidget(cbMax);
+    cbLayout->addWidget(cbStdDev);
+    cbLayout->addStretch(1);
+    QVBoxLayout *layout1 = new QVBoxLayout;
+    layout1->addWidget(lblWarning);
+    layout1->addLayout(cbLayout);
+
     gbSummary = new QGroupBox("Summary statistics");
     gbSummary->setFlat(true);
     gbSummary->setLayout(layout1);
@@ -69,8 +73,6 @@ ReceptorAnalysisTool::ReceptorAnalysisTool(QWidget *parent)
     // Main Layout
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->addWidget(lblWarning);
-    mainLayout->addSpacing(5);
     mainLayout->addWidget(gbSummary);
     mainLayout->addSpacing(5);
     mainLayout->addWidget(gbPercentile);
@@ -559,7 +561,7 @@ AnalysisWindow::AnalysisWindow(QWidget *parent) : QMainWindow(parent)
     setMinimumWidth(1200);
 
     // File Information
-    QDockWidget *dwInfo = new QDockWidget(tr("File Information"), this);
+    DockWidget *dwInfo = new DockWidget(tr("File Information"), this);
     dwInfo->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     dwInfo->setFeatures(QDockWidget::DockWidgetMovable |
                         QDockWidget::DockWidgetFloatable);
@@ -569,7 +571,7 @@ AnalysisWindow::AnalysisWindow(QWidget *parent) : QMainWindow(parent)
     addDockWidget(Qt::LeftDockWidgetArea, dwInfo);
 
     // Analysis Options
-    QDockWidget *dwOpts = new QDockWidget(tr("Analysis Options"), this);
+    DockWidget *dwOpts = new DockWidget(tr("Analysis Options"), this);
     dwOpts->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     dwOpts->setFeatures(QDockWidget::DockWidgetMovable |
                         QDockWidget::DockWidgetFloatable);

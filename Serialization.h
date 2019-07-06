@@ -20,6 +20,9 @@
 #include <cereal/archives/json.hpp>
 #include <cereal/types/array.hpp>
 #include <cereal/types/boost_variant.hpp>
+#include <cereal/types/map.hpp>
+#include <cereal/types/memory.hpp>
+#include <cereal/types/set.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/utility.hpp>
 #include <cereal/types/vector.hpp>
@@ -32,11 +35,12 @@ CEREAL_CLASS_VERSION(FluxProfile, 1)
 CEREAL_CLASS_VERSION(ReceptorRing, 3)
 CEREAL_CLASS_VERSION(ReceptorNode, 3)
 CEREAL_CLASS_VERSION(ReceptorGrid, 3)
-CEREAL_CLASS_VERSION(AreaSource, 2)
-CEREAL_CLASS_VERSION(AreaCircSource, 2)
-CEREAL_CLASS_VERSION(AreaPolySource, 2)
-CEREAL_CLASS_VERSION(SourceGroup, 4)
-CEREAL_CLASS_VERSION(Scenario, 3)
+CEREAL_CLASS_VERSION(BufferZone, 1)
+CEREAL_CLASS_VERSION(AreaSource, 3)
+CEREAL_CLASS_VERSION(AreaCircSource, 3)
+CEREAL_CLASS_VERSION(AreaPolySource, 3)
+CEREAL_CLASS_VERSION(SourceGroup, 6)
+CEREAL_CLASS_VERSION(Scenario, 4)
 
 namespace cereal {
 
@@ -385,8 +389,11 @@ void load(Archive& ar, IntervalMap& im)
 template <class Archive>
 void serialize(Archive& archive, FluxProfile& fp, const std::uint32_t version)
 {
+    // TODO: ADD fp.constantFlux
+
     if (version >= 1) {
-        archive(cereal::make_nvp("ts_method", fp.tsMethod),
+        archive(cereal::make_nvp("name", fp.name),
+                cereal::make_nvp("ts_method", fp.tsMethod),
                 cereal::make_nvp("ds_method", fp.dsMethod),
                 cereal::make_nvp("ref_flux", fp.refFlux),
                 cereal::make_nvp("ref_app_rate", fp.refAppRate),
@@ -466,12 +473,25 @@ void serialize(Archive& archive, ReceptorGrid& rg, const std::uint32_t version)
     }
 }
 
+// External serialize function for BufferZone
+template <class Archive>
+void serialize(Archive& archive, BufferZone& z, const std::uint32_t version)
+{
+    if (version >= 1) {
+        archive(cereal::make_nvp("area_threshold", z.areaThreshold),
+                cereal::make_nvp("app_rate_threshold", z.appRateThreshold),
+                cereal::make_nvp("distance", z.distance),
+                cereal::make_nvp("duration", z.duration));
+    }
+}
+
 // External serialize function for AreaSource
 template <class Archive>
 void serialize(Archive& archive, AreaSource& s, const std::uint32_t version)
 {
     // VERSION HISTORY:
-    // - V2:  adds support for deposition and xshift, yshift
+    // - V2:  adds support for deposition
+    // - V3:  adds support for flux profile
 
     if (version >= 1) {
         archive(cereal::make_nvp("src_id", s.srcid),
@@ -490,12 +510,13 @@ void serialize(Archive& archive, AreaSource& s, const std::uint32_t version)
                 cereal::make_nvp("szinit", s.szinit));
     }
     if (version >= 2) {
-        archive(cereal::make_nvp("xshift", s.xshift),
-                cereal::make_nvp("yshift", s.yshift),
-                cereal::make_nvp("air_diffusion", s.airDiffusion),
+        archive(cereal::make_nvp("air_diffusion", s.airDiffusion),
                 cereal::make_nvp("water_diffusion", s.waterDiffusion),
                 cereal::make_nvp("cuticular_resistance", s.cuticularResistance),
                 cereal::make_nvp("henrys_law_constant", s.henryConstant));
+    }
+    if (version >= 3) {
+        archive(cereal::make_nvp("flux_profile", s.fluxProfile));
     }
 }
 
@@ -504,7 +525,8 @@ template <class Archive>
 void serialize(Archive& archive, AreaCircSource& s, const std::uint32_t version)
 {
     // VERSION HISTORY:
-    // - V2:  adds support for deposition and xshift, yshift
+    // - V2:  adds support for deposition
+    // - V3:  adds support for flux profile
 
     if (version >= 1) {
         archive(cereal::make_nvp("src_id", s.srcid),
@@ -522,12 +544,13 @@ void serialize(Archive& archive, AreaCircSource& s, const std::uint32_t version)
                 cereal::make_nvp("szinit", s.szinit));
     }
     if (version >= 2) {
-        archive(cereal::make_nvp("xshift", s.xshift),
-                cereal::make_nvp("yshift", s.yshift),
-                cereal::make_nvp("air_diffusion", s.airDiffusion),
+        archive(cereal::make_nvp("air_diffusion", s.airDiffusion),
                 cereal::make_nvp("water_diffusion", s.waterDiffusion),
                 cereal::make_nvp("cuticular_resistance", s.cuticularResistance),
                 cereal::make_nvp("henrys_law_constant", s.henryConstant));
+    }
+    if (version >= 3) {
+        archive(cereal::make_nvp("flux_profile", s.fluxProfile));
     }
 }
 
@@ -536,7 +559,8 @@ template <class Archive>
 void serialize(Archive& archive, AreaPolySource& s, const std::uint32_t version)
 {
     // VERSION HISTORY:
-    // - V2:  adds support for deposition and xshift, yshift
+    // - V2:  adds support for deposition
+    // - V3:  adds support for flux profile
 
     if (version >= 1) {
         archive(cereal::make_nvp("src_id", s.srcid),
@@ -552,12 +576,13 @@ void serialize(Archive& archive, AreaPolySource& s, const std::uint32_t version)
                 cereal::make_nvp("szinit", s.szinit));
     }
     if (version >= 2) {
-        archive(cereal::make_nvp("xshift", s.xshift),
-                cereal::make_nvp("yshift", s.yshift),
-                cereal::make_nvp("air_diffusion", s.airDiffusion),
+        archive(cereal::make_nvp("air_diffusion", s.airDiffusion),
                 cereal::make_nvp("water_diffusion", s.waterDiffusion),
                 cereal::make_nvp("cuticular_resistance", s.cuticularResistance),
                 cereal::make_nvp("henrys_law_constant", s.henryConstant));
+    }
+    if (version >= 3) {
+        archive(cereal::make_nvp("flux_profile", s.fluxProfile));
     }
 }
 
@@ -569,6 +594,8 @@ void serialize(Archive& archive, SourceGroup& sg, const std::uint32_t version)
     // - V2:  adds support for discrete receptors
     // - V3:  adds support for deposition
     // - V4:  adds support for app. start distribution
+    // - V5:  adds support for flux profile distribution
+    // - V6:  new buffer zone format
 
     if (version >= 1) {
         archive(cereal::make_nvp("group_id", sg.grpid),
@@ -589,9 +616,15 @@ void serialize(Archive& archive, SourceGroup& sg, const std::uint32_t version)
                 cereal::make_nvp("cuticular_resistance", sg.cuticularResistance),
                 cereal::make_nvp("henrys_law_constant", sg.henryConstant));
     }
+    if (version >= 5) {
+        archive(cereal::make_nvp("flux_profile", sg.fluxProfile));
+    }
+    if (version >= 6) {
+        archive(cereal::make_nvp("enable_buffer_zones", sg.enableBufferZones),
+                cereal::make_nvp("buffer_zones", sg.zones));
+    }
     if (version >= 1) {
         archive(cereal::make_nvp("sources", sg.sources),
-                cereal::make_nvp("buffer_zones", sg.zones),
                 cereal::make_nvp("receptor_rings", sg.rings),
                 cereal::make_nvp("receptor_grids", sg.grids));
     }
@@ -619,6 +652,9 @@ void serialize(Archive& archive, Scenario& s, const std::uint32_t version)
     }
     if (version >= 3) {
         archive(cereal::make_nvp("averaging_periods", s.averagingPeriods));
+    }
+    if (version >= 4) {
+        archive(cereal::make_nvp("flux_profiles", s.fluxProfiles));
     }
     if (version >= 1) {
         archive(cereal::make_nvp("aermet_sf_file", s.surfaceFile),

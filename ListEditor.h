@@ -1,17 +1,12 @@
-#pragma once
+#ifndef LISTEDITOR_H
+#define LISTEDITOR_H
 
 #include <QWidget>
-#include <QVector>
 #include <QComboBox>
-#include <QDialogButtonBox>
 #include <QDoubleValidator>
-#include <QFont>
 #include <QIcon>
-#include <QLabel>
 #include <QListWidget>
-#include <QSettings>
 #include <QToolButton>
-#include <QToolBox>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 
@@ -19,6 +14,8 @@
 
 class ListEditor : public QWidget
 {
+    Q_OBJECT
+
 private:
     QComboBox *cboEditor;
     QListWidget *lwEditor;
@@ -74,8 +71,6 @@ public:
     void ListEditor::resetLayout()
     {
         lwEditor->setFixedHeight(lwEditor->sizeHintForRow(0) + 2 * lwEditor->frameWidth());
-        //cboEditor->setFixedHeight(lwEditor->height());
-        //cboEditor->setStyleSheet("font-size: 8pt;"); // stylesheet required here.
     }
 
     std::vector<double> ListEditor::values() const
@@ -147,11 +142,6 @@ public:
         lwEditor->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         lwEditor->setSpacing(2);
 
-        // Font
-        //QFont font = lwEditor->font();
-        //font.setPointSize(8);
-        //lwEditor->setFont(font);
-
         // Connections
         connect(cboEditor, QOverload<int>::of(&QComboBox::currentIndexChanged),
                 this, &ListEditor::onCurrentIndexChanged);
@@ -172,6 +162,16 @@ public:
         mainLayout->addLayout(editorLayout);
         mainLayout->addStretch(1);
 
-        setLayout(mainLayout);
+        this->setLayout(mainLayout);
+    }
+
+    void ListEditor::setWhatsThis(const QString &text)
+    {
+        cboEditor->setWhatsThis(text);
+        btnAdd->setWhatsThis(text);
+        btnRemove->setWhatsThis(text);
+        lwEditor->setWhatsThis(text);
     }
 };
+
+#endif // LISTEDITOR_H

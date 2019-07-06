@@ -5,7 +5,10 @@
 #include <QDialogButtonBox>
 #include <QMap>
 
+#include "Utilities.h"
+
 QT_BEGIN_NAMESPACE
+class QTextEdit;
 class QTreeWidget;
 class QTreeWidgetItem;
 class QStackedWidget;
@@ -19,10 +22,14 @@ public:
     explicit SettingsDialog(QWidget *parent = nullptr);
     void addPage(QString const& label, QWidget *page);
 
+private slots:
+    void onFocusChanged(const QWidget *, const QWidget *now);
+
 private:
     QTreeWidget *navTree;
     QMap<QTreeWidgetItem *, QWidget *> navTreeItems;
     QStackedWidget *pageStack;
+    //ReadOnlyTextEdit *helpTextEdit;
 
 protected:
     QDialogButtonBox *buttonBox;

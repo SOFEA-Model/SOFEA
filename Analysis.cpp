@@ -12,6 +12,7 @@
 #include <memory>
 #include <type_traits>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <boost/algorithm/string.hpp>
@@ -21,7 +22,9 @@
 #include <boost/accumulators/statistics/max.hpp>
 #include <boost/accumulators/statistics/variance.hpp>
 #include <boost/accumulators/statistics/p_square_quantile.hpp>
+#include <boost/accumulators/statistics/rolling_count.hpp>
 #include <boost/accumulators/statistics/rolling_mean.hpp>
+#include <boost/accumulators/statistics/rolling_sum.hpp>
 #include <boost/accumulators/statistics/p_square_cumul_dist.hpp>
 #include <boost/accumulators/statistics/density.hpp>
 #include <boost/lexical_cast.hpp>
@@ -35,7 +38,7 @@ extern "C" {
 }
 
 #include <QProgressDialog>
-
+#include <QDebug>
 
 // General netCDF error handler.
 void handleError(int rc)
@@ -501,22 +504,27 @@ void Analysis::calcReceptorStats(GeneralAnalysisOpts genOpts, ReceptorAnalysisOp
     handleError(nc_get_var_double(ncid, vars.at("y").id, &yc[0]));
     handleError(nc_get_var_double(ncid, vars.at("zelev").id, &zc[0]));
 
+    // Read the calm/missing flag array.
+    auto clmsg = std::vector<unsigned char>(ntime);
+    if (opts.calcRecMaxRM && opts.recWindowSizes.size() > 0 && aveper == 1) {
+        handleError(nc_get_var_ubyte(ncid, vars.at("clmsg").id, &clmsg[0]));
+    }
+
     // Read the data array. The last dimension varies fastest.
     // (ave, grp, rec, time)
     size_t start[4] = {iave, igrp, 0, 0};
     size_t count[4] = {1, 1, nrecs, ntime};
-
     auto values = std::vector<double>(ntime * nrecs, 0);
     handleError(nc_get_vara_double(ncid, vars.at(genOpts.type).id,
                                    start, count, &values[0]));
 
     // Remove fill values. The resulting size should be:
     // floor(ntime / (aveper / min_aveper)) * nrecs
-    auto remove = std::remove(values.begin(), values.end(), NC_FILL_DOUBLE);
-    values.erase(remove, values.end());
+    values.erase(std::remove(values.begin(), values.end(), NC_FILL_DOUBLE), values.end());
     if (values.size() != (ntime / (aveper / min_aveper)) * nrecs) {
         throw std::exception("Data array has unexpected missing values.");
     }
+
     ntime = ntime / (aveper / min_aveper);
 
     // Rescale using user-defined scale factor.
@@ -524,11 +532,12 @@ void Analysis::calcReceptorStats(GeneralAnalysisOpts genOpts, ReceptorAnalysisOp
         value *= genOpts.scaleFactor;
 
     // Define the statistical accumulator types.
-    typedef accumulator_set<double, features<tag::mean>> avgacc_t;
-    typedef accumulator_set<double, features<tag::max>> maxacc_t;
-    typedef accumulator_set<double, features<tag::variance>> varacc_t;
-    typedef accumulator_set<double, stats<tag::p_square_quantile>> p2acc_t;
-    typedef accumulator_set<double, stats<tag::rolling_mean>> rmacc_t;
+    using avgacc_t = accumulator_set<double, features<tag::mean>>;
+    using maxacc_t = accumulator_set<double, features<tag::max>>;
+    using varacc_t = accumulator_set<double, features<tag::variance>>;
+    using p2acc_t = accumulator_set<double, stats<tag::p_square_quantile>>;
+    using rmacc_t = accumulator_set<double, stats<tag::rolling_mean>>;
+    using rsacc_t = accumulator_set<double, stats<tag::rolling_sum, tag::rolling_count>>;
 
     // Initialize the output coordinate vectors.
     out.id = id;
@@ -572,8 +581,9 @@ void Analysis::calcReceptorStats(GeneralAnalysisOpts genOpts, ReceptorAnalysisOp
         avgacc_t avgacc;
         maxacc_t maxacc;
         varacc_t varacc;
-        std::vector<p2acc_t> p2accs;
+        std::vector<p2acc_t> p2accs; 
         std::vector<rmacc_t> rmaccs;
+        std::vector<std::pair<rsacc_t, rsacc_t>> rsaccs;
         std::vector<maxacc_t> maxrmaccs;
 
         if (opts.calcRecP2 && opts.recPercentiles.size() > 0) {
@@ -582,6 +592,7 @@ void Analysis::calcReceptorStats(GeneralAnalysisOpts genOpts, ReceptorAnalysisOp
                 p2accs.push_back(acc);
             }
         }
+
         if (opts.calcRecMaxRM && opts.recWindowSizes.size() > 0) {
             for (double w : opts.recWindowSizes) {
                 // Determine the window size. This depends on the averaging period.
@@ -591,32 +602,71 @@ void Analysis::calcReceptorStats(GeneralAnalysisOpts genOpts, ReceptorAnalysisOp
                 // (1, 2, 3, 4, 6, 8, 12, 24)
                 if (window_hours % aveper_hours == 0) {
                     int wsize = window_hours / aveper_hours;
-                    rmacc_t acc1(tag::rolling_window::window_size = wsize);
-                    rmaccs.push_back(acc1);
-                    maxacc_t acc2;
-                    maxrmaccs.push_back(acc2);
+                    rsacc_t rsacc1(tag::rolling_window::window_size = wsize); // concentration
+                    rsacc_t rsacc2(tag::rolling_window::window_size = wsize); // valid hours
+                    rsaccs.push_back(std::make_pair(rsacc1, rsacc2));
+                    rmacc_t rmacc(tag::rolling_window::window_size = wsize);
+                    rmaccs.push_back(rmacc);
+                    maxacc_t maxrmacc;
+                    maxrmaccs.push_back(maxrmacc);
+                }
+                else {
+                    throw std::exception("Invalid averaging period.");
                 }
             }
         }
 
         // Main update loop.
-        for (int t = 0; t < ntime; ++t) {
+        for (int t = 0; t < ntime; ++t)
+        {
             double val = values.at(i * ntime + t);
 
-            if (opts.calcRecMean)
+            if (opts.calcRecMean) {
                 avgacc(val);
-            if (opts.calcRecMax)
+            }
+            if (opts.calcRecMax) {
                 maxacc(val);
-            if (opts.calcRecStdDev)
+            }
+            if (opts.calcRecStdDev) {
                 varacc(val);
+            }
             if (opts.calcRecP2) {
                 for (p2acc_t &acc : p2accs)
                     acc(val);
             }
             if (opts.calcRecMaxRM) {
-                for (int j = 0; j < rmaccs.size(); ++j) {
-                    rmaccs[j](val);
-                    maxrmaccs[j](rolling_mean(rmaccs[j]));
+                if (aveper == 1) {
+                    // Apply EPA averaging policy for 1 hour averaging period.
+                    int cmflag = clmsg.at(t * (aveper / min_aveper));
+                    double cm = (cmflag == 0) ? 0 : 1;
+
+                    for (int j = 0; j < rsaccs.size(); ++j) {
+                        rsaccs[j].first(val);
+                        rsaccs[j].second(cm);
+
+                        // Current number of elements in the rolling window.
+                        double n = rolling_count(rsaccs[j].first);
+
+                        double numerator = rolling_sum(rsaccs[j].first);
+
+                        if (n <= 24) {
+                            // Short-term average. See SUBROUTINE AVER in AERMOD calc2.f
+                            double denominator = std::max(n - rolling_sum(rsaccs[j].second), std::round(n * 0.75 + 0.4));
+                            maxrmaccs[j](numerator / denominator);
+                        }
+                        else {
+                            // Long-term average. See SUBROUTINE PERAVE in AERMOD output.f
+                            double denominator = n - rolling_sum(rsaccs[j].second);
+                            maxrmaccs[j](numerator / denominator);
+                        }
+                    }
+                }
+                else {
+                    // Calculate standard rolling mean. Averaging already applied.
+                    for (int j = 0; j < rmaccs.size(); ++j) {
+                        rmaccs[j](val);
+                        maxrmaccs[j](rolling_mean(rmaccs[j]));
+                    }
                 }
             }
         }

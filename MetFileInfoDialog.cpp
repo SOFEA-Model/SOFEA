@@ -1,5 +1,7 @@
 #include <QtWidgets>
 
+#include <array>
+
 #include <qwt_series_data.h>
 #include <qwt_polar_grid.h>
 #include <qwt_polar_curve.h>
@@ -12,13 +14,7 @@
 #include <boost/histogram.hpp>
 
 #include "MetFileInfoDialog.h"
-
-
-// Internal function from qwtpolar/src/qwt_polar_curve.cpp
-static inline bool qwtInsidePole(const QwtScaleMap &map, double radius)
-{
-    return map.isInverting() ? (radius > map.s1()) : (radius < map.s1());
-}
+#include "PixmapUtilities.h"
 
 //-----------------------------------------------------------------------------
 // WindRoseSector
@@ -28,7 +24,7 @@ void WindRoseSector::setBrush(const QBrush &brush)
 {
     if (brush != d_brush) {
         d_brush = brush;
-        itemChanged();
+        emit itemChanged();
     }
 }
 
@@ -47,7 +43,7 @@ void WindRoseSector::drawCurve(QPainter *painter, int style,
         drawLines(painter, azimuthMap, radialMap, pole, from, to);
         break;
     case UserCurve:
-        drawPolygon(painter, azimuthMap, radialMap, pole, from, to);
+        drawSector(painter, azimuthMap, radialMap, pole, from, to);
         break;
     case NoCurve:
     default:
@@ -55,34 +51,45 @@ void WindRoseSector::drawCurve(QPainter *painter, int style,
     }
 }
 
-void WindRoseSector::drawPolygon(QPainter *painter,
+void WindRoseSector::drawSector(QPainter *painter,
     const QwtScaleMap &azimuthMap, const QwtScaleMap &radialMap,
     const QPointF &pole, int from, int to) const
 {
-    int size = to - from + 1;
-    if (size <= 0)
+    // Draw a custom curve style consisting of a filled annular sector
+    // bounded by 2 concentric circles and 2 lines. Assumes that the
+    // vertex order is counter-clockwise starting from the minimum radius
+    // and azimuth.
+
+    const int n = to - from + 1;
+    if (n != 2)
         return;
 
-    QPolygonF polyline;
-    polyline.resize(size);
-    QPointF *polylineData = polyline.data();
+    const QwtPointPolar a0r0 = sample(0);
+    const QwtPointPolar a1r1 = sample(1);
 
-    for (int i = from; i <= to; ++i)
-    {
-        QwtPointPolar point = sample(i);
-        if (!qwtInsidePole(radialMap, point.radius())) {
-            double r = radialMap.transform(point.radius());
-            const double a = azimuthMap.transform(point.azimuth());
-            polylineData[i - from] = qwtPolar2Pos(pole, r, a);
-        }
-        else {
-            polylineData[i - from] = pole;
-        }
-    }
+    const double r0 = radialMap.transform(a0r0.radius());
+    const double a0 = azimuthMap.transform(a0r0.azimuth());
+    const double r1 = radialMap.transform(a1r1.radius());
+    const double a1 = azimuthMap.transform(a1r1.azimuth());
+
+    QRectF rect0, rect1;
+    rect0.setSize(QSizeF(r0 * 2, r0 * 2));
+    rect1.setSize(QSizeF(r1 * 2, r1 * 2));
+    rect0.moveCenter(pole);
+    rect1.moveCenter(pole);
+
+    const double theta = qRadiansToDegrees(a1 - a0);
+
+    QPainterPath path;
+    path.arcMoveTo(rect0, qRadiansToDegrees(a0));
+    path.arcTo(rect0, qRadiansToDegrees(a0), theta);
+    path.lineTo(qwtPolar2Pos(pole, r1, a1));
+    path.arcTo(rect1, qRadiansToDegrees(a1), -theta);
+    path.closeSubpath();
 
     painter->setBrush(brush());
     painter->setPen(pen());
-    QwtPainter::drawPolygon(painter, polyline);
+    QwtPainter::drawPath(painter, path);
 }
 
 //-----------------------------------------------------------------------------
@@ -92,8 +99,8 @@ void WindRoseSector::drawPolygon(QPainter *painter,
 WindRosePlot::WindRosePlot(QWidget *parent) : QwtPolarPlot(parent)
 {
     setAutoReplot(false);
-    setPlotBackground(Qt::white);
     setMinimumSize(600, 600);
+    setPlotBackground(Qt::white);
 
     const QwtInterval radialInterval(-0.01, 0.2);
     const QwtInterval azimuthInterval(0.0, 360.0);
@@ -108,7 +115,7 @@ WindRosePlot::WindRosePlot(QWidget *parent) : QwtPolarPlot(parent)
 
     // Grid and Axes
     d_grid = new QwtPolarGrid();
-    d_grid->setPen(QPen(Qt::darkGray));
+    d_grid->setPen(QPen(Qt::black));
 
     for (int scaleId=0; scaleId < QwtPolar::ScaleCount; ++scaleId) {
         d_grid->showGrid(scaleId);
@@ -126,6 +133,7 @@ WindRosePlot::WindRosePlot(QWidget *parent) : QwtPolarPlot(parent)
     d_grid->showAxis(QwtPolar::AxisBottom, false);
     d_grid->showGrid(QwtPolar::Azimuth, true);
     d_grid->showGrid(QwtPolar::Radius, true);
+    d_grid->setZ(1000);
 
     d_grid->attach(this);
 }
@@ -137,12 +145,12 @@ WindRosePlot::WindRosePlot(QWidget *parent) : QwtPolarPlot(parent)
 class PolarPointSeriesData : public QwtArraySeriesData<QwtPointPolar>
 {
 public:
-    PolarPointSeriesData(QVector<QwtPointPolar> samples)
+    PolarPointSeriesData(const QVector<QwtPointPolar>& samples)
     {
         setSamples(samples);
     }
 
-    void setSamples(QVector<QwtPointPolar> samples)
+    void setSamples(const QVector<QwtPointPolar>& samples)
     {
         d_samples.clear();
         d_boundingRect = QRectF();
@@ -172,7 +180,7 @@ MetFileInfoDialog::MetFileInfoDialog(std::shared_ptr<SurfaceData> sd, QWidget *p
     : QDialog(parent), sd(sd)
 {
     setWindowTitle("Diagnostics");
-    setWindowFlag(Qt::WindowMaximizeButtonHint);
+    setWindowFlag(Qt::Tool);
 
     // Data Controls
     timeRangeSlider = new ctkRangeSlider(Qt::Horizontal);
@@ -197,6 +205,32 @@ MetFileInfoDialog::MetFileInfoDialog(std::shared_ptr<SurfaceData> sd, QWidget *p
     sbBinCount = new QSpinBox;
     sbBinCount->setRange(1, 6);
     sbBinCount->setValue(6);
+
+    // TEST: Gradient Selector
+    /*
+    QComboBox *cboGradient = new QComboBox;
+    cboGradient->setIconSize(QSize(48, 16));
+    QStandardItemModel *gradientModel = new QStandardItemModel;
+    cboGradient->setModel(gradientModel);
+    cboGradient->setItemDelegate(new GradientItemDelegate);
+
+    QStandardItem *item1 = new QStandardItem;
+    QLinearGradient fade1(0, 0, 48, 16);
+    fade1.setColorAt(0, QColor(0, 0, 0, 255));
+    fade1.setColorAt(1, QColor(0, 0, 0, 0));
+    item1->setData("TEST", Qt::DisplayRole);
+    item1->setData(QVariant::fromValue(fade1), Qt::DecorationRole);
+    gradientModel->setItem(0, 0, item1);
+
+    QStandardItem *item2 = new QStandardItem;
+    QLinearGradient fade2(0, 0, 48, 16);
+    fade2.setColorAt(0, QColor(255, 0, 0, 255));
+    fade2.setColorAt(1, QColor(0, 0, 255, 255));
+    item2->setData("TEST", Qt::DisplayRole);
+    item2->setData(QVariant::fromValue(fade2), Qt::DecorationRole);
+    gradientModel->setItem(1, 0, item2);
+    */
+
 
     // Bin Editor Model
     binModel = new QStandardItemModel;
@@ -247,6 +281,8 @@ MetFileInfoDialog::MetFileInfoDialog(std::shared_ptr<SurfaceData> sd, QWidget *p
     controlsLayout->addLayout(sectorSizeLayout,                       0, 7);
     controlsLayout->addWidget(new QLabel(tr("Bin count: ")),          1, 6);
     controlsLayout->addWidget(sbBinCount,                             1, 7);
+    //controlsLayout->addWidget(new QLabel(tr("Gradient: ")),           2, 6);
+    //controlsLayout->addWidget(cboGradient,                            2, 7);
 
     // Azimuth Spacing (degrees)
     // Automatic Radius, or Min/Max
@@ -284,12 +320,12 @@ MetFileInfoDialog::MetFileInfoDialog(std::shared_ptr<SurfaceData> sd, QWidget *p
 void MetFileInfoDialog::init()
 {
     // Default Color Map
-    wrColors.push_back(QColor(0,   41,  255, 200));
-    wrColors.push_back(QColor(0,   213, 255, 200));
-    wrColors.push_back(QColor(125, 255, 122, 200));
-    wrColors.push_back(QColor(255, 230, 0,   200));
-    wrColors.push_back(QColor(255, 71,  0,   200));
-    wrColors.push_back(QColor(128, 0,   0,   200));
+    wrColors.push_back(QColor(0,   41,  255, 192));
+    wrColors.push_back(QColor(0,   213, 255, 192));
+    wrColors.push_back(QColor(125, 255, 122, 192));
+    wrColors.push_back(QColor(255, 230, 0,   192));
+    wrColors.push_back(QColor(255, 71,  0,   192));
+    wrColors.push_back(QColor(128, 0,   0,   192));
 
     // Defaults
     rbSectorSize15->setChecked(true);
@@ -305,6 +341,7 @@ void MetFileInfoDialog::init()
     connect(sbBinCount, QOverload<int>::of(&QSpinBox::valueChanged),
             this, &MetFileInfoDialog::onBinCountChanged);
 
+    // Slider Configuration
     timeRangeSlider->setRange(1, sd->nrec);
     timeRangeSlider->setPositions(1, sd->nrec);
     timeRangeSlider->setEnabled(true);
@@ -319,7 +356,7 @@ void MetFileInfoDialog::onIntervalChanged(const int min, const int max)
     idxMin = min;
     idxMax = max;
 
-    // Recalculate derived values on surface data subset.
+    // Recalculate metrics on surface data subset.
     int nrec = idxMax - idxMin + 1;
     int ncalm = 0;
     int nmiss = 0;
@@ -375,10 +412,6 @@ void MetFileInfoDialog::drawSectors()
     if (idxMin < 1 || idxMax > sd->records.size())
         return;
 
-    // Remove and delete existing curves.
-    wrSectors.clear();
-    wrPlot->detachItems(QwtPolarItem::Rtti_PolarCurve, true);
-
     // Number of valid observations (denominator).
     int nvalid = 0;
 
@@ -401,15 +434,16 @@ void MetFileInfoDialog::drawSectors()
     if (nvalid <= 0)
         return;
 
+    // Remove and detach existing curves.
+    wrSectors.clear();
+    wrPlot->detachItems(QwtPolarItem::Rtti_PolarCurve, true);
+
     // Generate the sector curves.
     // Radius represents proportion of valid observations.
-
     double max_radius = 0;
-
     for (auto wdir : hist.axis(0_c))
     {
         double prev_radius = 0;
-
         for (auto wspd : hist.axis(1_c))
         {
             double azimuth0 = wdir.lower() + azimuthSpacing;
@@ -421,14 +455,9 @@ void MetFileInfoDialog::drawSectors()
             if (radius1 > max_radius)
                 max_radius = radius1;
 
-            // Create the point series for Qwt.
-            QVector<QwtPointPolar> vertices;
-            vertices.push_back(QwtPointPolar(azimuth0, radius0));
-            vertices.push_back(QwtPointPolar(azimuth0, radius1));
-            vertices.push_back(QwtPointPolar(azimuth1, radius1));
-            vertices.push_back(QwtPointPolar(azimuth1, radius0));
-            vertices.push_back(QwtPointPolar(azimuth0, radius0));
-            PolarPointSeriesData *series = new PolarPointSeriesData(vertices);
+            // Create the series data for the sector.
+            PolarPointSeriesData *series = new PolarPointSeriesData(
+                { QwtPointPolar(azimuth0, radius0), QwtPointPolar(azimuth1, radius1) });
 
             // Get the brush associated with the bin.
             QBrush brush = QBrush(QColor(128, 128, 128, 200));
@@ -458,7 +487,7 @@ void MetFileInfoDialog::drawSectors()
 
     wrPlot->replot();
 
-    // Legend labels for wind speed.
+    // Set legend labels for wind speed.
     for (auto wspd : hist.axis(1_c))
     {
         double radial0 = wspd.lower();
@@ -467,7 +496,7 @@ void MetFileInfoDialog::drawSectors()
                         tr(", ") + QString::number(radial1, 'g', 5) + tr(")");
 
         QBrush brush = QBrush(wrColors[wspd.idx()]);
-        QPixmap pm = ColorPickerDelegate::brushValuePixmap(brush);
+        QPixmap pm = PixmapUtilities::brushValuePixmap(brush);
         QStandardItem *item = new QStandardItem;
         item->setEditable(false);
         item->setData(label, Qt::DisplayRole);

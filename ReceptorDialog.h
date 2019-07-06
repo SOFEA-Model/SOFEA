@@ -12,9 +12,11 @@
 #include "StandardTableEditor.h"
 #include "Utilities.h"
 
+#include "Scenario.h"
 #include "SourceGroup.h"
 
 QT_BEGIN_NAMESPACE
+class QComboBox;
 class QDoubleSpinBox;
 class QSpinBox;
 class QLabel;
@@ -32,6 +34,7 @@ private slots:
     void onRemoveRingClicked();
 
 private:
+    QComboBox *cboSourceGroup;
     QDoubleSpinBox *sbRingBuffer;
     QDoubleSpinBox *sbRingSpacing;
     QStandardItemModel *ringModel;

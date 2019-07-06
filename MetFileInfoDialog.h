@@ -18,7 +18,6 @@
 
 #include "MetFileParser.h"
 #include "Utilities.h"
-#include "ItemDelegate.h"
 #include "StandardTableView.h"
 
 class QwtPolarGrid;
@@ -38,7 +37,7 @@ private:
         const QwtScaleMap &azimuthMap, const QwtScaleMap &radialMap,
         const QPointF &pole, int from, int to) const override;
 
-    void drawPolygon(QPainter *painter,
+    void drawSector(QPainter *painter,
         const QwtScaleMap &azimuthMap, const QwtScaleMap &radialMap,
         const QPointF &pole, int from, int to) const;
 

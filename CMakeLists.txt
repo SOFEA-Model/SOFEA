@@ -33,8 +33,9 @@ option(SOFEA_DEBUG "Enable verbose logging" OFF)
 find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Svg REQUIRED)
 find_package(Qt5Network REQUIRED)
+find_package(Qt5WinExtras REQUIRED)
 
-set(QT5_LIBRARIES Qt5::Widgets Qt5::Svg Qt5::Network)
+set(QT5_LIBRARIES Qt5::Widgets Qt5::Svg Qt5::Network Qt5::WinExtras)
 
 #############################
 # Boost
@@ -187,19 +188,24 @@ link_directories(${SCINTILLA_LIBRARY_DIR})
 set(TARGET ${CMAKE_PROJECT_NAME})
 
 set(SOURCES
+    ctkCollapsibleGroupBox.cpp
+    ctkProxyStyle.cpp
     ctkRangeSlider.cpp
     main.cpp
     Analysis.cpp
     AnalysisWindow.cpp
+    BufferZoneModel.cpp
     CurveTracker.cpp
     DateTimeDistributionDialog.cpp
     FluxProfileDialog.cpp
     FluxProfileModel.cpp
+    FluxProfilePlot.cpp
     GenericDistribution.cpp
     GenericDistributionDialog.cpp
     GeometryOp.cpp
     GeosOp.cpp
     InputViewer.cpp
+    InputWriter.cpp
     IPCServer.cpp
     ItemDelegate.cpp
     LogWidget.cpp
@@ -208,6 +214,7 @@ set(SOURCES
     MetFileParser.cpp
     MonteCarloDateTimeEdit.cpp
     MonteCarloLineEdit.cpp
+    PixmapUtilities.cpp
     ReceptorDialog.cpp
     RunModelDialog.cpp
     RunstreamParser.cpp
@@ -236,14 +243,19 @@ set(SOURCES
 )
 
 set(HEADERS
+    ctkCollapsibleGroupBox.h
+    ctkProxyStyle.h
     ctkRangeSlider.h
     Common.h
     Analysis.h
     AnalysisWindow.h
+    BufferZone.h
+    BufferZoneModel.h
     CurveTracker.h
     FluxProfile.h
     FluxProfileDialog.h
     FluxProfileModel.h
+    FluxProfilePlot.h
     DateTimeDistribution.h
     DateTimeDistributionDialog.h
     GenericDistribution.h
@@ -251,6 +263,7 @@ set(HEADERS
     GeometryOp.h
     GeosOp.h
     InputViewer.h
+    InputWriter.h
     IPCMessage.h
     IPCServer.h
     ItemDelegate.h
@@ -261,6 +274,7 @@ set(HEADERS
     MetFileParser.h
     MonteCarloDateTimeEdit.h
     MonteCarloLineEdit.h
+    PixmapUtilities.h
     ReceptorDialog.h
     RunModelDialog.h
     Runstream.h
@@ -290,8 +304,6 @@ set(HEADERS
     UDUnitsLineEdit.h
     Utilities.h
 )
-
-
 
 qt5_wrap_ui(UI_GENERATED_HEADERS)
 add_definitions(-DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
@@ -324,6 +336,8 @@ set(EXTRA_LIBS "crypt32.lib" "wldap32.lib" "normaliz.lib" "wsock32.lib" "ws2_32.
 
 # Add WIN32 after ${TARGET} in add_executable to turn off console window
 # ${HEADERS} in add_executable for Qt Creator support
+
+#add_executable(${TARGET} WIN32 ${SOURCES})
 add_executable(${TARGET} WIN32 ${SOURCES} ${HEADERS} ${UI_GENERATED_HEADERS})
 
 target_link_libraries(${TARGET}

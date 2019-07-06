@@ -96,6 +96,7 @@ struct Scenario
     //std::vector<ReceptorGrid> grids;
 
     // Containers
-    std::vector<std::shared_ptr<FluxProfile>> fluxProfiles;
+    using FluxProfilePtr = std::shared_ptr<FluxProfile>;
+    std::vector<FluxProfilePtr> fluxProfiles;
     boost::ptr_vector<SourceGroup> sourceGroups;
 };

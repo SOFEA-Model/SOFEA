@@ -87,7 +87,7 @@ void MonteCarloDateTimeEdit::clearDistribution()
 
 void MonteCarloDateTimeEdit::onSelectDistribution()
 {
-    DateTimeDistributionDialog dialog(currentDist);
+    DateTimeDistributionDialog dialog(currentDist, this);
 
     if (QDialog::Accepted == dialog.exec())
     {

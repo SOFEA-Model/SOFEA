@@ -16,11 +16,6 @@ void addStandardItem(QStandardItemModel *model, int row, int col, T value, bool 
     model->setItem(row, col, item);
 }
 
-// TODO:
-// - zElev: terrain elevation (m)
-// - zHill: hill height scale (m)
-// - zFlag: receptor height above terrain (m)
-
 //-----------------------------------------------------------------------------
 // ReceptorRingTab
 //-----------------------------------------------------------------------------
@@ -28,6 +23,8 @@ void addStandardItem(QStandardItemModel *model, int row, int col, T value, bool 
 ReceptorRingTab::ReceptorRingTab(QStandardItemModel *model, QWidget *parent)
     : QWidget(parent), ringModel(model)
 {
+    cboSourceGroup = new QComboBox;
+
     sbRingBuffer = new QDoubleSpinBox;
     sbRingBuffer->setRange(0.1, 99000); // 99km
     sbRingBuffer->setValue(100);
@@ -63,10 +60,12 @@ ReceptorRingTab::ReceptorRingTab(QStandardItemModel *model, QWidget *parent)
     ringInputLayout->setColumnMinimumWidth(0, 200);
     ringInputLayout->setColumnStretch(0, 0);
     ringInputLayout->setColumnStretch(1, 1);
-    ringInputLayout->addWidget(new QLabel("Buffer distance (m): "), 0, 0);
-    ringInputLayout->addWidget(new QLabel("Receptor spacing (m): "), 1, 0);
-    ringInputLayout->addWidget(sbRingBuffer, 0, 1);
-    ringInputLayout->addWidget(sbRingSpacing, 1, 1);
+    ringInputLayout->addWidget(new QLabel("Source group: "), 0, 0);
+    ringInputLayout->addWidget(new QLabel("Buffer distance (m): "), 1, 0);
+    ringInputLayout->addWidget(new QLabel("Receptor spacing (m): "), 2, 0);
+    ringInputLayout->addWidget(cboSourceGroup, 0, 1);
+    ringInputLayout->addWidget(sbRingBuffer, 1, 1);
+    ringInputLayout->addWidget(sbRingSpacing, 2, 1);
 
     QVBoxLayout *ringTableLayout = new QVBoxLayout;
     ringTableLayout->setContentsMargins(0, 0, 0, 0);
@@ -121,15 +120,12 @@ ReceptorNodeTab::ReceptorNodeTab(QStandardItemModel *model, QWidget *parent)
 {
     leNodeX = new DoubleLineEdit(-10000000, 10000000, 2);
     leNodeX->setValue(0);
-    leNodeX->setFixedWidth(90);
 
     leNodeY = new DoubleLineEdit(-10000000, 10000000, 2);
     leNodeY->setValue(0);
-    leNodeY->setFixedWidth(90);
 
     leNodeZ = new DoubleLineEdit(0, 10000, 2);
     leNodeZ->setValue(0);
-    leNodeZ->setFixedWidth(90);
 
     nodeTable = new StandardTableView;
     nodeTable->setModel(nodeModel);
@@ -186,9 +182,9 @@ void ReceptorNodeTab::onAddNodeClicked()
     // Insert item at back.
     int currentRow = nodeModel->rowCount();
     addStandardItem(nodeModel, currentRow, 0, color, true);
-    addStandardItem(nodeModel, currentRow, 1, leNodeX->value(), false);
-    addStandardItem(nodeModel, currentRow, 2, leNodeY->value(), false);
-    addStandardItem(nodeModel, currentRow, 3, leNodeZ->value(), false);
+    addStandardItem(nodeModel, currentRow, 1, leNodeX->value(), true);
+    addStandardItem(nodeModel, currentRow, 2, leNodeY->value(), true);
+    addStandardItem(nodeModel, currentRow, 3, leNodeZ->value(), true);
 }
 
 void ReceptorNodeTab::onRemoveNodeClicked()
@@ -209,9 +205,6 @@ ReceptorGridTab::ReceptorGridTab(QStandardItemModel *model, QWidget *parent)
     sbGridYCount = new QSpinBox;
     sbGridXDelta = new QDoubleSpinBox;
     sbGridYDelta = new QDoubleSpinBox;
-
-    leGridXInit->setFixedWidth(90);
-    leGridYInit->setFixedWidth(90);
 
     sbGridXCount->setRange(1, 1000);
     sbGridYCount->setRange(1, 1000);
@@ -542,6 +535,7 @@ void ReceptorDialog::setRingGeometry(ReceptorRing &ring) const
 
     // Create the source mpolygon for the buffer.
     std::vector<QPolygonF> mpolygon;
+    // FIXME: select the active source group for the ring
     for (const Source &s : sgPtr->sources)
         mpolygon.push_back(s.geometry);
 

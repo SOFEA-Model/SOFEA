@@ -25,7 +25,7 @@ StandardPlot::StandardPlot(QWidget *parent) : QwtPlot(parent)
         axisWidget(axis)->setMargin(0);
         axisScaleDraw(axis)->enableComponent(QwtAbstractScaleDraw::Backbone, false);
         QFont axisFont = QApplication::font();
-        axisFont.setPointSize(9);
+        axisFont.setPointSize(8);
         setAxisFont(axis, axisFont);
     }
 
@@ -65,7 +65,7 @@ void StandardPlot::setAxisTitleInternal(QwtPlot::Axis axis, const QString& text)
 {
     QwtText title(text);
     QFont axisTitleFont = QApplication::font();
-    axisTitleFont.setPointSize(10);
+    axisTitleFont.setPointSize(8);
     title.setFont(axisTitleFont);
     setAxisTitle(axis, title);
 }
@@ -170,7 +170,7 @@ void StandardPlot::addRefVLine(double x, double y, const QString& label)
     // TODO: make sure label is inside plotLayout()->canvasRect()
     QwtText reflabel(label);
     QFont font = reflabel.font();
-    font.setPointSize(9);
+    font.setPointSize(8);
     reflabel.setFont(font);
     refline->setLabel(reflabel);
     refline->setLabelAlignment(Qt::AlignRight);

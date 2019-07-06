@@ -28,15 +28,9 @@ public:
     double getProbability(int row) const;
     void normalize();
 
-private slots:
-    void onSetClicked();
-    void onSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
-
 private:
-    QDoubleSpinBox *sbProbability;
     SamplingProxyModel *proxyModel;
     StandardTableView *view;
-    QPushButton *btnSet;
     QPushButton *btnNormalize;
 };
 

@@ -11,7 +11,6 @@ UDUnitsLineEdit::UDUnitsLineEdit(QWidget *parent)
 {
     setMaxLength(256);
     setAutoFillBackground(true);
-    //setFrame(false);
 
     m_defaultPalette = this->palette();
     m_errorPalette = this->palette();
@@ -28,9 +27,9 @@ void UDUnitsLineEdit::setConvertFrom(const QString &unit)
 
 void UDUnitsLineEdit::setBasePalette()
 {
-    QColor bgColor = QWidget::palette().window().color();
-    m_defaultPalette.setColor(QPalette::Base, bgColor);
-    m_errorPalette.setColor(QPalette::Base, bgColor);
+    QColor windowColor = QWidget::palette().window().color();
+    m_defaultPalette.setColor(QPalette::Base, windowColor);
+    m_errorPalette.setColor(QPalette::Base, windowColor);
     this->setPalette(m_defaultPalette);
 }
 

@@ -124,40 +124,40 @@ const QMultiMap<ID, ParameterInfo> parameterMap = {
 //    ---------------------    ------------------------     -----------   -----------   -----------   -----------    ----
     { ID::UniformInt,        { "Upper: ",                   boost::none,  boost::none,  boost::none,            0,      1 }},
     { ID::UniformInt,        { "Lower: ",                   boost::none,  boost::none,  boost::none,            0,      1 }},
-    { ID::UniformReal,       { "Upper: ",                   boost::none,  boost::none,  boost::none,            3,   0.01 }},
-    { ID::UniformReal,       { "Lower: ",                   boost::none,  boost::none,  boost::none,            3,   0.01 }},
-    { ID::Binomial,          { "Probability of success: ",  boost::none,        0.001,        1.000,            3,   0.01 }},
+    { ID::UniformReal,       { "Upper: ",                   boost::none,  boost::none,  boost::none,            6,   0.01 }},
+    { ID::UniformReal,       { "Lower: ",                   boost::none,  boost::none,  boost::none,            6,   0.01 }},
+    { ID::Binomial,          { "Probability of success: ",  boost::none,     0.000001,        1.000,            6,   0.01 }},
     { ID::Binomial,          { "Trials: ",                  boost::none,            1,  boost::none,            0,      1 }},
-    { ID::Geometric,         { "Probability: ",             boost::none,        0.001,        0.999,            3,   0.01 }},
-    { ID::NegativeBinomial,  { "Probability of success: ",  boost::none,        0.001,        0.999,            3,   0.01 }},
+    { ID::Geometric,         { "Probability: ",             boost::none,     0.000001,        0.999,            6,   0.01 }},
+    { ID::NegativeBinomial,  { "Probability of success: ",  boost::none,     0.000001,        0.999,            6,   0.01 }},
     { ID::NegativeBinomial,  { "Successes: ",               boost::none,            1,  boost::none,            0,      1 }},
-    { ID::Beta,              { "Beta: ",                    boost::none,        0.001,  boost::none,            3,   0.01 }},
-    { ID::Beta,              { "Alpha: ",                   boost::none,        0.001,  boost::none,            3,   0.01 }},
-    { ID::Exponential,       { "Rate: ",                    boost::none,        0.001,  boost::none,            3,   0.01 }},
-    { ID::ExtremeValue,      { "Scale: ",                   boost::none,        0.001,  boost::none,            3,   0.01 }},
-    { ID::ExtremeValue,      { "Location: ",                boost::none,        0.001,  boost::none,            3,   0.01 }},
-    { ID::Gamma,             { "Scale: ",                   boost::none,        0.001,  boost::none,            3,   0.01 }},
-    { ID::Gamma,             { "Shape: ",                   boost::none,        0.001,  boost::none,            3,   0.01 }},
-    { ID::Laplace,           { "Scale: ",                   boost::none,        0.001,  boost::none,            3,   0.01 }},
-    { ID::Laplace,           { "Location: ",                boost::none,  boost::none,  boost::none,            3,   0.01 }},
-    { ID::Poisson,           { "Mean: ",                    boost::none,        0.001,  boost::none,            3,      1 }},
-    { ID::Weibull,           { "Scale: ",                   boost::none,        0.001,  boost::none,            3,   0.01 }},
-    { ID::Weibull,           { "Shape: ",                   boost::none,            1,  boost::none,            3,   0.01 }},
-    { ID::Cauchy,            { "Scale: ",                   boost::none,            0,  boost::none,            3,   0.01 }},
-    { ID::Cauchy,            { "Location: ",                boost::none,  boost::none,  boost::none,            3,   0.01 }},
+    { ID::Beta,              { "Beta: ",                    boost::none,     0.000001,  boost::none,            6,   0.01 }},
+    { ID::Beta,              { "Alpha: ",                   boost::none,     0.000001,  boost::none,            6,   0.01 }},
+    { ID::Exponential,       { "Rate: ",                    boost::none,     0.000001,  boost::none,            6,   0.01 }},
+    { ID::ExtremeValue,      { "Scale: ",                   boost::none,     0.000001,  boost::none,            6,   0.01 }},
+    { ID::ExtremeValue,      { "Location: ",                boost::none,     0.000001,  boost::none,            6,   0.01 }},
+    { ID::Gamma,             { "Scale: ",                   boost::none,     0.000001,  boost::none,            6,   0.01 }},
+    { ID::Gamma,             { "Shape: ",                   boost::none,     0.000001,  boost::none,            6,   0.01 }},
+    { ID::Laplace,           { "Scale: ",                   boost::none,     0.000001,  boost::none,            6,   0.01 }},
+    { ID::Laplace,           { "Location: ",                boost::none,  boost::none,  boost::none,            6,   0.01 }},
+    { ID::Poisson,           { "Mean: ",                    boost::none,     0.000001,  boost::none,            6,      1 }},
+    { ID::Weibull,           { "Scale: ",                   boost::none,     0.000001,  boost::none,            6,   0.01 }},
+    { ID::Weibull,           { "Shape: ",                   boost::none,            1,  boost::none,            6,   0.01 }},
+    { ID::Cauchy,            { "Scale: ",                   boost::none,            0,  boost::none,            6,   0.01 }},
+    { ID::Cauchy,            { "Location: ",                boost::none,  boost::none,  boost::none,            6,   0.01 }},
     { ID::ChiSquared,        { "Degrees of freedom: ",      boost::none,            2,         1000,            0,      1 }},
-    { ID::NCChiSquared,      { "Non-centrality: ",          boost::none,        0.001,         1000,            3,   0.01 }},
+    { ID::NCChiSquared,      { "Non-centrality: ",          boost::none,     0.000001,         1000,            6,   0.01 }},
     { ID::NCChiSquared,      { "Degrees of freedom: ",      boost::none,            1,         1000,            0,      1 }},
     { ID::FisherF,           { "Degrees of freedom 2: ",    boost::none,            1,          100,            0,      1 }},
     { ID::FisherF,           { "Degrees of freedom 1: ",    boost::none,            2,           20,            0,      1 }},
-    { ID::Lognormal,         { "Scale: ",                   boost::none,        0.001,  boost::none,            3,   0.01 }},
-    { ID::Lognormal,         { "Location: ",                boost::none,  boost::none,  boost::none,            3,   0.01 }},
-    { ID::Normal,            { "Standard deviation: ",      boost::none,        0.001,  boost::none,            3,   0.01 }},
-    { ID::Normal,            { "Mean: ",                    boost::none,  boost::none,  boost::none,            3,   0.01 }},
+    { ID::Lognormal,         { "Scale: ",                   boost::none,     0.000001,  boost::none,            6,   0.01 }},
+    { ID::Lognormal,         { "Location: ",                boost::none,  boost::none,  boost::none,            6,   0.01 }},
+    { ID::Normal,            { "Standard deviation: ",      boost::none,     0.000001,  boost::none,            6,   0.01 }},
+    { ID::Normal,            { "Mean: ",                    boost::none,  boost::none,  boost::none,            6,   0.01 }},
     { ID::StudentT,          { "Degrees of freedom: ",      boost::none,            1,          100,            0,      1 }},
-    { ID::Triangle,          { "Upper: ",                   boost::none,  boost::none,  boost::none,            3,   0.01 }},
-    { ID::Triangle,          { "Mode: ",                    boost::none,  boost::none,  boost::none,            3,   0.01 }},
-    { ID::Triangle,          { "Lower: ",                   boost::none,  boost::none,  boost::none,            3,   0.01 }}
+    { ID::Triangle,          { "Upper: ",                   boost::none,  boost::none,  boost::none,            6,   0.01 }},
+    { ID::Triangle,          { "Mode: ",                    boost::none,  boost::none,  boost::none,            6,   0.01 }},
+    { ID::Triangle,          { "Lower: ",                   boost::none,  boost::none,  boost::none,            6,   0.01 }}
 };
 
 // Remaps parameters of the Boost.Random distribution to ParameterInfo.
@@ -396,6 +396,8 @@ GenericDistributionDialog::GenericDistributionDialog(const GenericDistribution& 
     : QDialog(parent), currentDist(d)
 {
     setWindowTitle(tr("Define Distribution"));
+    setWindowFlag(Qt::Tool);
+    setWindowIcon(QIcon(":/images/Effects_32x.png"));
 
     distributionTree = new QTreeView;
     distributionTree->setHeaderHidden(true);
@@ -434,12 +436,12 @@ GenericDistributionDialog::GenericDistributionDialog(const GenericDistribution& 
     controlsFrame->setLayout(controlsLayout);
     controlsFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
     QPalette controlsFramePalette = controlsFrame->palette();
-    controlsFramePalette.setColor(QPalette::Background, Qt::white);
+    controlsFramePalette.setColor(QPalette::Window, Qt::white);
     controlsFrame->setPalette(controlsFramePalette);
     controlsFrame->setAutoFillBackground(true);
 
     // Button Box
-    buttonBox = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Close);
+    buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
@@ -457,7 +459,7 @@ GenericDistributionDialog::GenericDistributionDialog(const GenericDistribution& 
     plotFrame->setLayout(plotFrameLayout);
     plotFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
     QPalette plotFramePalette = plotFrame->palette();
-    plotFramePalette.setColor(QPalette::Background, Qt::white);
+    plotFramePalette.setColor(QPalette::Window, Qt::white);
     plotFrame->setPalette(plotFramePalette);
     plotFrame->setAutoFillBackground(true);
 

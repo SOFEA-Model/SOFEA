@@ -5,6 +5,7 @@
 #endif
 
 #include <map>
+#include <memory>
 #include <vector>
 
 #include <boost/random/discrete_distribution.hpp>
@@ -12,14 +13,14 @@
 #include <boost/random/variate_generator.hpp>
 #include <boost/random/mersenne_twister.hpp>
 
-//namespace Distribution
-//{
-template <class T>
+template <class T, class Compare = std::owner_less<T>>
 struct SamplingDistribution
 {
+    using ProbabilityMap = std::map<T, double, Compare>;
+
     SamplingDistribution() {}
 
-    SamplingDistribution(const std::map<T, double>& map)
+    SamplingDistribution(const ProbabilityMap& map)
         : data(map) {}
 
     bool operator==(const SamplingDistribution& rhs) const {
@@ -54,12 +55,22 @@ struct SamplingDistribution
         keys.reserve(data.size());
         probabilities.reserve(data.size());
 
-        for(auto it = data.begin(); it != data.end(); ++it) {
+        // If there is only one value, return it.
+        if (data.size() == 1) {
+            auto it = data.begin();
+            return it->first;
+        }
+
+        for (auto it = data.begin(); it != data.end(); ++it) {
             if (it->second > 0) {
                 keys.push_back(it->first);
                 probabilities.push_back(it->second);
             }
         }
+
+        // Return default if probabilities are zero.
+        if (probabilities.empty())
+            return T();
 
         // Select the map index.
         discrete_distribution<> index_dist(probabilities.begin(), probabilities.end());
@@ -69,7 +80,7 @@ struct SamplingDistribution
         return keys.at(index);
     }
 
-    std::map<T, double> data;
+    ProbabilityMap data;
 };
 
 //} // namespace Distribution

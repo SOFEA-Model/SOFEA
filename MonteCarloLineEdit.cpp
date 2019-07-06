@@ -125,7 +125,7 @@ QString MonteCarloLineEdit::getDistributionText() const
 
 void MonteCarloLineEdit::onSelectDistribution()
 {
-    GenericDistributionDialog dialog(m_distribution);
+    GenericDistributionDialog dialog(m_distribution, this);
 
     if (QDialog::Accepted == dialog.exec())
     {

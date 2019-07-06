@@ -1,7 +1,10 @@
 #ifndef SOURCETABLE_H
 #define SOURCETABLE_H
 
+#include "Scenario.h"
+#include "SourceGroup.h"
 #include "SourceModel.h"
+#include "FluxProfileModel.h"
 #include "StandardTableView.h"
 #include "Utilities.h"
 
@@ -15,9 +18,9 @@ class SourceTable : public QWidget
     Q_OBJECT
 
 public:
-    SourceTable(SourceGroup *sg, QWidget *parent = nullptr);
+    SourceTable(Scenario *s, SourceGroup *sg, QWidget *parent = nullptr);
     double getTotalMass() const;
-    void showFluxProfile(const Source *s);
+    void plotFluxProfile(const Source *s);
 
 signals:
     void dataChanged();
@@ -26,16 +29,25 @@ public slots:
     void refresh();
 
 private slots:
-    void showContextMenu(const QPoint &pos);
+    void headerContextMenuRequested(const QPoint &pos);
+    void contextMenuRequested(const QPoint &pos);
     void handleDataChanged(const QModelIndex &, const QModelIndex &, const QVector<int> &);
     void handleRowsInserted(const QModelIndex &, int, int);
     void handleRowsRemoved(const QModelIndex &, int, int);
 
 private:
+    void setColumnVisible(int column, bool visible);
+    bool isColumnVisible(int column) const;
+
+    Scenario *sPtr;
     SourceGroup *sgPtr;
+
     QLabel *massLabel;
     StandardTableView *table;
     SourceModel *model;
+    FluxProfileModel *fpEditorModel;
+
+    // Table Actions
     QAction *actAddArea;
     QAction *actAddAreaCirc;
     QAction *actAddAreaPoly;

@@ -191,6 +191,7 @@ std::string Scenario::writeInput() const
     // These indexes are used to write out short source and source group
     // identifiers, because AERMOD only supports one hourly emissions
     // file per run.
+
     int isrc, igrp;
 
     w.write("SO STARTING\n");
@@ -218,11 +219,22 @@ std::string Scenario::writeInput() const
             }
 
             // BUFRZONE
-            for (const std::pair<double, int>& z : sg.zones) {
-                QDateTime zoneStart = s.appStart;
-                QDateTime zoneEnd = zoneStart.addSecs(z.second * 60 * 60);
-                w.write("   BUFRZONE S{:0=3} {: 8.2f} {} {}\n", isrc, z.first,
-                        aermodTimeString(zoneStart), aermodTimeString(zoneEnd));
+            if (sg.enableBufferZones) {
+                BufferZone zref;
+                zref.appRateThreshold = s.appRate;
+                zref.areaThreshold = s.area();
+
+                auto it = std::find_if(sg.zones.begin(), sg.zones.end(), [&zref](const BufferZone& z) {
+                   return (z.areaThreshold >= zref.areaThreshold) && (z.appRateThreshold >= zref.appRateThreshold);
+                });
+
+                if (it != sg.zones.end()) {
+                    int totalHours = it->duration;
+                    QDateTime zoneStart = s.appStart;
+                    QDateTime zoneEnd = zoneStart.addSecs(totalHours * 60 * 60);
+                    w.write("   BUFRZONE S{:0=3} {: 8.2f} {} {}\n", isrc, it->distance,
+                            aermodTimeString(zoneStart), aermodTimeString(zoneEnd));
+                }
             }
         }
         w.write("\n");
@@ -299,8 +311,8 @@ std::string Scenario::writeInput() const
         startend = minTime.toString("yy MM dd") + " " + maxTime.toString("yy MM dd");
 
     w.write("ME STARTING\n");
-    w.write("   SURFFILE \"{}\"\n", surfaceFile);
-    w.write("   PROFFILE \"{}\"\n", upperAirFile);
+    w.write("   SURFFILE \"{}\"\n", MetFileParser::absolutePath(surfaceFile));
+    w.write("   PROFFILE \"{}\"\n", MetFileParser::absolutePath(upperAirFile));
     w.write("   SURFDATA {} {}\n", surfaceId, minTime.date().year());
     w.write("   UAIRDATA {} {}\n", upperAirId, maxTime.date().year());
     w.write("   PROFBASE {: 6.1f} METERS\n", anemometerHeight);
@@ -347,7 +359,7 @@ void Scenario::writeFluxFile(const std::string& path) const
 
     if (!minTime.isValid() || !maxTime.isValid()) {
         BOOST_LOG_TRIVIAL(error) << "Invalid time range";
-        return;
+        return; // FIXME: throw an exception
     }
 
     // Make sure that each source has a valid flux profile.
@@ -362,7 +374,7 @@ void Scenario::writeFluxFile(const std::string& path) const
     }
 
     if (missingProfile)
-        return;
+        return; // FIXME: throw an exception
 
     fmt::MemoryWriter w;
     std::map<QDateTime, std::string> grid;
@@ -378,9 +390,9 @@ void Scenario::writeFluxFile(const std::string& path) const
     }
 
     // Generate and cache all expanded reference flux profiles.
-    std::map<std::shared_ptr<FluxProfile>, std::vector<double>> exRefFluxMap;
+    std::map<FluxProfilePtr, std::vector<double>> exRefFluxMap;
 
-    for (const auto fp : fluxProfiles)
+    for (const auto& fp : fluxProfiles)
     {
         // Expand the reference flux profile to one point per hour.
         std::vector<double> exRefFlux;
@@ -415,7 +427,7 @@ void Scenario::writeFluxFile(const std::string& path) const
                 const auto fp = s.fluxProfile.lock();
                 if (!fp) {
                     BOOST_LOG_TRIVIAL(error) << "Failed to acquire read lock";
-                    return;
+                    return; // FIXME: throw an exception
                 }
 
                 // Calculate the overall flux scale factor.

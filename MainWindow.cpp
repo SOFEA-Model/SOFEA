@@ -21,7 +21,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
     setWindowIcon(QIcon(":/images/Corteva_64x.png"));
     setUnifiedTitleAndToolBarOnMac(true);
+    setAcceptDrops(true);
 
+    taskbarButton = new QWinTaskbarButton(this);
+
+    // TODO: use QProxyStyle for PE_IndicatorTabClose
     centralTabWidget = new QTabWidget;
     centralTabWidget->setTabsClosable(true);
     centralTabWidget->setDocumentMode(true);
@@ -43,10 +47,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     setupLogging();
     loadSettings();
 
-    //QStringList argv = QCoreApplication::arguments();
-    //if (argv.size() > 1 && QFile::exists(argv.last())) {
-    //    openProject(argv.last());
-    //}
+    QStringList argv = QCoreApplication::arguments();
+    if (argv.size() > 1 && QFile::exists(argv.last())) {
+        openProjectFile(argv.last());
+    }
 
     projectModified = false;
 
@@ -127,6 +131,7 @@ void MainWindow::createActions()
     helpAct = new QAction(helpIcon, tr("Open User's Guide"), this);
     helpAct->setShortcuts(QKeySequence::HelpContents);
     helpAct->setStatusTip(tr("Open User's Guide"));
+    helpAct->setDisabled(true); // FIXME
 
     aboutAct = new QAction(tr("About SOFEA"), this);
     aboutAct->setStatusTip(tr("About SOFEA"));
@@ -175,7 +180,7 @@ void MainWindow::createPanels()
     setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
 
     // Project Browser
-    dwProjectTree = new QDockWidget(tr("Project Browser"), this);
+    dwProjectTree = new DockWidget(tr("Project Browser"), this);
     dwProjectTree->setObjectName("ProjectBrowser");
     dwProjectTree->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
 
@@ -196,7 +201,7 @@ void MainWindow::createPanels()
     viewMenu->addAction(dwProjectTree->toggleViewAction());
 
     // Messages LogWidget
-    dwMessages = new QDockWidget(tr("Messages"), this);
+    dwMessages = new DockWidget(tr("Messages"), this);
     dwMessages->setObjectName("Messages");
     dwMessages->setAllowedAreas(Qt::BottomDockWidgetArea);
     lwMessages = new LogWidget(dwMessages);
@@ -205,7 +210,7 @@ void MainWindow::createPanels()
     viewMenu->addAction(dwMessages->toggleViewAction());
 
     // Model Output LogWidget
-    dwOutput = new QDockWidget(tr("Model Output"), this);
+    dwOutput = new DockWidget(tr("Model Output"), this);
     dwMessages->setObjectName("Model Output");
     dwMessages->setAllowedAreas(Qt::BottomDockWidgetArea);
     lwOutput = new LogWidget(dwOutput);
@@ -223,33 +228,8 @@ void MainWindow::setupConnections()
     connect(centralTabWidget, &QTabWidget::tabCloseRequested,
             this, &MainWindow::deleteTab);
 
-    connect(this, &MainWindow::scenarioUpdated, [=](Scenario *s)
-    {
-        projectModified = true;
-        if (scenarioToInputViewer.count(s) > 0) {
-            InputViewer *viewer = scenarioToInputViewer[s];
-            int index = centralTabWidget->indexOf(viewer);
-            if (index >= 0) {
-                viewer->refresh();
-                QString title = QString::fromStdString(s->title);
-                centralTabWidget->setTabText(index, title);
-            }
-        }
-    });
-
-    connect(this, &MainWindow::sourceGroupUpdated, [=](SourceGroup *sg)
-    {
-        projectModified = true;
-        if (sourceGroupToSourceTable.count(sg) > 0) {
-            SourceTable *table = sourceGroupToSourceTable[sg];
-            int index = centralTabWidget->indexOf(table);
-            if (index >= 0) {
-                table->refresh();
-                QString title = QString::fromStdString(sg->grpid);
-                centralTabWidget->setTabText(index, title);
-            }
-        }
-    });
+    connect(this, &MainWindow::scenarioUpdated, this, &MainWindow::onScenarioUpdated);
+    connect(this, &MainWindow::sourceGroupUpdated, this, &MainWindow::onSourceGroupUpdated);
 
     // File Menu
     connect(newAct, &QAction::triggered, this, &MainWindow::newScenario);
@@ -375,17 +355,26 @@ void MainWindow::openProject()
     if (openFile.isEmpty())
         return;
 
+    openProjectFile(openFile);
+}
+
+void MainWindow::openProjectFile(const QString& openFile)
+{
+    QFileInfo fi(openFile);
+    if (fi.suffix().toLower() != "sofea")
+        return;
+
     // Close current project.
     closeProject();
 
     // Read the scenario data.
     std::string ifile = openFile.toStdString();
-    std::ifstream is(ifile);
-    cereal::JSONInputArchive ia(is);
 
     try {
+        std::ifstream is(ifile);
+        cereal::JSONInputArchive ia(is);
         ia(scenarios);
-    } catch (const std::exception &e) {
+    } catch (const cereal::Exception &e) {
         QMessageBox::critical(this, "Parse Error", QString::fromLocal8Bit(e.what()));
         return;
     }
@@ -401,8 +390,9 @@ void MainWindow::openProject()
 
     // Update project file and working directory.
     projectFile = openFile;
-    QFileInfo fi(openFile);
     projectDir = fi.canonicalPath();
+
+    QSettings settings;
     settings.setValue("DefaultDirectory", projectDir);
 
     projectModified = false;
@@ -419,7 +409,7 @@ void MainWindow::saveProject()
     if (projectFile.isEmpty() || sender == saveAsAct) {
         QSettings settings;
         QString saveFile;
-        QString currentDir = settings.value("DefaultDirectory", QDir::rootPath()).toString();
+        QString currentDir = settings.value("DefaultDirectory", QDir::currentPath()).toString();
         saveFile = QFileDialog::getSaveFileName(this,
                                                 tr("Save Project"),
                                                 currentDir,
@@ -435,11 +425,25 @@ void MainWindow::saveProject()
         settings.setValue("DefaultDirectory", projectDir);
     }
 
+    saveProjectFile(projectFile);
+}
+
+void MainWindow::saveProjectFile(const QString& saveFile)
+{
+    if (scenarios.size() == 0)
+        return;
+
     // Write the scenario data.
-    std::string ofile = projectFile.toStdString();
-    std::ofstream os(ofile);
-    cereal::JSONOutputArchive oa(os);
-    oa(scenarios);
+    std::string ofile = saveFile.toStdString();
+
+    try {
+        std::ofstream os(ofile);
+        cereal::JSONOutputArchive oa(os);
+        oa(scenarios);
+    } catch (const cereal::Exception &e) {
+        QMessageBox::critical(this, "Parse Error", QString::fromLocal8Bit(e.what()));
+        return;
+    }
 
     projectModified = false;
 }
@@ -479,26 +483,6 @@ void MainWindow::closeProject()
 void MainWindow::exitApplication()
 {
     QApplication::closeAllWindows();
-}
-
-void MainWindow::closeEvent(QCloseEvent *event)
-{
-    if (projectModified) {
-        // Get user confirmation.
-        QMessageBox msgBox;
-        msgBox.setIcon(QMessageBox::Question);
-        msgBox.setText("The current project has unsaved changes. Are you sure you want to exit?");
-        msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-        msgBox.setDefaultButton(QMessageBox::No);
-
-        int rc = msgBox.exec();
-        if (rc == QMessageBox::No) {
-            event->ignore();
-            return;
-        }
-    }
-
-    event->accept();
 }
 
 void MainWindow::newScenario()
@@ -703,7 +687,7 @@ void MainWindow::showScenarioProperties(Scenario *s)
 {
     ScenarioProperties *dialog = new ScenarioProperties(s, this);
     connect(dialog, &ScenarioProperties::saved, [&]() {
-        emit scenarioUpdated(s); // input file update
+        emit scenarioUpdated(s);
     });
     dialog->exec();
 }
@@ -713,8 +697,8 @@ void MainWindow::showSourceGroupProperties(SourceGroup *sg)
     Scenario *s = sourceGroupToScenario[sg];
     SourceGroupProperties *dialog = new SourceGroupProperties(s, sg, this);
     connect(dialog, &SourceGroupProperties::saved, [&]() {
-        emit scenarioUpdated(s); // input file update
-        emit sourceGroupUpdated(sg); // source table update
+        emit scenarioUpdated(s);
+        emit sourceGroupUpdated(sg);
     });
     dialog->exec();
 }
@@ -725,7 +709,7 @@ void MainWindow::showReceptorEditor(SourceGroup *sg)
     ReceptorDialog *dialog = new ReceptorDialog(s, sg, this);
     int rc = dialog->exec();
     if (rc == QDialog::Accepted) {
-        emit scenarioUpdated(s); // input file update
+        emit scenarioUpdated(s);
     }
 }
 
@@ -766,7 +750,8 @@ void MainWindow::showSourceTable(SourceGroup *sg)
             centralTabWidget->setCurrentIndex(index);
     }
     else {
-        SourceTable *table = new SourceTable(sg);
+        Scenario *s = sourceGroupToScenario[sg];
+        SourceTable *table = new SourceTable(s, sg);
 
         QString title = QString::fromStdString(sg->grpid);
         centralTabWidget->addTab(table, title);
@@ -785,7 +770,7 @@ void MainWindow::exportFluxFile(Scenario *s)
 {
     QSettings settings;
     QString saveFile;
-    QString currentDir = settings.value("DefaultDirectory", QDir::rootPath()).toString();
+    QString currentDir = settings.value("DefaultDirectory", QDir::currentPath()).toString();
     saveFile = QFileDialog::getSaveFileName(this,
                                             tr("Export Flux File"),
                                             currentDir,
@@ -805,6 +790,7 @@ void MainWindow::contextMenuRequested(QPoint const& pos)
     QAction *selectedItem;
 
     // Scenario Context Menu
+    // TODO: Import Sources, Edit Receptors
     if (item && treeWidgetToScenario.count(item) > 0)
     {
         Scenario *s = treeWidgetToScenario[item];
@@ -939,12 +925,48 @@ void MainWindow::deleteTab(int index)
     }
 }
 
+
+void MainWindow::onScenarioUpdated(Scenario *s)
+{
+    projectModified = true;
+    if (scenarioToInputViewer.count(s) > 0) {
+        InputViewer *viewer = scenarioToInputViewer[s];
+        int viewerIndex = centralTabWidget->indexOf(viewer);
+        if (viewerIndex >= 0) {
+            viewer->refresh();
+            QString viewerTitle = QString::fromStdString(s->title);
+            centralTabWidget->setTabText(viewerIndex, viewerTitle);
+        }
+    }
+    for (const auto &item : sourceTableToSourceGroup) {
+        SourceTable *table = item.first;
+        SourceGroup *sg = item.second;
+        if (sourceGroupToScenario[sg] = s) {
+            table->refresh();
+        }
+    }
+}
+
+void MainWindow::onSourceGroupUpdated(SourceGroup *sg)
+{
+    projectModified = true;
+    if (sourceGroupToSourceTable.count(sg) > 0) {
+        SourceTable *table = sourceGroupToSourceTable[sg];
+        int tableIndex = centralTabWidget->indexOf(table);
+        if (tableIndex >= 0) {
+            table->refresh();
+            QString tableTitle = QString::fromStdString(sg->grpid);
+            centralTabWidget->setTabText(tableIndex, tableTitle);
+        }
+    }
+}
+
 void MainWindow::runModel()
 {
     if (projectDir.isEmpty() || !QDir(projectDir).exists())
     {
         QSettings settings;
-        QString currentDir = settings.value("DefaultDirectory", QDir::rootPath()).toString();
+        QString currentDir = settings.value("DefaultDirectory", QDir::currentPath()).toString();
         QString selectedDir = QFileDialog::getExistingDirectory(this, tr("Select Working Directory"),
                                                                 currentDir,
                                                                 QFileDialog::ShowDirsOnly);
@@ -958,6 +980,8 @@ void MainWindow::runModel()
 
     RunModelDialog dialog(this);
     dialog.setWorkingDirectory(projectDir);
+    dialog.setTaskbarButton(taskbarButton);
+
     for (Scenario &s : scenarios) {
         dialog.addScenario(&s);
     }
@@ -984,7 +1008,7 @@ void MainWindow::about()
 {
     QString aboutText;
     aboutText += "<h3>Corteva Agriscience<br />Soil Fumigant Exposure Assessment (SOFEA) Modeling System</h3>";
-    aboutText += QString("<h4>Version %1 <i>BETA</i>").arg(SOFEA_VERSION_STRING);
+    aboutText += QString("<h4>Version %1 <i>ALPHA</i>").arg(SOFEA_VERSION_STRING);
 #if _WIN64
     aboutText += " 64-bit</h4>";
 #elif _WIN32
@@ -1005,9 +1029,66 @@ void MainWindow::about()
 
     // Contributor Info
     aboutText += "<h4>Developers:</h4>";
-    aboutText += "Steven A. Cryer (sacryer@dow.com)<br>";
-    aboutText += "Ian van Wesenbeeck (ijvanwesenbeeck@dow.com)<br>";
     aboutText += "John Buonagurio (jbuonagurio@exponent.com)";
+    aboutText += "Steven A. Cryer (sacryer@dow.com)<br>";
+    aboutText += "Ian van Wesenbeeck (ian@illahe-environmental.com)<br>";
 
     QMessageBox::about(this, tr("About SOFEA"), aboutText);
+}
+
+/****************************************************************************
+** Events
+****************************************************************************/
+
+void MainWindow::showEvent(QShowEvent *event)
+{
+    taskbarButton->setWindow(this->windowHandle());
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    if (projectModified) {
+        // Get user confirmation.
+        QMessageBox msgBox;
+        msgBox.setIcon(QMessageBox::Question);
+        msgBox.setText("The current project has unsaved changes. Are you sure you want to exit?");
+        msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        msgBox.setDefaultButton(QMessageBox::No);
+
+        int rc = msgBox.exec();
+        if (rc == QMessageBox::No) {
+            event->ignore();
+            return;
+        }
+    }
+
+    event->accept();
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *event)
+{
+    event->acceptProposedAction();
+}
+
+void MainWindow::dragMoveEvent(QDragMoveEvent *event)
+{
+    event->acceptProposedAction();
+}
+
+void MainWindow::dragLeaveEvent(QDragLeaveEvent *event)
+{
+    event->accept();
+}
+
+void MainWindow::dropEvent(QDropEvent *event)
+{
+    const QMimeData* mimeData = event->mimeData();
+
+    if (mimeData->hasUrls()) {
+        QList<QUrl> urlList = mimeData->urls();
+        QString openFile = urlList.first().toLocalFile();
+        openProjectFile(openFile);
+    }
+
+    event->acceptProposedAction();
 }

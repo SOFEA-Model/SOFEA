@@ -2,6 +2,7 @@
 
 #include "StandardPlot.h"
 #include "FluxProfileDialog.h"
+#include "FluxProfilePlot.h"
 
 #include <boost/log/trivial.hpp>
 #include <boost/log/attributes/scoped_attribute.hpp>
@@ -25,16 +26,36 @@ FluxProfileDialog::FluxProfileDialog(std::shared_ptr<FluxProfile> fp, QWidget *p
     : QDialog(parent), wptr(fp)
 {
     setWindowTitle(QString::fromStdString(fp->name));
+    setWindowIcon(QIcon(":/images/KagiChart_32x.png"));
+    setMinimumSize(650, 500);
 
-    buttonBox = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Close);
+    buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-    connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
     // Reference
     sbRefAppRate = new QDoubleSpinBox;
     sbRefAppRate->setRange(0, 10000000);
     sbRefAppRate->setDecimals(2);
     sbRefAppRate->setSingleStep(1);
+
+    bgFluxMode = new QButtonGroup(this);
+    radioVariableFlux = new QRadioButton(tr("Variable"));
+    radioConstantFlux = new QRadioButton(tr("Constant"));
+    bgFluxMode->addButton(radioVariableFlux, 1);
+    bgFluxMode->addButton(radioConstantFlux, 2);
+
+    radioConstantFlux->setDisabled(true); // FIXME - NOT YET IMPLEMENTED
+    radioVariableFlux->setDisabled(true); // FIXME - NOT YET IMPLEMENTED
+
+    lblConstantFluxInfo = new StatusLabel;
+    lblConstantFluxInfo->setSeverity(2);
+    lblConstantFluxInfo->setText(
+        "Constant flux is determined from the mean scaled hourly flux profile "
+        "for each source, and applies to the full simulation period. "
+        "Application start time is used for flux scaling only."
+    );
+    lblConstantFluxInfo->hide();
+
     refTable = new StandardTableView;
 
     StandardTableEditor::StandardButtons refEditorOpts =
@@ -43,6 +64,7 @@ FluxProfileDialog::FluxProfileDialog(std::shared_ptr<FluxProfile> fp, QWidget *p
         StandardTableEditor::Import;
 
     refEditor = new StandardTableEditor(Qt::Vertical, refEditorOpts);
+    btnPlot = new QPushButton("Plot...");
 
     // Temporal Scaling
     cboTemporalScaling = new QComboBox;
@@ -74,7 +96,7 @@ FluxProfileDialog::FluxProfileDialog(std::shared_ptr<FluxProfile> fp, QWidget *p
     sbWavelength->setRange(0.01, 1461); // 365+365+365+366
     sbWavelength->setSingleStep(10);
     btnCalcPhase = new QPushButton("Estimate");
-    btnPlotTS = new QPushButton("Plot");
+    btnPlotTS = new QPushButton("Plot...");
 
     // Incorporation Depth Scaling
     cboDepthScaling = new QComboBox;
@@ -92,18 +114,33 @@ FluxProfileDialog::FluxProfileDialog(std::shared_ptr<FluxProfile> fp, QWidget *p
     sbMaxVL->setDecimals(2);
     sbMaxVL->setSuffix("%");
     sbMaxVL->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    btnPlotDS = new QPushButton("Plot");
+    btnPlotDS = new QPushButton("Plot...");
 
     // Reference Layout
+    QHBoxLayout *fluxModeLayout = new QHBoxLayout;
+    fluxModeLayout->addWidget(radioVariableFlux);
+    fluxModeLayout->addWidget(radioConstantFlux);
+    fluxModeLayout->setAlignment(radioVariableFlux, Qt::AlignLeft);
+    fluxModeLayout->setAlignment(radioConstantFlux, Qt::AlignLeft);
+
     GridLayout *refInputLayout = new GridLayout;
     refInputLayout->setMargin(0);
     refInputLayout->addWidget(new QLabel(tr("Application rate (kg/ha):")), 1, 0);
     refInputLayout->addWidget(sbRefAppRate, 1, 1);
+    refInputLayout->addWidget(new QLabel(tr("Flux calculation mode:")), 2, 0);
+    refInputLayout->addLayout(fluxModeLayout, 2, 1, Qt::AlignLeft);
+    refInputLayout->addWidget(lblConstantFluxInfo, 3, 0, 1, 2);
+
+    QVBoxLayout *refControlsLayout = new QVBoxLayout;
+    refControlsLayout->setMargin(0);
+    refControlsLayout->addWidget(refEditor);
+    refControlsLayout->addStretch(1);
+    refControlsLayout->addWidget(btnPlot);
 
     QHBoxLayout *refTableLayout = new QHBoxLayout;
     refTableLayout->setMargin(0);
     refTableLayout->addWidget(refTable);
-    refTableLayout->addWidget(refEditor);
+    refTableLayout->addLayout(refControlsLayout);
 
     QVBoxLayout *refLayout = new QVBoxLayout;
     refLayout->addLayout(refInputLayout);
@@ -136,11 +173,9 @@ FluxProfileDialog::FluxProfileDialog(std::shared_ptr<FluxProfile> fp, QWidget *p
 
     GridLayout *stackInner2 = new GridLayout;
     stackInner2->setMargin(0);
-    stackInner2->setColumnStretch(0, 1);
-    stackInner2->setColumnStretch(1, 1);
     stackInner2->addWidget(new QLabel(tr("Amplitude (A):")), 0, 0);
     stackInner2->addWidget(sbAmplitude, 0, 1);
-    stackInner2->addWidget(new QLabel(tr("Center Amplitude (D):")), 1, 0);
+    stackInner2->addWidget(new QLabel(tr("Center amplitude (D):")), 1, 0);
     stackInner2->addWidget(sbCenterAmplitude, 1, 1);
     stackInner2->addWidget(new QLabel(tr("Phase (\xcf\x95):")), 2, 0);
     stackInner2->addLayout(phaseLayout, 2, 1);
@@ -230,11 +265,11 @@ void FluxProfileDialog::init()
     // Initialize StandardItemModel for Reference Flux
     refModel = new QStandardItemModel;
     refModel->setColumnCount(2);
-    QString fluxHeader = QLatin1String("Flux (g/m\xb2/second)"); // [g m-2 s-1]
-    refModel->setHorizontalHeaderLabels(QStringList{"Interval (hr)", fluxHeader});
+    QString fluxHeader = QLatin1String("Flux (g/m\xb2/s)"); // [g m-2 s-1]
+    refModel->setHorizontalHeaderLabels(QStringList{"Duration (hr)", fluxHeader});
 
     refTable->setModel(refModel);
-    refTable->setSpinBoxForColumn(0, 1, 1000);
+    refTable->setSpinBoxForColumn(0, 1, 1000, 1);
     refTable->setDoubleLineEditForColumn(1, 0, 10000000, 8, false);
     refTable->setMinimumWidth(400);
 
@@ -243,8 +278,10 @@ void FluxProfileDialog::init()
     refEditor->setImportCaption(tr("Import Flux Profile"));
 
     // Connections
+    connect(radioConstantFlux, &QRadioButton::toggled, lblConstantFluxInfo, &QLabel::setVisible);
     connect(refEditor, &StandardTableEditor::importRequested, this, &FluxProfileDialog::importFluxProfile);
     connect(btnCalcPhase, &QPushButton::clicked, this, &FluxProfileDialog::calcPhase);
+    connect(btnPlot, &QPushButton::clicked, this, &FluxProfileDialog::plotFluxProfile);
     connect(btnPlotTS, &QPushButton::clicked, this, &FluxProfileDialog::plotTemporalScaling);
     connect(btnPlotDS, &QPushButton::clicked, this, &FluxProfileDialog::plotDepthScaling);
     connect(cboTemporalScaling, static_cast<void (QComboBox::*)(int)>(&QComboBox::activated),
@@ -290,38 +327,9 @@ void FluxProfileDialog::save()
         return;
     }
 
-    fp->refFlux.clear();
-    for (int i = 0; i < refModel->rowCount(); ++i) {
-        if (refModel->item(i, 0) && refModel->item(i, 1)) {
-            QModelIndex xi = refModel->index(i, 0);
-            QModelIndex yi = refModel->index(i, 1);
-            int x = refModel->data(xi).toInt();
-            double y = refModel->data(yi).toDouble();
-            if (x > 0 && y >= 0) {
-                fp->refFlux.push_back(std::make_pair(x, y));
-            }
-        }
-    }
-
-    using TSMethod = FluxProfile::TSMethod;
-    using DSMethod = FluxProfile::DSMethod;
-
-    fp->tsMethod = static_cast<TSMethod>(cboTemporalScaling->currentData().toInt());
-    fp->dsMethod = static_cast<DSMethod>(cboDepthScaling->currentData().toInt());
-    fp->refStart.setDate(deRefDate->date());
-    fp->refAppRate = sbRefAppRate->value();
-    fp->refDepth = sbRefDepth->value();
-    fp->refVL = sbRefVL->value() / 100.;
-    fp->maxVL = sbMaxVL->value() / 100.;
-    fp->warmSeasonStart = deStartDate->date();
-    fp->warmSeasonEnd = deEndDate->date();
-    fp->warmSeasonSF = sbScaleFactor->value();
-    fp->amplitude = sbAmplitude->value();
-    fp->centerAmplitude = sbCenterAmplitude->value();
-    fp->phase = sbPhase->value();
-    fp->wavelength = sbWavelength->value();
-
-    saved = true;
+    std::string name = fp->name;
+    *fp = currentProfile();
+    fp->name = name;
 }
 
 void FluxProfileDialog::load()
@@ -346,6 +354,10 @@ void FluxProfileDialog::load()
     using TSMethod = FluxProfile::TSMethod;
     using DSMethod = FluxProfile::DSMethod;
 
+    if (fp->constantFlux)
+        radioConstantFlux->setChecked(true);
+    else
+        radioVariableFlux->setChecked(true);
     deRefDate->setDateTime(fp->refStart);
     sbRefAppRate->setValue(fp->refAppRate);
     sbRefDepth->setValue(fp->refDepth);
@@ -374,11 +386,28 @@ void FluxProfileDialog::load()
 
 FluxProfile FluxProfileDialog::currentProfile()
 {
-    using TSMethod = FluxProfile::TSMethod;
     FluxProfile fp;
 
+    for (int i = 0; i < refModel->rowCount(); ++i) {
+        if (refModel->item(i, 0) && refModel->item(i, 1)) {
+            QModelIndex xi = refModel->index(i, 0);
+            QModelIndex yi = refModel->index(i, 1);
+            int x = refModel->data(xi).toInt();
+            double y = refModel->data(yi).toDouble();
+            if (x > 0 && y >= 0) {
+                fp.refFlux.push_back(std::make_pair(x, y));
+            }
+        }
+    }
+
+    using TSMethod = FluxProfile::TSMethod;
+    using DSMethod = FluxProfile::DSMethod;
+
     fp.tsMethod = static_cast<TSMethod>(cboTemporalScaling->currentData().toInt());
-    fp.refStart.setDate(deRefDate->date());
+    fp.dsMethod = static_cast<DSMethod>(cboDepthScaling->currentData().toInt());
+    fp.constantFlux = radioConstantFlux->isChecked();
+    fp.refStart = deRefDate->dateTime();
+    fp.refAppRate = sbRefAppRate->value();
     fp.refDepth = sbRefDepth->value();
     fp.refVL = sbRefVL->value() / 100.;
     fp.maxVL = sbMaxVL->value() / 100.;
@@ -411,7 +440,7 @@ void FluxProfileDialog::onRowsInserted(const QModelIndex &parent, int first, int
     refTable->setFocus();
 }
 
-void FluxProfileDialog::importFluxProfile()
+void FluxProfileDialog::importFluxProfile(const QString &filename)
 {
     BOOST_LOG_SCOPED_THREAD_TAG("Source", "Import");
 
@@ -420,15 +449,13 @@ void FluxProfileDialog::importFluxProfile()
     // Remove existing rows
     refModel->removeRows(0, refModel->rowCount());
 
-    QString csvfile = refEditor->importFile();
-    int hour;
-    double flux;
     ReferenceFlux imported;
-
-    io::CSVReader<2> in(csvfile.toStdString());
+    io::CSVReader<2> in(filename.toStdString());
 
     while (true) {
         try {
+            int hour;
+            double flux;
             if (in.read_row(hour, flux))
                 imported.push_back(std::make_pair(hour, flux));
             else
@@ -468,6 +495,31 @@ void FluxProfileDialog::calcPhase()
         phi += 360.0;
 
     sbPhase->setValue(phi);
+}
+
+void FluxProfileDialog::plotFluxProfile()
+{
+    FluxProfile fp = currentProfile();
+    FluxProfilePlot *plotWidget = new FluxProfilePlot(fp);
+    plotWidget->setAppStart(fp.refStart);
+    plotWidget->setAppRate(fp.refAppRate);
+    plotWidget->setIncorpDepth(fp.refDepth);
+    plotWidget->setupConnections();
+    plotWidget->updatePlot();
+
+    QDialog *plotDialog = new QDialog(this);
+    QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Close);
+    connect(buttonBox, &QDialogButtonBox::rejected, plotDialog, &QDialog::reject);
+
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    mainLayout->addWidget(plotWidget);
+    mainLayout->addWidget(buttonBox);
+
+    plotDialog->setWindowTitle("Reference Flux Profile");
+    plotDialog->setWindowFlag(Qt::Tool);
+    plotDialog->setAttribute(Qt::WA_DeleteOnClose);
+    plotDialog->setLayout(mainLayout);
+    plotDialog->exec();
 }
 
 void FluxProfileDialog::plotTemporalScaling()
@@ -526,11 +578,11 @@ void FluxProfileDialog::plotTemporalScaling()
     sfCurve->attach(plot);
 
     // Use reference date on X-axis
-    QwtDateScaleDraw *scaleDraw = new QwtDateScaleDraw;
+    QwtDateScaleDraw *scaleDraw = new QwtDateScaleDraw(Qt::UTC);
     scaleDraw->setDateFormat(QwtDate::Month, QString("MMM"));
     scaleDraw->enableComponent(QwtAbstractScaleDraw::Backbone, false);
-    QwtDateScaleEngine *scaleEngine = new QwtDateScaleEngine;
     plot->setAxisScaleDraw(QwtPlot::xBottom, scaleDraw);
+    QwtDateScaleEngine *scaleEngine = new QwtDateScaleEngine(Qt::UTC);
     plot->setAxisScaleEngine(QwtPlot::xBottom, scaleEngine);
 
     // Set plot limits
@@ -628,12 +680,5 @@ void FluxProfileDialog::plotDepthScaling()
 void FluxProfileDialog::accept()
 {
     save();
-}
-
-void FluxProfileDialog::reject()
-{
-    if (saved)
-        QDialog::done(QDialog::Accepted);
-    else
-        QDialog::done(QDialog::Rejected);
+    QDialog::done(QDialog::Accepted);
 }

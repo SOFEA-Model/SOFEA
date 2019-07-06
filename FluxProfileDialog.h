@@ -13,11 +13,13 @@
 #include "FluxProfile.h"
 
 QT_BEGIN_NAMESPACE
+class QButtonGroup;
 class QComboBox;
 class QDateTimeEdit;
 class QDialogButtonBox;
 class QDoubleSpinBox;
 class QPushButton;
+class QRadioButton;
 class QStackedWidget;
 class QStandardItemModel;
 QT_END_NAMESPACE
@@ -37,27 +39,31 @@ private:
 
 private slots:
     void onRowsInserted(const QModelIndex& parent, int first, int last);
-    void importFluxProfile();
+    void importFluxProfile(const QString& filename);
     void calcPhase();
+    void plotFluxProfile();
     void plotTemporalScaling();
     void plotDepthScaling();
 
 public slots:
     void accept() override;
-    void reject() override;
     
 private:
     std::weak_ptr<FluxProfile> wptr;
-    bool saved = false;
 
     static const QMap<FluxProfile::TSMethod, QString> tsMethodMap;
     static const QMap<FluxProfile::DSMethod, QString> dsMethodMap;
 
     QDialogButtonBox *buttonBox;
+    QPushButton *btnPlot;
 
     // Reference
     QDateTimeEdit *deRefDate;
     QDoubleSpinBox *sbRefAppRate;
+    QButtonGroup *bgFluxMode;
+    StatusLabel *lblConstantFluxInfo;
+    QRadioButton *radioConstantFlux;
+    QRadioButton *radioVariableFlux;
     QDoubleSpinBox *sbRefDepth;
     QDoubleSpinBox *sbRefVL;
     QDoubleSpinBox *sbMaxVL;

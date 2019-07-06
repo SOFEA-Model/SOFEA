@@ -3,6 +3,7 @@
 #include "SourceGroupPages.h"
 
 #include <boost/log/trivial.hpp>
+#include <boost/log/attributes/scoped_attribute.hpp>
 
 #include <csv/csv.h>
 
@@ -30,7 +31,7 @@ ApplicationPage::ApplicationPage(SourceGroup *sg, QWidget *parent)
     sbAppFactor->setDecimals(2);
     sbAppFactor->setSingleStep(0.1);
 
-    bgCalcMode = new QButtonGroup;
+    bgCalcMode = new QButtonGroup(this);
     radioProspective = new QRadioButton(tr("Prospective"));
     radioValidation = new QRadioButton(tr("Retrospective"));
     bgCalcMode->addButton(radioProspective, 1);
@@ -53,20 +54,18 @@ ApplicationPage::ApplicationPage(SourceGroup *sg, QWidget *parent)
     QHBoxLayout *calcModeLayout = new QHBoxLayout;
     calcModeLayout->addWidget(radioProspective);
     calcModeLayout->addWidget(radioValidation);
+    calcModeLayout->setAlignment(radioProspective, Qt::AlignLeft);
+    calcModeLayout->setAlignment(radioValidation, Qt::AlignLeft);
 
     GridLayout *layout1 = new GridLayout;
-    layout1->setColumnStretch(0, 1);
-    layout1->setColumnStretch(1, 2);
     layout1->addWidget(new QLabel(tr("Application method:")), 0, 0);
     layout1->addWidget(cboAppMethod, 0, 1);
     layout1->addWidget(new QLabel(tr("Application factor:")), 1, 0);
     layout1->addWidget(sbAppFactor, 1, 1);
     layout1->addWidget(new QLabel(tr("Calculation mode:")), 2, 0);
-    layout1->addLayout(calcModeLayout, 2, 1);
+    layout1->addLayout(calcModeLayout, 2, 1, Qt::AlignLeft);
 
     GridLayout *layout2 = new GridLayout;
-    layout2->setColumnStretch(0, 1);
-    layout2->setColumnStretch(1, 2);
     layout2->addWidget(new QLabel(tr("Application start time:")), 0, 0);
     layout2->addWidget(mcAppStart, 0, 1);
     layout2->addWidget(new QLabel(tr("Application rate (kg/ha):")), 1, 0);
@@ -101,9 +100,7 @@ void ApplicationPage::init()
         cboAppMethod->addItem(val, static_cast<int>(key));
     }
 
-    connect(radioValidation, &QRadioButton::toggled, [=](bool checked) {
-        gbMonteCarlo->setDisabled(checked);
-    });
+    connect(radioValidation, &QRadioButton::toggled, gbMonteCarlo, &QGroupBox::setDisabled);
 
     load();
 }
@@ -164,14 +161,14 @@ DepositionPage::DepositionPage(SourceGroup *sg, QWidget *parent)
     lblDepoUserVelocity->setText("Custom gas dry deposition velocity must be disabled for these parameters to take effect.");
 
     // Layout
-    GridLayout *layout1 = new GridLayout;
-    layout1->addWidget(new QLabel(QLatin1String("Air diffusion (cm\xb2/sec):")), 0, 0);
+    QGridLayout *layout1 = new QGridLayout;
+    layout1->addWidget(new QLabel(QLatin1String("Air diffusivity [Da] (cm\xb2/sec):")), 0, 0);
     layout1->addWidget(mcAirDiffusion, 0, 1);
-    layout1->addWidget(new QLabel(QLatin1String("Water diffusion (cm\xb2/sec):")), 1, 0);
+    layout1->addWidget(new QLabel(QLatin1String("Water diffusivity [Dw] (cm\xb2/sec):")), 1, 0);
     layout1->addWidget(mcWaterDiffusion, 1, 1);
-    layout1->addWidget(new QLabel(QLatin1String("Cuticular resistance (s/cm):")), 2, 0);
+    layout1->addWidget(new QLabel(QLatin1String("Cuticular resistance [rcl] (s/cm):")), 2, 0);
     layout1->addWidget(mcCuticularResistance, 2, 1);
-    layout1->addWidget(new QLabel(QLatin1String("Henry's law constant (Pa-m\xb3/mol):")), 3, 0);
+    layout1->addWidget(new QLabel(QLatin1String("Henry's law constant [H] (Pa-m\xb3/mol):")), 3, 0);
     layout1->addWidget(mcHenryConstant, 3, 1);
 
     QGroupBox *gbMonteCarlo = new QGroupBox("Monte Carlo Parameters");
@@ -239,8 +236,8 @@ void DepositionPage::load()
 FluxProfilePage::FluxProfilePage(Scenario *s, SourceGroup *sg, QWidget *parent)
     : QWidget(parent), sgPtr(sg), sPtr(s)
 {
-    model = new FluxProfileModel;
-    model->load(sPtr->fluxProfiles, false);
+    model = new FluxProfileModel(this);
+    model->load(sPtr->fluxProfiles);
 
     editor = new SamplingDistributionEditor(model);
     editor->setColumnHidden(1);
@@ -278,7 +275,10 @@ void FluxProfilePage::save()
         QModelIndex index = model->index(row, 0);
         auto fp = model->fluxProfileFromIndex(index);
         double probability = editor->getProbability(row);
-        sgPtr->fluxProfile.data[fp] = probability;
+
+        // SourceGroup holds a weak_ptr to Scenario flux profile.
+        std::weak_ptr<FluxProfile> weak = fp;
+        sgPtr->fluxProfile.data[weak] = probability;
     }
 }
 
@@ -288,8 +288,11 @@ void FluxProfilePage::load()
         QModelIndex index = model->index(row, 0);
         auto fp = model->fluxProfileFromIndex(index);
 
+        // SourceGroup holds a weak_ptr to Scenario flux profile.
+        std::weak_ptr<FluxProfile> weak = fp;
+
         if (sgPtr->fluxProfile.data.count(fp) > 0) {
-            double probability = sgPtr->fluxProfile.data.at(fp);
+            double probability = sgPtr->fluxProfile.data.at(weak);
             editor->setProbability(row, probability);
         }
     }
@@ -302,37 +305,47 @@ void FluxProfilePage::load()
 BufferZonePage::BufferZonePage(SourceGroup *sg, QWidget *parent)
     : QWidget(parent), sgPtr(sg)
 {
-    sbBuffer = new QDoubleSpinBox;
-    sbBuffer->setRange(0, 99000); // 99km
-    sbBuffer->setValue(0);
-    sbBuffer->setDecimals(2);
+    chkEnable = new QCheckBox("Enable buffer zone processing");
 
-    sbReentry = new QSpinBox;
-    sbReentry->setMinimum(1);
-    sbReentry->setMaximum(1000);
-    sbReentry->setSingleStep(1);
-    sbReentry->setValue(1);
+    sbAreaThreshold = new QDoubleSpinBox;
+    sbAreaThreshold->setRange(0, 10000);
 
-    zoneModel = new QStandardItemModel;
-    zoneModel->setColumnCount(2);
-    zoneModel->setHorizontalHeaderLabels(QStringList{"Distance (m)", "Reentry (hr)"});
+    sbAppRateThreshold = new QDoubleSpinBox;
+    sbAppRateThreshold->setRange(0, 10000000);
+    sbAppRateThreshold->setDecimals(2);
+
+    zoneModel = new BufferZoneModel;
 
     zoneTable = new StandardTableView;
     zoneTable->setModel(zoneModel);
-    zoneTable->setDoubleLineEditForColumn(0, 0, 99000, 7, false);
-    zoneTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    zoneTable->setDoubleSpinBoxForColumn(2, 0, 99000, 2, 1);
+    zoneTable->setSpinBoxForColumn(3, 0, 1000, 1);
+    zoneTable->setSelectionBehavior(QAbstractItemView::SelectItems);
     zoneTable->setSelectionMode(QAbstractItemView::ContiguousSelection);
+    zoneTable->setEditTriggers(QAbstractItemView::AllEditTriggers);
 
-    zoneEditor = new StandardTableEditor(Qt::Vertical);
+    int startingWidth = zoneTable->font().pointSize();
+    int frameWidth = zoneTable->frameWidth();
+    zoneTable->setColumnWidth(0, startingWidth * 10);
+    zoneTable->setColumnWidth(1, startingWidth * 20);
+    zoneTable->setColumnWidth(2, startingWidth * 15);
+    zoneTable->setColumnWidth(3, startingWidth * 15);
+    zoneTable->setMinimumWidth(startingWidth * 60 + frameWidth * 2);
+
+    StandardTableEditor::StandardButtons zoneEditorOpts =
+        StandardTableEditor::Add |
+        StandardTableEditor::Remove |
+        StandardTableEditor::Import;
+
+    zoneEditor = new StandardTableEditor(Qt::Vertical, zoneEditorOpts);
 
     // Layout
     GridLayout *zoneInputLayout = new GridLayout;
-    zoneInputLayout->setColumnStretch(0, 1);
     zoneInputLayout->setMargin(0);
-    zoneInputLayout->addWidget(new QLabel(tr("Buffer zone distance (m):")), 0, 0);
-    zoneInputLayout->addWidget(sbBuffer, 0, 1);
-    zoneInputLayout->addWidget(new QLabel(tr("Reentry period (hr):")), 1, 0);
-    zoneInputLayout->addWidget(sbReentry, 1, 1);
+    zoneInputLayout->addWidget(new QLabel(tr("Area threshold (ha):")), 0, 0);
+    zoneInputLayout->addWidget(sbAreaThreshold, 0, 1);
+    zoneInputLayout->addWidget(new QLabel(tr("App. rate threshold (kg/ha):")), 1, 0);
+    zoneInputLayout->addWidget(sbAppRateThreshold, 1, 1);
 
     QHBoxLayout *zoneTableLayout = new QHBoxLayout;
     zoneTableLayout->setMargin(0);
@@ -340,6 +353,8 @@ BufferZonePage::BufferZonePage(SourceGroup *sg, QWidget *parent)
     zoneTableLayout->addWidget(zoneEditor);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
+    mainLayout->addWidget(chkEnable);
+    mainLayout->addSpacing(5);
     mainLayout->addLayout(zoneInputLayout);
     mainLayout->addSpacing(5);
     mainLayout->addLayout(zoneTableLayout);
@@ -358,7 +373,12 @@ void BufferZonePage::init()
 {
     connect(zoneEditor->btnAdd,    &QPushButton::clicked, this, &BufferZonePage::onAddZoneClicked);
     connect(zoneEditor->btnRemove, &QPushButton::clicked, this, &BufferZonePage::onRemoveZoneClicked);
+    connect(zoneEditor, &StandardTableEditor::importRequested, this, &BufferZonePage::importBufferZoneTable);
+
     zoneEditor->init(zoneTable);
+    zoneEditor->setImportFilter("Buffer Zone Table (*.csv *.txt)");
+    zoneEditor->setImportCaption(tr("Import Buffer Zone Table"));
+
     disconnect(zoneEditor->btnAdd,    &QPushButton::clicked, zoneEditor, &StandardTableEditor::onAddItemClicked);
     disconnect(zoneEditor->btnRemove, &QPushButton::clicked, zoneEditor, &StandardTableEditor::onRemoveItemClicked);
 
@@ -367,75 +387,50 @@ void BufferZonePage::init()
 
 void BufferZonePage::save()
 {
-    sgPtr->zones.clear();
-    sgPtr->zones = zones;
+    sgPtr->enableBufferZones = chkEnable->isChecked();
+    zoneModel->save(sgPtr->zones);
 }
 
 void BufferZonePage::load()
 {
-    zones.clear();
-    zones = sgPtr->zones;
-
-    zoneModel->removeRows(0, zoneModel->rowCount());
-    for (const auto& z : zones)
-    {
-        // Insert item at front.
-        int currentRow = zoneModel->rowCount();
-        zoneModel->insertRow(currentRow);
-        QStandardItem *item0 = new QStandardItem;
-        QStandardItem *item1 = new QStandardItem;
-        item0->setData(z.first, Qt::DisplayRole);
-        item1->setData(z.second, Qt::DisplayRole);
-        zoneModel->setItem(currentRow, 0, item0);
-        zoneModel->setItem(currentRow, 1, item1);
-    }
-
-    //zoneModel->sort(0, Qt::AscendingOrder);
+    chkEnable->setChecked(sgPtr->enableBufferZones);
+    zoneModel->load(sgPtr->zones);
 }
 
 void BufferZonePage::onAddZoneClicked()
 {
-    double buffer = sbBuffer->value();
-    int reentry = sbReentry->value();
-
-    // Check if a buffer zone with the current distance already exists.
-    auto it = std::find_if(std::begin(zones), std::end(zones),
-        [&](const std::pair<double, int> &z) { return z.first == buffer; });
-
-    if (it != std::end(zones)) {
-        // Buffer zone exists; update it.
-        (*it).second = reentry;
-
-        int position = std::distance(std::begin(zones), it);
-        QStandardItem *item = zoneModel->item(position, 1);
-        item->setData(reentry, Qt::DisplayRole);
-    }
-    else {
-        // Add a new buffer zone.
-        zones.push_back(std::make_pair(buffer, reentry));
-
-        // insert item at back.
-        int currentRow = zoneModel->rowCount();
-        QStandardItem *item0 = new QStandardItem;
-        QStandardItem *item1 = new QStandardItem;
-        item0->setData(buffer, Qt::DisplayRole);
-        item1->setData(reentry, Qt::DisplayRole);
-        zoneModel->setItem(currentRow, 0, item0);
-        zoneModel->setItem(currentRow, 1, item1);
-    }
+    BufferZone z;
+    z.areaThreshold = sbAreaThreshold->value();
+    z.appRateThreshold = sbAppRateThreshold->value();
+    zoneModel->insert(z);
 }
 
 void BufferZonePage::onRemoveZoneClicked()
 {
-    QModelIndexList selection = zoneTable->selectionModel()->selectedRows();
-
-    int count = selection.count();
-    int row = selection.first().row();
-
-    auto it = zones.begin() + row;
-    for (int i = 0; i < count; ++i)
-        it = zones.erase(it);
-
     zoneTable->removeSelectedRows();
 }
 
+void BufferZonePage::importBufferZoneTable(const QString& filename)
+{
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Import");
+
+    std::set<BufferZone> imported;
+
+    io::CSVReader<4> in(filename.toStdString());
+    in.read_header(io::ignore_extra_column, "area", "apprate", "distance", "duration");
+
+    while (true) {
+        try {
+            BufferZone z;
+            if (in.read_row(z.areaThreshold, z.appRateThreshold, z.distance, z.duration))
+                imported.insert(z);
+            else
+                break;
+        } catch (const std::exception &e) {
+            BOOST_LOG_TRIVIAL(error) << e.what();
+            break;
+        }
+    }
+
+    zoneModel->load(imported);
+}

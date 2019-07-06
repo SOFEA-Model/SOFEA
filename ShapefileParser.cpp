@@ -142,8 +142,6 @@ void ShapefileParser::parseSources(const QString& filename, SourceGroup *sgPtr)
             if (validGeometry) {
                 AreaPolySource *source = new AreaPolySource;
                 source->geometry = p;
-                source->xshift = xshift;
-                source->yshift = yshift;
                 source->xs = p.first().x();
                 source->ys = p.first().y();
 

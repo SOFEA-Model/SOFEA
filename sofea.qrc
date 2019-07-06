@@ -83,5 +83,12 @@
         <file>images/SyncArrow_32x.png</file>
         <file>images/KagiChart_16x.png</file>
         <file>images/MeasureCalculate_16x.png</file>
+        <file>images/Effects_32x.png</file>
+        <file>images/TableFunction_16x.png</file>
+        <file>images/TableFunction_32x.png</file>
+        <file>images/KagiChart_32x.png</file>
+        <file>images/Close_24x.png</file>
+        <file>images/Close_NoHalo_24x.png</file>
+        <file>images/Restore_NoHalo_24x.png</file>
     </qresource>
 </RCC>

@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include <QString>
+
 #include <boost/icl/gregorian.hpp>
 #include <boost/icl/ptime.hpp>
 #include <boost/icl/interval_set.hpp>
@@ -101,9 +103,12 @@ struct ProfileData
 class MetFileParser
 {
 public:
+    MetFileParser(const QString& filename);
     MetFileParser(const std::string& filename);
+
     SurfaceInfo getSurfaceInfo() const;
     std::shared_ptr<SurfaceData> getSurfaceData() const;
+    static std::string absolutePath(const std::string& filename);
 
 private:
     std::shared_ptr<SurfaceData> sd = nullptr;

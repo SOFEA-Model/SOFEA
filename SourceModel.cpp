@@ -9,11 +9,13 @@
 #include <QFileInfo>
 #include <QSettings>
 
+#include <algorithm>
+
 #include <boost/ptr_container/clone_allocator.hpp>
 #include <fmt/format.h>
 
-SourceModel::SourceModel(SourceGroup *sg, QObject *parent)
-    : QAbstractTableModel(parent), sgPtr(sg)
+SourceModel::SourceModel(Scenario *s, SourceGroup *sg, QObject *parent)
+    : QAbstractTableModel(parent), sPtr(s), sgPtr(sg)
 {}
 
 void SourceModel::reset()
@@ -54,8 +56,21 @@ void SourceModel::import()
 
 Source* SourceModel::sourceFromIndex(const QModelIndex &index) const
 {
-    Source &s = sgPtr->sources.at(index.row());
-    return &s;
+    if (index.isValid() && index.row() < rowCount()) {
+        Source &s = sgPtr->sources.at(index.row());
+        return &s;
+    }
+    return nullptr;
+}
+
+void SourceModel::setColumnHidden(int column, bool hidden)
+{
+    columnHidden[column] = hidden;
+}
+
+bool SourceModel::isColumnHidden(int column) const
+{
+    return columnHidden.value(column, false);
 }
 
 void SourceModel::addAreaSource()
@@ -114,7 +129,7 @@ int SourceModel::rowCount(const QModelIndex &parent) const
 int SourceModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return 12;
+    return 14;
 }
 
 QVariant SourceModel::data(const QModelIndex &index, int role) const
@@ -127,47 +142,9 @@ QVariant SourceModel::data(const QModelIndex &index, int role) const
 
     const Source &s = sgPtr->sources.at(index.row());
 
-    if (role == Qt::EditRole)
+    if (role == Qt::UserRole)
     {
-        switch (index.column()) {
-            case 0:  return QString::fromStdString(s.srcid);
-            case 4:  return s.appStart;
-            case 5:  return s.appRate;
-            case 6:  return s.incorpDepth;
-            default: return QVariant();
-        }
-    }
-
-    if (role == Qt::DisplayRole)
-    {
-        QVariant fluxProfileName;
-        QVariant timeScaleFactor;
-        QVariant depthScaleFactor;
-        QVariant fluxScaleFactor;
-
-        const auto fp = s.fluxProfile.lock();
-        if (fp) {
-            fluxProfileName = QString::fromStdString(fp->name);
-            timeScaleFactor = fp->timeScaleFactor(s.appStart);
-            depthScaleFactor = fp->depthScaleFactor(s.incorpDepth);
-            fluxScaleFactor = fp->fluxScaleFactor(s.appRate, s.appStart, s.incorpDepth);
-        }
-
-        switch (index.column()) {
-            case 0:  return QString::fromStdString(s.srcid);
-            case 1:  return s.xs;
-            case 2:  return s.ys;
-            case 3:  return s.area();
-            case 4:  return s.appStart.toString("yyyy-MM-dd HH:mm");
-            case 5:  return s.appRate;
-            case 6:  return s.incorpDepth;
-            case 7:  return s.appRate * s.area() * sgPtr->appFactor;
-            case 8:  return fluxProfileName;
-            case 9:  return timeScaleFactor;
-            case 10: return depthScaleFactor;
-            case 11: return fluxScaleFactor;
-            default: return QVariant();
-        }
+        return QVariant();
     }
 
     if (role == Qt::ForegroundRole)
@@ -187,13 +164,83 @@ QVariant SourceModel::data(const QModelIndex &index, int role) const
             case 9:  return QVariant(QColor(Qt::red));
             case 10: return QVariant(QColor(Qt::red));
             case 11: return QVariant(QColor(Qt::red));
+            case 12: return QVariant();
+            case 13: return QVariant();
+            case 14: return QVariant(QColor(Qt::blue));
+            case 15: return QVariant(QColor(Qt::blue));
+            case 16: return QVariant(QColor(Qt::blue));
+            case 17: return QVariant(QColor(Qt::blue));
+            default: return QVariant(QColor(Qt::blue));
+        }
+    }
+
+    QVariant fluxProfileName;
+    QVariant timeScaleFactor;
+    QVariant depthScaleFactor;
+    QVariant fluxScaleFactor;
+
+    const auto fp = s.fluxProfile.lock();
+    if (fp) {
+        fluxProfileName = QString::fromStdString(fp->name);
+        timeScaleFactor = fp->timeScaleFactor(s.appStart);
+        depthScaleFactor = fp->depthScaleFactor(s.incorpDepth);
+        fluxScaleFactor = fp->fluxScaleFactor(s.appRate, s.appStart, s.incorpDepth);
+    }
+
+    double area = s.area();
+    QVariant bufferDistance = QString();
+    QVariant bufferDuration = QString();
+
+    if (sgPtr->enableBufferZones) {
+        BufferZone zref;
+        zref.appRateThreshold = s.appRate;
+        zref.areaThreshold = area;
+
+        auto it = std::find_if(sgPtr->zones.begin(), sgPtr->zones.end(), [&zref](const BufferZone& z) {
+           return (z.areaThreshold >= zref.areaThreshold) && (z.appRateThreshold >= zref.appRateThreshold);
+        });
+
+        if (it != sgPtr->zones.end()) {
+            bufferDistance = it->distance;
+            bufferDuration = it->duration;
+        }
+    }
+
+    if (role == Qt::EditRole)
+    {
+        switch (index.column()) {
+            case 0:  return QString::fromStdString(s.srcid);
+            case 4:  return s.appStart;
+            case 5:  return s.appRate;
+            case 6:  return s.incorpDepth;
+            case 8:  return fluxProfileName;
             default: return QVariant();
         }
     }
 
-    if (role == Qt::UserRole)
+    if (role == Qt::DisplayRole)
     {
-        return QVariant();
+        switch (index.column()) {
+            case 0:  return QString::fromStdString(s.srcid);
+            case 1:  return s.xs;
+            case 2:  return s.ys;
+            case 3:  return area;
+            case 4:  return s.appStart.toString("yyyy-MM-dd HH:mm");
+            case 5:  return s.appRate;
+            case 6:  return s.incorpDepth;
+            case 7:  return s.appRate * area * sgPtr->appFactor;
+            case 8:  return fluxProfileName;
+            case 9:  return timeScaleFactor;
+            case 10: return depthScaleFactor;
+            case 11: return fluxScaleFactor;
+            case 12: return bufferDistance;
+            case 13: return bufferDuration;
+            case 14: return s.airDiffusion;
+            case 15: return s.waterDiffusion;
+            case 16: return s.cuticularResistance;
+            case 17: return s.henryConstant;
+            default: return QVariant();
+        }
     }
 
     return QVariant();
@@ -201,11 +248,13 @@ QVariant SourceModel::data(const QModelIndex &index, int role) const
 
 bool SourceModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    if (role == Qt::EditRole && index.isValid()) {
-        int row = index.row();
+    if (!index.isValid())
+        return false;
 
-        Source &s = sgPtr->sources.at(row);
+    int row = index.row();
+    Source &s = sgPtr->sources.at(row);
 
+    if (role == Qt::EditRole) {
         switch (index.column()) {
             case 0: {
                 QString srcid = value.toString();
@@ -238,6 +287,20 @@ bool SourceModel::setData(const QModelIndex &index, const QVariant &value, int r
         return true;
     }
 
+    if (role == Qt::UserRole) {
+        switch (index.column()) {
+            case 8: {
+                int fpIndex = value.toInt();
+                if (fpIndex >= 0 && fpIndex < sPtr->fluxProfiles.size()) {
+                    s.fluxProfile = sPtr->fluxProfiles[fpIndex];
+                }
+            }
+        }
+
+        emit dataChanged(index, index);
+        return true;
+    }
+
     return false;
 }
 
@@ -258,6 +321,12 @@ QVariant SourceModel::headerData(int section, Qt::Orientation orientation, int r
                 case 9:  return QString("Time SF");
                 case 10: return QString("Depth SF");
                 case 11: return QString("Overall SF");
+                case 12: return QString("BZ Distance (m)");
+                case 13: return QString("BZ Duration (hr)");
+                case 14: return QLatin1String("Da (cm\xb2/sec)");
+                case 15: return QLatin1String("Dw (cm\xb2/sec)");
+                case 16: return QLatin1String("rcl (s/cm)");
+                case 17: return QLatin1String("H (Pa-m\xb3/mol)");
                 default: return QVariant();
             }
         }
@@ -297,6 +366,7 @@ Qt::ItemFlags SourceModel::flags(const QModelIndex &index) const
         case 4:  return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
         case 5:  return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
         case 6:  return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
+        case 8:  return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
         default: return QAbstractTableModel::flags(index);
     }
 }

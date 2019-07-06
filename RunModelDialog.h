@@ -8,6 +8,8 @@
 #include <QProcess>
 #include <QStandardItemModel>
 #include <QTimer>
+#include <QWinTaskbarButton>
+#include <QWinTaskbarProgress>
 
 #include <boost/ptr_container/ptr_vector.hpp>
 
@@ -27,6 +29,7 @@ class RunModelDialog : public QDialog
 public:
     explicit RunModelDialog(QWidget *parent = nullptr);
     void setWorkingDirectory(const QString& path);
+    void setTaskbarButton(QWinTaskbarButton *button);
     void addScenario(Scenario *);
 
 public slots:
@@ -80,6 +83,8 @@ private:
     QStandardItemModel *runModel;
     StandardTableView *runTable;
     QDialogButtonBox *buttonBox;
+    QWinTaskbarButton *taskbarButton = nullptr;
+    QWinTaskbarProgress *taskbarProgress = nullptr;
 };
 
 #endif // RUNMODELDIALOG_H

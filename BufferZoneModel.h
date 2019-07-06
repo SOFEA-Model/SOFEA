@@ -1,24 +1,21 @@
-#ifndef SOURCEMODEL_H
-#define SOURCEMODEL_H
+#ifndef BUFFERZONEMODEL_H
+#define BUFFERZONEMODEL_H
+
+#include <set>
 
 #include <QAbstractTableModel>
 #include <QVariant>
-#include <QMap>
 
-#include "Scenario.h"
-#include "SourceGroup.h"
+#include "BufferZone.h"
 
-class SourceModel : public QAbstractTableModel
+class BufferZoneModel : public QAbstractTableModel
 {
-    Q_OBJECT
-
 public:
-    SourceModel(Scenario *s, SourceGroup *sg, QObject *parent = nullptr);
-    void reset();
-    void import();
-    void setColumnHidden(int column, bool hidden);
-    bool isColumnHidden(int column) const;
-    Source* sourceFromIndex(const QModelIndex &index) const;
+    explicit BufferZoneModel(QObject *parent = nullptr);
+
+    void save(std::set<BufferZone>& zones) const;
+    void load(const std::set<BufferZone>& zones);
+    void insert(const BufferZone& zone);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -28,15 +25,8 @@ public:
     Qt::ItemFlags flags(const QModelIndex &index) const override;
     bool removeRows(int row, int count, const QModelIndex &index = QModelIndex()) override;
 
-public slots:
-    void addAreaSource();
-    void addAreaCircSource();
-    void addAreaPolySource();
-
 private:
-    Scenario *sPtr;
-    SourceGroup *sgPtr;
-    QMap<int, bool> columnHidden;
+    std::set<BufferZone> m_zones;
 };
 
-#endif // SOURCEMODEL_H
+#endif // BUFFERZONEMODEL_H

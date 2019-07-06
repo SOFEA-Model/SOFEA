@@ -4,15 +4,43 @@
 #include <string>
 
 #include <QDateEdit>
+#include <QDockWidget>
 #include <QFrame>
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPalette>
 #include <QPlainTextEdit>
+#include <QProxyStyle>
 #include <QStringList>
 #include <QTextEdit>
 #include <QToolButton>
+
+//-----------------------------------------------------------------------------
+// DockWidget
+//-----------------------------------------------------------------------------
+
+class DockWidgetProxyStyle : public QProxyStyle
+{
+public:
+    DockWidgetProxyStyle(QStyle *style = nullptr);
+protected:
+    int pixelMetric(PixelMetric which, const QStyleOption *option,
+        const QWidget *widget) const override;
+    QIcon standardIcon(QStyle::StandardPixmap icon, const QStyleOption *option = nullptr,
+        const QWidget *widget = nullptr) const override;
+    void drawControl(QStyle::ControlElement element, const QStyleOption *option,
+        QPainter *painter, const QWidget *widget = nullptr) const override;
+};
+
+class DockWidget : public QDockWidget
+{
+public:
+    DockWidget(const QString& title, QWidget *parent = nullptr, Qt::WindowFlags flags = 0);
+    DockWidget(QWidget *parent = nullptr, Qt::WindowFlags flags = 0);
+private:
+    DockWidgetProxyStyle *proxyStyle;
+};
 
 //-----------------------------------------------------------------------------
 // GridLayout
@@ -78,8 +106,6 @@ public:
     void setBasePalette();
 protected:
     void paintEvent(QPaintEvent *event) override;
-private:
-    QPalette m_defaultPalette;
 };
 
 //-----------------------------------------------------------------------------
@@ -90,11 +116,7 @@ class ReadOnlyTextEdit : public QTextEdit
 {
 public:
     explicit ReadOnlyTextEdit(QWidget *parent = nullptr);
-    void setRowCount(const int rows);
-protected:
-    void paintEvent(QPaintEvent *event) override;
-private:
-    QPalette m_defaultPalette;
+    void setLineCount(const int lines);
 };
 
 //-----------------------------------------------------------------------------

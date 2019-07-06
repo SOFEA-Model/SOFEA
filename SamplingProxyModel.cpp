@@ -30,9 +30,11 @@ QModelIndex SamplingProxyModel::mapToSource(const QModelIndex &proxyIndex) const
     if (!proxyIndex.isValid())
         return QModelIndex();
 
-    const int column = proxyIndex.column();
-    if (column >= sourceModel()->columnCount())
-        return QModelIndex();
+    if (proxyIndex.column() >= sourceModel()->columnCount()) {
+        // Create a fake index for the extra column.
+        const QModelIndex newIndex = createIndex(proxyIndex.row(), proxyIndex.column(), proxyIndex.internalPointer());
+        return QIdentityProxyModel::mapToSource(newIndex);
+    }
 
     return QIdentityProxyModel::mapToSource(proxyIndex);
 }
@@ -50,8 +52,8 @@ QVariant SamplingProxyModel::data(const QModelIndex &index, int role) const
 
     if (extraCol == 0) {
         if (role == Qt::EditRole || role == Qt::DisplayRole) {
-            if (modelData.find(index) != modelData.end()) {
-                double value = modelData.at(index);
+            if (m_modelData.find(index) != m_modelData.end()) {
+                double value = m_modelData.at(index);
                 return QVariant(value);
             } else {
                 return QVariant(0.0);
@@ -64,16 +66,18 @@ QVariant SamplingProxyModel::data(const QModelIndex &index, int role) const
 
 bool SamplingProxyModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
+    // Only allow editing extra columns.
     const int extraCol = extraColumnForProxyColumn(index.column());
-    if (extraCol == 0) {
-        if (role == Qt::EditRole) {
-            bool ok = false;
-            double p = value.toDouble(&ok);
-            if (ok) {
-                modelData[index] = value.toDouble();
-                emit dataChanged(index, index);
-                return true;
-            }
+    if (extraCol != 0)
+        return false;
+
+    if (role == Qt::EditRole) {
+        bool ok = false;
+        double p = value.toDouble(&ok);
+        if (ok) {
+            m_modelData[index] = value.toDouble();
+            emit dataChanged(index, index);
+            return true;
         }
     }
 
@@ -102,13 +106,13 @@ Qt::ItemFlags SamplingProxyModel::flags(const QModelIndex &index) const
 {
     const int extraCol = extraColumnForProxyColumn(index.column());
     if (extraCol < 0) {
-        return sourceModel()->flags(mapToSource(index));
+        return sourceModel()->flags(mapToSource(index)) & (~Qt::ItemIsEditable) & (~Qt::ItemIsEnabled);
     }
     else if (extraCol == 0) {
         return QAbstractItemModel::flags(index) | Qt::ItemIsEditable;
     }
 
-    return Qt::ItemIsEnabled;
+    return Qt::NoItemFlags;
 }
 
 QModelIndex SamplingProxyModel::index(int row, int column, const QModelIndex &parent) const
@@ -132,7 +136,7 @@ QModelIndex SamplingProxyModel::sibling(int row, int column, const QModelIndex &
 
 void SamplingProxyModel::normalize()
 {
-    if (!normalizeInternal(modelData))
+    if (!normalizeInternal(m_modelData))
         return;
 
     int column = proxyColumnForExtraColumn(0);

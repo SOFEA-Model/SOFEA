@@ -16,6 +16,7 @@ signals:
     void saved();
 
 public slots:
+    void apply();
     void accept() override;
     void reject() override;
 
@@ -25,7 +26,6 @@ private:
     MetDataPage *metDataPage;
     FluxProfilesPage *fluxProfilesPage;
     DispersionPage *dispersionPage;
-    bool _saved;
 };
 
 #endif // SCENARIOPROPERTIES_H

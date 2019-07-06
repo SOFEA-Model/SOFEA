@@ -2,8 +2,8 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -17,9 +17,8 @@
 #include "GenericDistribution.h"
 #include "SamplingDistribution.h"
 #include "Source.h"
+#include "BufferZone.h"
 #include "FluxProfile.h"
-
-struct Scenario;
 
 struct ReceptorRing
 {
@@ -81,8 +80,6 @@ struct SourceGroup
     void resampleHenryConstant();
     void resampleFluxProfile();
 
-    void resetGeometry();
-
     enum class AppMethod {
         Other,
         TIFDripIrrigation,
@@ -115,10 +112,12 @@ struct SourceGroup
     GenericDistribution henryConstant;
 
     // Buffer Zones
-    std::vector<std::pair<double, int>> zones; // distance, hours
+    bool enableBufferZones;
+    std::set<BufferZone> zones;
 
     // Flux Profile
-    using FluxProfileDistribution = SamplingDistribution<std::shared_ptr<FluxProfile>>;
+    using FluxProfilePtr = std::weak_ptr<FluxProfile>;
+    using FluxProfileDistribution = SamplingDistribution<FluxProfilePtr>;
     FluxProfileDistribution fluxProfile;
 
     // Containers

@@ -5,7 +5,13 @@
 #include <sstream>
 #include <locale>
 #include <memory>
+#include <string>
 #include <vector>
+
+#include <QDir>
+#include <QFileInfo>
+#include <QSettings>
+#include <QString>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
@@ -66,13 +72,18 @@ inline bool checkMiss(const SurfaceData::SurfaceRecord& sr)
     }
 }
 
+MetFileParser::MetFileParser(const QString& filename)
+    : MetFileParser(filename.toStdString())
+{}
+
 MetFileParser::MetFileParser(const std::string& filename)
 {
     using namespace boost::gregorian;
     using namespace boost::posix_time;
     using namespace boost::icl;
 
-    std::ifstream ifs(filename, std::ios_base::in);
+    std::string path = absolutePath(filename);
+    std::ifstream ifs(path, std::ios_base::in);
     if (!ifs)
         return;
 
@@ -179,4 +190,18 @@ SurfaceInfo MetFileParser::getSurfaceInfo() const
 std::shared_ptr<SurfaceData> MetFileParser::getSurfaceData() const
 {
     return sd;
+}
+
+std::string MetFileParser::absolutePath(const std::string& filename)
+{
+    // If this is a relative path, assume current project directory.
+    QString path = QString::fromStdString(filename);
+    QFileInfo fi(path);
+    if (!path.isEmpty() && fi.isRelative()) {
+        QSettings settings;
+        QString dir = settings.value("DefaultDirectory", QDir::currentPath()).toString();
+        path = QDir::cleanPath(dir + QDir::separator() + path);
+    }
+
+    return path.toStdString();
 }

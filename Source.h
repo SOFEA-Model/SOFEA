@@ -49,7 +49,9 @@ struct Source
     double cuticularResistance = 0;
     double henryConstant = 0;
     QPolygonF geometry;
-    std::weak_ptr<FluxProfile> fluxProfile;
+
+    using FluxProfilePtr = std::weak_ptr<FluxProfile>;
+    FluxProfilePtr fluxProfile;
 };
 
 // Implement clonable concept for boost::ptr_vector

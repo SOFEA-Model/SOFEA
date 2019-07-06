@@ -17,6 +17,7 @@ signals:
     void saved();
 
 public slots:
+    void apply();
     void accept() override;
     void reject() override;
 
@@ -26,7 +27,6 @@ private:
     DepositionPage *depositionPage;
     FluxProfilePage *fluxProfilePage;
     BufferZonePage *bufferZonePage;
-    bool _saved;
 };
 
 #endif // SOURCEGROUPPROPERTIES_H

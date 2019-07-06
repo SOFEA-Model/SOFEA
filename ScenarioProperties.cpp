@@ -1,3 +1,4 @@
+#include <QPushButton>
 #include <QWidget>
 #include <QIcon>
 
@@ -5,7 +6,7 @@
 #include "Scenario.h"
 
 ScenarioProperties::ScenarioProperties(Scenario *s, QWidget *parent)
-    : SettingsDialog(parent), sPtr(s), _saved(false)
+    : SettingsDialog(parent), sPtr(s)
 {
     setWindowTitle(QString::fromStdString(s->title));
     setWindowIcon(QIcon(":/images/Settings_32x.png"));
@@ -20,25 +21,27 @@ ScenarioProperties::ScenarioProperties(Scenario *s, QWidget *parent)
     addPage("Flux Profiles", fluxProfilesPage);
     addPage("Dispersion Model", dispersionPage);
 
+    connect(buttonBox->button(QDialogButtonBox::Apply), &QPushButton::clicked, this, &ScenarioProperties::apply);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &ScenarioProperties::accept);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &ScenarioProperties::reject);
 }
 
-void ScenarioProperties::accept()
+void ScenarioProperties::apply()
 {
     generalPage->save();
     metDataPage->save();
     fluxProfilesPage->save();
     dispersionPage->save();
-
-    _saved = true;
     emit saved();
+}
+
+void ScenarioProperties::accept()
+{
+    apply();
+    QDialog::done(QDialog::Accepted);
 }
 
 void ScenarioProperties::reject()
 {
-    if (_saved)
-        QDialog::done(QDialog::Accepted);
-    else
-        QDialog::done(QDialog::Rejected);
+    QDialog::done(QDialog::Rejected);
 }

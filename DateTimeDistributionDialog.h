@@ -33,17 +33,16 @@ private:
     void resetTable();
 
 public slots:
+    void apply();
     void accept() override;
     void reject() override;
 
 private:
     IntervalMap intervals;
     DateTimeDistribution currentDist;
-    bool saved = false;
 
     QDateTimeEdit *dteLower;
     QDateTimeEdit *dteUpper;
-    QDoubleSpinBox *sbProbability;
     QStandardItemModel *model;
     StandardTableView *view;
     QPushButton *btnAdd;

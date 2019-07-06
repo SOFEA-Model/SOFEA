@@ -12,11 +12,11 @@ class StandardTableEditor : public QWidget
 
 public:
     enum StandardButton {
-        Add       = 0x1,
-        Remove    = 0x2,
-        AddRemove = 0x3,
-        Rename    = 0x4,
-        MoveUp    = 0x8,
+        Add       = 0x01,
+        Remove    = 0x02,
+        AddRemove = 0x03,
+        Rename    = 0x04,
+        MoveUp    = 0x08,
         MoveDown  = 0x10,
         Edit      = 0x20,
         Import    = 0x40,
@@ -31,7 +31,6 @@ public:
     void init(StandardTableView *standardTableView);
     void setImportFilter(const QString& filter);
     void setImportCaption(const QString& caption);
-    QString importFile();
 
     QPushButton *btnAdd = nullptr;
     QPushButton *btnRemove = nullptr;
@@ -45,12 +44,12 @@ signals:
     void moveRequested(const QModelIndex &sourceParent, int sourceRow, int count,
                        const QModelIndex &destinationParent, int destinationRow);
     void editRequested(const QModelIndex &index);
-    void importRequested();
+    void importRequested(const QString& filename);
 
 public slots:
     void onAddItemClicked();
     void onRemoveItemClicked();
-    void onRenameItemClicked();;
+    void onRenameItemClicked();
     void onMoveRequested();
     void onEditItemClicked();
     void onImportClicked();
@@ -60,7 +59,6 @@ private:
     StandardTableView *m_standardTableView;
     QString m_importFilter;
     QString m_importCaption;
-    QString m_importFile;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(StandardTableEditor::StandardButtons)

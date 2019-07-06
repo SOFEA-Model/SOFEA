@@ -1,9 +1,10 @@
 #include <QtWidgets>
 
+#include "ctkCollapsibleGroupBox.h"
+
 #include "ScenarioPages.h"
 #include "MetFileParser.h"
 #include "MetFileInfoDialog.h"
-#include "FluxProfileDialog.h"
 
 /****************************************************************************
 ** General
@@ -13,14 +14,18 @@ GeneralPage::GeneralPage(Scenario *s, QWidget *parent)
     : QWidget(parent), scenario(s)
 {
     cboFumigant = new QComboBox;
+    cboFumigant->setObjectName("Fumigant");
 
     leDecayCoefficient = new DoubleLineEdit;
+    leDecayCoefficient->setObjectName("DecayCoefficient");
 
     sbFlagpoleHeight = new QDoubleSpinBox;
+    sbFlagpoleHeight->setObjectName("FlagpoleHeight");
     sbFlagpoleHeight->setRange(0, 1000);
     sbFlagpoleHeight->setDecimals(2);
 
     periodEditor = new ListEditor;
+    periodEditor->setObjectName("AveragingPeriod");
     periodEditor->setValidator(1, 24, 0);
     periodEditor->addValue(1);
     periodEditor->addValue(24);
@@ -29,22 +34,20 @@ GeneralPage::GeneralPage(Scenario *s, QWidget *parent)
     periodEditor->setEditable(false);
 
     // Layouts
-    GridLayout *layout1 = new GridLayout;
-    layout1->addWidget(new QLabel(tr("Fumigant type:")), 0, 0);
-    layout1->addWidget(cboFumigant, 0, 1);
-    layout1->addWidget(new QLabel(tr("Decay coefficient (1/sec):")), 1, 0);
-    layout1->addWidget(leDecayCoefficient, 1, 1);
-    layout1->addWidget(new QLabel(tr("Default receptor height (m):")), 2, 0);
-    layout1->addWidget(sbFlagpoleHeight, 2, 1);
-    layout1->addWidget(new QLabel(tr("Averaging periods (hr): ")), 3, 0);
-    layout1->addWidget(periodEditor, 3, 1, 2, 1);
-
-    QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->addLayout(layout1);
-    mainLayout->addStretch(1);
+    GridLayout *mainLayout = new GridLayout;
+    mainLayout->setAlignment(Qt::AlignTop);
+    mainLayout->addWidget(new QLabel(tr("Fumigant type:")), 0, 0);
+    mainLayout->addWidget(cboFumigant, 0, 1);
+    mainLayout->addWidget(new QLabel(tr("Decay coefficient (1/sec):")), 1, 0);
+    mainLayout->addWidget(leDecayCoefficient, 1, 1);
+    mainLayout->addWidget(new QLabel(tr("Default receptor height (m):")), 2, 0);
+    mainLayout->addWidget(sbFlagpoleHeight, 2, 1);
+    mainLayout->addWidget(new QLabel(tr("Averaging periods (hr): ")), 3, 0);
+    mainLayout->addWidget(periodEditor, 3, 1, 2, 1);
 
     BackgroundFrame *frame = new BackgroundFrame;
     frame->setLayout(mainLayout);
+
     QVBoxLayout *frameLayout = new QVBoxLayout;
     frameLayout->addWidget(frame);
     frameLayout->setMargin(0);
@@ -55,6 +58,11 @@ GeneralPage::GeneralPage(Scenario *s, QWidget *parent)
 
 void GeneralPage::init()
 {
+    cboFumigant->setWhatsThis("<p><b>Fumigant Type</b></p><p>Type of fumigant used in the scenario. For reference only; does not affect calculations.</p>");
+    leDecayCoefficient->setWhatsThis("<p><b>Decay Coefficient</b></p><p>Optional decay coefficient for exponential decay.</p>");
+    sbFlagpoleHeight->setWhatsThis("<p><b>Default Receptor Height</b></p><p>Default receptor height above local terrain.</p>");
+    periodEditor->setWhatsThis("<p><b>Averaging Periods</b></p><p>Averaging periods to include in output.</p>");
+
     for (const auto& item : scenario->chemicalMap) {
         QString text = QString::fromStdString(item.second);
         cboFumigant->addItem(text, item.first); // ID
@@ -100,22 +108,26 @@ MetDataPage::MetDataPage(Scenario *s, QWidget *parent)
     : QWidget(parent), scenario(s)
 {
     leSurfaceDataFile = new QLineEdit;
+    leSurfaceDataFile->setObjectName("SurfaceDataFile");
     leSurfaceDataFile->setMaxLength(260); // MAX_PATH
     btnSurfaceDataFile = new QToolButton;
     btnSurfaceDataFile->setText("...");
 
     leUpperAirDataFile = new QLineEdit;
+    leUpperAirDataFile->setObjectName("UpperAirDataFile");
     leUpperAirDataFile->setMaxLength(260); // MAX_PATH
     btnUpperAirDataFile = new QToolButton;
     btnUpperAirDataFile->setText("...");
 
     sbAnemometerHeight = new QDoubleSpinBox;
+    sbAnemometerHeight->setObjectName("AnemometerHeight");
     sbAnemometerHeight->setMinimum(0.1);
     sbAnemometerHeight->setMaximum(1000);
     sbAnemometerHeight->setSingleStep(0.1);
     sbAnemometerHeight->setDecimals(1);
 
     sbWindRotation = new QDoubleSpinBox;
+    sbWindRotation->setObjectName("WindRotation");
     sbWindRotation->setMinimum(0);
     sbWindRotation->setMaximum(359.9);
     sbWindRotation->setSingleStep(1);
@@ -128,28 +140,34 @@ MetDataPage::MetDataPage(Scenario *s, QWidget *parent)
     lwIntervals = new QListWidget;
     lwIntervals->setSelectionMode(QAbstractItemView::NoSelection);
     lwIntervals->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    lwIntervals->setUniformItemSizes(true);
 
     btnDiagnostics = new QPushButton("Diagnostics...");
     btnUpdate = new QPushButton("Update");
 
     // Layouts
     QLatin1String rotationText = QLatin1String("Wind rotation (\u00b0CCW):");
-    GridLayout *layout1 = new GridLayout;
-    layout1->setColumnStretch(0, 0);
-    layout1->setColumnStretch(1, 1);
-    layout1->setColumnStretch(2, 0);
-    layout1->addWidget(new QLabel(tr("Surface data file:")),        0, 0);
-    layout1->addWidget(leSurfaceDataFile,                           0, 1);
-    layout1->addWidget(btnSurfaceDataFile,                          0, 2);
-    layout1->addWidget(new QLabel(tr("Upper air data file:")),      1, 0);
-    layout1->addWidget(leUpperAirDataFile,                          1, 1);
-    layout1->addWidget(btnUpperAirDataFile,                         1, 2);
-    layout1->addWidget(new QLabel(tr("Anemometer height (m):")),    2, 0);
-    layout1->addWidget(sbAnemometerHeight,                          2, 1, 1, 2);
-    layout1->addWidget(new QLabel(rotationText),                    3, 0);
-    layout1->addWidget(sbWindRotation,                              3, 1, 1, 2);
+    GridLayout *inputLayout = new GridLayout;
+    inputLayout->setColumnStretch(0, 0);
+    inputLayout->setColumnStretch(1, 1);
+    inputLayout->setColumnStretch(2, 0);
+    inputLayout->addWidget(new QLabel(tr("Surface data file:")),        0, 0);
+    inputLayout->addWidget(leSurfaceDataFile,                           0, 1);
+    inputLayout->addWidget(btnSurfaceDataFile,                          0, 2);
+    inputLayout->addWidget(new QLabel(tr("Upper air data file:")),      1, 0);
+    inputLayout->addWidget(leUpperAirDataFile,                          1, 1);
+    inputLayout->addWidget(btnUpperAirDataFile,                         1, 2);
+    inputLayout->addWidget(new QLabel(tr("Anemometer height (m):")),    2, 0);
+    inputLayout->addWidget(sbAnemometerHeight,                          2, 1, 1, 2);
+    inputLayout->addWidget(new QLabel(rotationText),                    3, 0);
+    inputLayout->addWidget(sbWindRotation,                              3, 1, 1, 2);
 
     // File Information
+    QVBoxLayout *statsLayout = new QVBoxLayout;
+    statsLayout->addSpacing(5);
+    statsLayout->addWidget(new QLabel(tr("Time intervals:")));
+    statsLayout->addWidget(lwIntervals);
+
     GridLayout *infoLayout = new GridLayout;
     int minWidth = infoLayout->columnMinimumWidth(0) - 12;
     infoLayout->setColumnMinimumWidth(0, minWidth);
@@ -159,27 +177,23 @@ MetDataPage::MetDataPage(Scenario *s, QWidget *parent)
     infoLayout->addWidget(leSurfaceStationId,                          0, 1);
     infoLayout->addWidget(new QLabel(tr("Upper air station ID:")),     1, 0);
     infoLayout->addWidget(leUpperAirStationId,                         1, 1);
+    infoLayout->addLayout(statsLayout,                                 2, 0, 1, 2);
 
-    QVBoxLayout *statsLayout = new QVBoxLayout;
-    statsLayout->addSpacing(5);
-    statsLayout->addWidget(new QLabel(tr("Time intervals:")));
-    statsLayout->addWidget(lwIntervals);
-    infoLayout->addLayout(statsLayout, 2, 0, 1, 2);
     QGroupBox *gbFileInfo = new QGroupBox("File Information");
     gbFileInfo->setLayout(infoLayout);
 
     // Buttons
-    QHBoxLayout *layout4 = new QHBoxLayout;
-    layout4->addStretch(1);
-    layout4->addWidget(btnUpdate);
-    layout4->addWidget(btnDiagnostics);
+    QHBoxLayout *buttonLayout = new QHBoxLayout;
+    buttonLayout->addStretch(1);
+    buttonLayout->addWidget(btnUpdate);
+    buttonLayout->addWidget(btnDiagnostics);
 
     // Main Layout
     QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->addLayout(layout1);
+    mainLayout->addLayout(inputLayout);
     mainLayout->addSpacing(15);
     mainLayout->addWidget(gbFileInfo);
-    mainLayout->addLayout(layout4);
+    mainLayout->addLayout(buttonLayout);
     mainLayout->addStretch(1);
 
     BackgroundFrame *frame = new BackgroundFrame;
@@ -236,7 +250,7 @@ void MetDataPage::load()
 
 void MetDataPage::showInfoDialog()
 {
-    std::string surfaceFile = leSurfaceDataFile->text().toStdString();
+    QString surfaceFile = leSurfaceDataFile->text();
 
     MetFileParser parser(surfaceFile);
     std::shared_ptr<SurfaceData> sd = parser.getSurfaceData();
@@ -250,7 +264,7 @@ void MetDataPage::showInfoDialog()
 
 void MetDataPage::update()
 {
-    std::string surfaceFile = leSurfaceDataFile->text().toStdString();
+    QString surfaceFile = leSurfaceDataFile->text();
 
     MetFileParser parser(surfaceFile);
     SurfaceInfo sfInfo = parser.getSurfaceInfo();
@@ -295,7 +309,7 @@ void MetDataPage::browseMetDataFile()
     if (fi.exists())
         defaultDirectory = fi.canonicalPath();
     else
-        defaultDirectory = settings.value(settingsKey, qApp->applicationDirPath()).toString();
+        defaultDirectory = settings.value(settingsKey, QDir::currentPath()).toString();
 
     // execute the dialog
     const QString metFile = QFileDialog::getOpenFileName(this,
@@ -321,7 +335,7 @@ void MetDataPage::browseMetDataFile()
 FluxProfilesPage::FluxProfilesPage(Scenario *s, QWidget *parent)
     : QWidget(parent), scenario(s)
 {
-    model = new FluxProfileModel;
+    model = new FluxProfileModel(this);
 
     table = new StandardTableView;
     table->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -338,7 +352,7 @@ FluxProfilesPage::FluxProfilesPage(Scenario *s, QWidget *parent)
     table->setColumnWidth(2, startingWidth * 18);
     table->setColumnWidth(3, startingWidth * 18);
 
-    StandardTableEditor::StandardButtons editorOpts = StandardTableEditor::All;
+    StandardTableEditor::StandardButtons editorOpts = StandardTableEditor::All & ~StandardTableEditor::Import;
     editor = new StandardTableEditor(Qt::Vertical, editorOpts);
     editor->init(table);
 
@@ -376,12 +390,7 @@ void FluxProfilesPage::load()
 
 void FluxProfilesPage::editFluxProfile(const QModelIndex& index)
 {
-    auto fp = model->fluxProfileFromIndex(index);
-    FluxProfileDialog dialog(fp, this);
-    int rc = dialog.exec();
-    if (rc == QDialog::Accepted) {
-        emit model->dataChanged(index, index);
-    }
+    model->showEditor(index, this);
 }
 
 /****************************************************************************
@@ -392,7 +401,7 @@ DispersionPage::DispersionPage(Scenario *s, QWidget *parent)
     : QWidget(parent), scenario(s)
 {
     // AERMOD Group 1: Non-DFAULT
-    QGroupBox *gbNonDefault = new QGroupBox("Non-DFAULT Options");
+    ctkCollapsibleGroupBox *gbNonDefault = new ctkCollapsibleGroupBox("Non-DFAULT Options");
     gbNonDefault->setFlat(true);
     chkFlat = new QCheckBox("Assume flat terrain (FLAT)");
     chkFastArea = new QCheckBox("Optimize model runtime for area sources (FASTAREA)");
@@ -419,8 +428,9 @@ DispersionPage::DispersionPage(Scenario *s, QWidget *parent)
     velocityLayout->addStretch(1);
 
     // AERMOD Group 2: ALPHA
-    QGroupBox *gbAlpha = new QGroupBox("ALPHA Options");
+    ctkCollapsibleGroupBox *gbAlpha = new ctkCollapsibleGroupBox("ALPHA Options");
     gbAlpha->setFlat(true);
+    //gbAlpha->setCollapsed(true);
     chkLowWind = new QCheckBox("Optimize model for low wind speeds (LOW_WIND)");
 
     // Low Wind Parameters
@@ -469,13 +479,7 @@ DispersionPage::DispersionPage(Scenario *s, QWidget *parent)
 
     // ALPHA Layout
     QGridLayout *gbAlphaLayout = new QGridLayout;
-    gbAlphaLayout->setColumnMinimumWidth(0, 16);
-    gbAlphaLayout->setColumnStretch(0, 0);
-    gbAlphaLayout->setColumnStretch(1, 0);
-    gbAlphaLayout->setColumnStretch(2, 1);
-    gbAlphaLayout->setColumnStretch(3, 0);
-    gbAlphaLayout->setColumnStretch(4, 1);
-    gbAlphaLayout->setColumnStretch(5, 2);
+    gbAlphaLayout->setColumnStretch(5, 1);
     gbAlphaLayout->addWidget(chkLowWind, 0, 0, 1, 5);
     gbAlphaLayout->addWidget(lblSVmin,   1, 1, 1, 1);
     gbAlphaLayout->addWidget(sbSVmin,    1, 2, 1, 1);

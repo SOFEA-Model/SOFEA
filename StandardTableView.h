@@ -20,17 +20,13 @@ public:
     void removeSelectedRows();
     bool moveSelectedRows(int offset);
     void copyClipboard();
-    void setDoubleLineEdit(double min, double max, int decimals, bool fixed = false);
     void setDoubleLineEditForColumn(int column, double min, double max, int decimals, bool fixed = false);
-    void setSpinBox(int min, int max);
-    void setSpinBoxForColumn(int column, int min, int max);
-    void setDoubleSpinBox(double min, double max, int decimals, bool fixed = false);
-    void setDoubleSpinBoxForColumn(int column, double min, double max, int decimals, bool fixed = false);
-    void setDateTimeEdit(QDateTime min = QDateTime(QDate(1800, 1, 1), QTime(0, 0, 0, 0)),
-                         QDateTime max = QDateTime(QDate(2100, 12, 31), QTime(23, 59, 59, 999)));
+    void setSpinBoxForColumn(int column, int min, int max, int singleStep);
+    void setDoubleSpinBoxForColumn(int column, double min, double max, int decimals, double singleStep);
     void setDateTimeEditForColumn(int column,
                                   QDateTime min = QDateTime(QDate(1800, 1, 1), QTime(0, 0, 0, 0)),
                                   QDateTime max = QDateTime(QDate(2100, 12, 31), QTime(23, 59, 59, 999)));
+    void setComboBoxForColumn(int column, QAbstractItemModel *model, int modelColumn);
     std::vector<double> getNumericColumn(int);
     template <typename T> void setColumnData(int column, const std::vector<T> &values);
 

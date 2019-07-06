@@ -1,4 +1,5 @@
 #include "FluxProfileModel.h"
+#include "FluxProfileDialog.h"
 
 #include <QApplication>
 #include <QMetaType>
@@ -36,47 +37,64 @@ FluxProfileModel::FluxProfileModel(QObject *parent)
     : QAbstractTableModel(parent)
 {}
 
-void FluxProfileModel::save(std::vector<std::shared_ptr<FluxProfile>> &profiles) const
+void FluxProfileModel::save(std::vector<std::shared_ptr<FluxProfile>>& profiles)
 {
-    profiles = modelData;
-}
+    profiles.clear();
+    profiles.reserve(localData.size());
 
-void FluxProfileModel::load(const std::vector<std::shared_ptr<FluxProfile>>& profiles, bool copy)
-{
-    beginResetModel();
-
-    // If copy is true, initialize local data with deep copy.
-    // Otherwise, pointers refer to the original object.
-
-    if (copy) {
-        modelData.clear();
-        modelData.reserve(profiles.size());
-        for (const auto fp : profiles) {
-            modelData.emplace_back(std::make_shared<FluxProfile>(*fp));
+    for (auto local : localData) {
+        auto source = localToSource.at(local);
+        if (local != nullptr) {
+            *source = *local;
+            profiles.push_back(source);
         }
     }
-    else {
-        modelData = profiles;
+}
+
+void FluxProfileModel::load(const std::vector<std::shared_ptr<FluxProfile>>& profiles)
+{
+    beginResetModel();
+
+    // Initialize local model data with deep copy.
+
+    localData.clear();
+    localToSource.clear();
+    sourceToLocal.clear();
+
+    localData.reserve(profiles.size());
+    for (const auto source : profiles) {
+        auto local = std::make_shared<FluxProfile>(*source);
+        localToSource[local] = source;
+        sourceToLocal[source] = local;
+        localData.push_back(local);
     }
 
     endResetModel();
 }
 
-void FluxProfileModel::reset()
+void FluxProfileModel::showEditor(const QModelIndex &index, QWidget *parent)
 {
-    beginResetModel();
-    endResetModel();
+    auto fp = localData.at(index.row());
+    FluxProfileDialog dialog(fp, parent);
+    int rc = dialog.exec();
+    if (rc == QDialog::Accepted) {
+        QModelIndex topLeft = this->index(index.row(), 0);
+        QModelIndex bottomRight = this->index(index.row(), this->columnCount() - 1);
+        emit dataChanged(topLeft, bottomRight);
+    }
 }
 
 std::shared_ptr<FluxProfile> FluxProfileModel::fluxProfileFromIndex(const QModelIndex &index)
 {
-    return modelData.at(index.row());
+    // Returns the original flux profile.
+    auto local = localData.at(index.row());
+    return localToSource.at(local);
 }
 
 int FluxProfileModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return modelData.size();
+    return static_cast<int>(localData.size());
 }
 
 int FluxProfileModel::columnCount(const QModelIndex &parent) const
@@ -93,7 +111,7 @@ QVariant FluxProfileModel::data(const QModelIndex &index, int role) const
     if (index.row() >= rowCount() || index.row() < 0)
         return QVariant();
 
-    auto fp = modelData.at(index.row());
+    auto fp = localData.at(index.row());
 
     if (role == Qt::UserRole) {
         return QVariant();
@@ -123,7 +141,7 @@ bool FluxProfileModel::setData(const QModelIndex &index, const QVariant &value, 
 {
     if (role == Qt::EditRole && index.isValid())
     {
-        auto fp = modelData.at(index.row());
+        auto fp = localData.at(index.row());
         switch (index.column()) {
             case 0: {
                 QString name = value.toString();
@@ -175,14 +193,19 @@ Qt::ItemFlags FluxProfileModel::flags(const QModelIndex &index) const
 
 bool FluxProfileModel::insertRows(int row, int count, const QModelIndex &)
 {
-    if (row < 0 || row > modelData.size())
+    static unsigned int seq = 0;
+
+    if (row < 0 || row > localData.size())
         return false;
 
-    auto it = modelData.begin() + row;
+    auto it = localData.begin() + row;
     beginInsertRows(QModelIndex(), row, row + count - 1);
     for (int i=0; i < count; ++i) {
         auto fp = std::make_shared<FluxProfile>();
-        modelData.insert(it, fp);
+        fp->name = fmt::format("Profile{:0=2}", ++seq);
+        localToSource[fp] = fp;
+        sourceToLocal[fp] = fp;
+        localData.insert(it, fp);
     }
     endInsertRows();
 
@@ -191,13 +214,17 @@ bool FluxProfileModel::insertRows(int row, int count, const QModelIndex &)
 
 bool FluxProfileModel::removeRows(int row, int count, const QModelIndex &)
 {
-    if (row < 0 || row > modelData.size())
+    if (row < 0 || row > localData.size())
         return false;
 
-    auto it = modelData.begin() + row;
+    auto local = localData.at(row);
+    auto source = localToSource.at(local);
+    sourceToLocal.at(source) = nullptr;
+
+    auto it = localData.begin() + row;
     beginRemoveRows(QModelIndex(), row, row + count - 1);
     for (int i = 0; i < count; ++i) {
-        it = modelData.erase(it);
+        it = localData.erase(it);
     }
     endRemoveRows();
 
@@ -213,12 +240,12 @@ bool FluxProfileModel::moveRows(const QModelIndex &, int sourceFirst, int count,
     int sourceLast = sourceFirst + count;
     int destinationLast = destinationFirst + count;
 
-    if (sourceLast > modelData.size() || destinationLast > modelData.size())
+    if (sourceLast > localData.size() || destinationLast > localData.size())
         return false;
 
     // Get the extraction range.
-    decltype(modelData) range(modelData.begin() + sourceFirst,
-                              modelData.begin() + sourceLast);
+    decltype(localData) range(localData.begin() + sourceFirst,
+                              localData.begin() + sourceLast);
 
     // Notify views of new state.
     // See documentation for QAbstractItemModel::beginMoveRows.
@@ -228,10 +255,10 @@ bool FluxProfileModel::moveRows(const QModelIndex &, int sourceFirst, int count,
                   QModelIndex(), destinationChild);
 
     // Erase and insert.
-    modelData.erase(modelData.begin() + sourceFirst,
-                    modelData.begin() + sourceLast);
+    localData.erase(localData.begin() + sourceFirst,
+                    localData.begin() + sourceLast);
 
-    modelData.insert(modelData.begin() + destinationFirst,
+    localData.insert(localData.begin() + destinationFirst,
                      range.begin(), range.end());
 
     endMoveRows();

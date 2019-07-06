@@ -1,25 +1,23 @@
 #ifndef FLUXPROFILEMODEL_H
 #define FLUXPROFILEMODEL_H
 
+#include <map>
 #include <memory>
 #include <vector>
 
 #include <QAbstractTableModel>
-#include <QMap>
 #include <QVariant>
 
 #include "FluxProfile.h"
 
 class FluxProfileModel : public QAbstractTableModel
 {
-    Q_OBJECT
-
 public:
     FluxProfileModel(QObject *parent = nullptr);
 
-    void save(std::vector<std::shared_ptr<FluxProfile>>& profiles) const;
-    void load(const std::vector<std::shared_ptr<FluxProfile> > &profiles, bool copy = true);
-    void reset();
+    void save(std::vector<std::shared_ptr<FluxProfile>>& profiles);
+    void load(const std::vector<std::shared_ptr<FluxProfile>>& profiles);
+    void showEditor(const QModelIndex &index, QWidget *parent);
     std::shared_ptr<FluxProfile> fluxProfileFromIndex(const QModelIndex &index);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -34,7 +32,10 @@ public:
                   const QModelIndex &destinationParent, int destinationFirst) override;
 
 private:
-    std::vector<std::shared_ptr<FluxProfile>> modelData;
+    using FluxProfilePtr = std::shared_ptr<FluxProfile>;
+    std::vector<FluxProfilePtr> localData;
+    std::map<FluxProfilePtr, FluxProfilePtr> localToSource;
+    std::map<FluxProfilePtr, FluxProfilePtr> sourceToLocal;
 };
 
 #endif // FLUXPROFILEMODEL_H

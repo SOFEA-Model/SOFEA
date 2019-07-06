@@ -24,6 +24,8 @@ SourceGroup::SourceGroup()
     waterDiffusion = Distribution::Constant();
     cuticularResistance = Distribution::Constant();
     henryConstant = Distribution::Constant();
+
+    enableBufferZones = false;
 }
 
 // Used in RunstreamParser, SourceModel
@@ -114,3 +116,4 @@ void SourceGroup::resampleFluxProfile()
     for (Source &s : sources)
         s.fluxProfile = fluxProfile(&gen);
 }
+

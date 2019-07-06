@@ -1,10 +1,11 @@
+#include <QPushButton>
 #include <QWidget>
 #include <QIcon>
 
 #include "SourceGroupProperties.h"
 
 SourceGroupProperties::SourceGroupProperties(Scenario *s, SourceGroup *sg, QWidget *parent)
-    : SettingsDialog(parent), sgPtr(sg), _saved(false)
+    : SettingsDialog(parent), sgPtr(sg)
 {
     setWindowTitle(QString::fromStdString(sg->grpid));
     setWindowIcon(QIcon(":/images/BuildQueue_32x.png"));
@@ -24,15 +25,16 @@ SourceGroupProperties::SourceGroupProperties(Scenario *s, SourceGroup *sg, QWidg
 
     addPage("Application", applicationPage);
     addPage("Deposition", depositionPage);
-    addPage("Flux Profile", fluxProfilePage);
-    addPage("Buffer Zone", bufferZonePage);
+    addPage("Flux Profiles", fluxProfilePage);
+    addPage("Buffer Zones", bufferZonePage);
 
+    connect(buttonBox->button(QDialogButtonBox::Apply), &QPushButton::clicked, this, &SourceGroupProperties::apply);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &SourceGroupProperties::accept);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &SourceGroupProperties::reject);
 }
 
-void SourceGroupProperties::accept()
-{   
+void SourceGroupProperties::apply()
+{
     applicationPage->save();
     depositionPage->save();
     fluxProfilePage->save();
@@ -60,14 +62,16 @@ void SourceGroupProperties::accept()
     if (depositionPage->mcHenryConstant->isModified())
         sgPtr->resampleHenryConstant();
 
-    _saved = true;
     emit saved();
+}
+
+void SourceGroupProperties::accept()
+{
+    apply();
+    QDialog::done(QDialog::Accepted);
 }
 
 void SourceGroupProperties::reject()
 {
-    if (_saved)
-        QDialog::done(QDialog::Accepted);
-    else
-        QDialog::done(QDialog::Rejected);
+    QDialog::done(QDialog::Rejected);
 }

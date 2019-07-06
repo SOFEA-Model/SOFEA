@@ -14,26 +14,17 @@ SamplingDistributionEditor::SamplingDistributionEditor(QAbstractItemModel *sourc
     if (sourceModel == nullptr)
         return;
 
-    sbProbability = new QDoubleSpinBox;
-    sbProbability->setRange(0, 1);
-    sbProbability->setValue(1);
-    sbProbability->setDecimals(4);
-    sbProbability->setSingleStep(0.01);
-
-    btnSet = new QPushButton("Set");
-    btnSet->setEnabled(false);
-
     proxyModel = new SamplingProxyModel;
     proxyModel->setSourceModel(sourceModel);
 
     view = new StandardTableView;
     view->setModel(proxyModel);
-    view->setSelectionBehavior(QAbstractItemView::SelectRows);
-    view->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    view->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    view->setSelectionBehavior(QAbstractItemView::SelectItems);
+    view->setSelectionMode(QAbstractItemView::SingleSelection);
+    view->setEditTriggers(QAbstractItemView::AllEditTriggers);
 
     int lastColumn = proxyModel->proxyColumnForExtraColumn(0);
-    view->setDoubleLineEditForColumn(lastColumn, 0, 1, 4, true);
+    view->setDoubleSpinBoxForColumn(lastColumn, 0, 1, 4, 0.1);
 
     QHeaderView *header = view->horizontalHeader();
     header->setStretchLastSection(false);
@@ -44,18 +35,9 @@ SamplingDistributionEditor::SamplingDistributionEditor(QAbstractItemModel *sourc
     btnNormalize = new QPushButton("Normalize");
 
     // Connections
-    connect(btnSet, &QPushButton::clicked, this, &SamplingDistributionEditor::onSetClicked);
     connect(btnNormalize, &QPushButton::clicked, this, &SamplingDistributionEditor::normalize);
 
-    connect(view->selectionModel(), &QItemSelectionModel::selectionChanged,
-            this, &SamplingDistributionEditor::onSelectionChanged);
-
     // Layout
-    QHBoxLayout *inputLayout = new QHBoxLayout;
-    inputLayout->addWidget(new QLabel("Probability: "), 0);
-    inputLayout->addWidget(sbProbability, 1);
-    inputLayout->addWidget(btnSet, 0);
-
     QHBoxLayout *controlsLayout = new QHBoxLayout;
     controlsLayout->setMargin(0);
     controlsLayout->addStretch(1);
@@ -63,7 +45,6 @@ SamplingDistributionEditor::SamplingDistributionEditor(QAbstractItemModel *sourc
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->setMargin(0);
-    mainLayout->addLayout(inputLayout);
     mainLayout->addWidget(view);
     mainLayout->addSpacing(5);
     mainLayout->addLayout(controlsLayout);
@@ -93,25 +74,4 @@ double SamplingDistributionEditor::getProbability(int row) const
 void SamplingDistributionEditor::normalize()
 {
     proxyModel->normalize();
-}
-
-void SamplingDistributionEditor::onSetClicked()
-{
-    int column = proxyModel->proxyColumnForExtraColumn(0);
-
-    QModelIndexList selectedRows = view->selectionModel()->selectedRows();
-    for (const QModelIndex& rowIndex : selectedRows) {
-        QModelIndex index = rowIndex.siblingAtColumn(column);
-        double value = sbProbability->value();
-        proxyModel->setData(index, value);
-    }
-}
-
-void SamplingDistributionEditor::onSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected)
-{
-    Q_UNUSED(selected);
-    Q_UNUSED(deselected);
-
-    bool hasSelection = view->selectionModel()->hasSelection();
-    btnSet->setEnabled(hasSelection);
 }
