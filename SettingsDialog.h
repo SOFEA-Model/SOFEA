@@ -5,8 +5,6 @@
 #include <QDialogButtonBox>
 #include <QMap>
 
-#include "Utilities.h"
-
 QT_BEGIN_NAMESPACE
 class QTextEdit;
 class QTreeWidget;
@@ -29,7 +27,6 @@ private:
     QTreeWidget *navTree;
     QMap<QTreeWidgetItem *, QWidget *> navTreeItems;
     QStackedWidget *pageStack;
-    //ReadOnlyTextEdit *helpTextEdit;
 
 protected:
     QDialogButtonBox *buttonBox;

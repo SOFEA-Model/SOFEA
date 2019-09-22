@@ -12,10 +12,12 @@
 #include <qwt_plot_rescaler.h>
 #include <qwt_plot_curve.h>
 #include <qwt_plot_marker.h>
+#include <qwt_plot_shapeitem.h>
 #include <qwt_point_data.h>
 #include <qwt_series_data.h>
 
-#include "CurveTracker.h"
+#include "PlotCurveTracker.h"
+#include "PlotItemTitleTracker.h"
 
 class StandardPlot : public QwtPlot
 {
@@ -23,6 +25,8 @@ class StandardPlot : public QwtPlot
 
 public:
     explicit StandardPlot(QWidget *parent = nullptr);
+    ~StandardPlot();
+
     void setXAxisTitle(const QString&);
     void setYAxisTitle(const QString&);
     void setXAxisScale(double min, double max, double step);
@@ -30,10 +34,11 @@ public:
     void clear();
     void setPanZoomMode(bool);
     void setCurveTracker(bool);
+    void setItemTitleTracker(bool);
     void setRescaler(bool);
-    void addPoint(QPointF const&, const int size = 5, QBrush const& brush = QBrush());
-    void addPoints(QPolygonF const&, const int size = 5, QBrush const& brush = QBrush());
-    void addRing(QPolygonF const&, QPen const& pen = QPen(), QBrush const& brush = QBrush());
+    void addPoint(const QPointF&, const int size = 5, const QBrush& brush = QBrush());
+    void addPoints(const QPolygonF&, const int size = 5, const QBrush& brush = QBrush());
+    void addRing(const QPolygonF&, const QPen& pen = QPen(), const QBrush& brush = QBrush(), const QString& title = QString());
     void addRefVLine(double x, double y, const QString& label);
     void autoScale();
 
@@ -47,7 +52,8 @@ private:
     QwtPlotPanner *m_panner = nullptr;
     QwtPlotMagnifier *m_magnifier = nullptr;
     QwtPlotRescaler* m_rescaler = nullptr;
-    CurveTracker *m_tracker = nullptr;
+    PlotCurveTracker *m_curveTracker = nullptr;
+    PlotItemTitleTracker *m_titleTracker = nullptr;
 };
 
 #endif // STANDARDPLOT_H

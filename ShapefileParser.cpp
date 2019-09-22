@@ -42,7 +42,6 @@ void ShapefileParser::parseSources(const QString& filename, SourceGroup *sgPtr)
 
     int pnEntities, pnShapeType;
     double adfMinBound[4], adfMaxBound[4]; // X, Y, Z, M
-    double xshift = 0, yshift = 0;
 
     // Open the file with read-only access.
     SHPHandle handle = SHPOpen(filename.toStdString().c_str(), "rb");
@@ -86,17 +85,17 @@ void ShapefileParser::parseSources(const QString& filename, SourceGroup *sgPtr)
     }
 
     // Determine whether shift is required.
-    if (fabs(adfMinBound[0]) >= MAX_COORDINATE_ABS_VALUE ||
-        fabs(adfMinBound[1]) >= MAX_COORDINATE_ABS_VALUE) {
-        // Calculate reasonable shift values, rounding off to the nearest hundred.
-        xshift = -adfMinBound[0];
-        yshift = -adfMinBound[1];
-        xshift = static_cast<int>(xshift / 100) * 100.0;
-        yshift = static_cast<int>(yshift / 100) * 100.0;
-        BOOST_LOG_TRIVIAL(info) << "Coordinates are too large. Applying shift: ("
-                                << static_cast<int>(xshift) << ", "
-                                << static_cast<int>(yshift) << ")";
-    }
+    //if (fabs(adfMinBound[0]) >= MAX_COORDINATE_ABS_VALUE ||
+    //    fabs(adfMinBound[1]) >= MAX_COORDINATE_ABS_VALUE) {
+    //    // Calculate reasonable shift values, rounding off to the nearest hundred.
+    //    xshift = -adfMinBound[0];
+    //    yshift = -adfMinBound[1];
+    //    xshift = static_cast<int>(xshift / 100) * 100.0;
+    //    yshift = static_cast<int>(yshift / 100) * 100.0;
+    //    BOOST_LOG_TRIVIAL(info) << "Coordinates are too large. Applying shift: ("
+    //                            << static_cast<int>(xshift) << ", "
+    //                            << static_cast<int>(yshift) << ")";
+    //}
 
     // Read only polygons, and only those without holes.
     int nProcessed = 0;
@@ -127,8 +126,8 @@ void ShapefileParser::parseSources(const QString& filename, SourceGroup *sgPtr)
         if (validType && validPartCount && validVertexCount) {
             QPolygonF p;
             for (int j = 0; j < psShape->nVertices; ++j) {
-                double x = psShape->padfX[j] + xshift;
-                double y = psShape->padfY[j] + yshift;
+                double x = psShape->padfX[j];
+                double y = psShape->padfY[j];
                 p << QPointF(x, y);
             }
 

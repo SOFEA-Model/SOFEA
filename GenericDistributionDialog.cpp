@@ -14,7 +14,6 @@
 #include <boost/multi_index/member.hpp>
 
 #include "GenericDistributionDialog.h"
-#include "Utilities.h"
 
 enum class DistributionType
 {
@@ -37,7 +36,7 @@ using ID = DistributionID;
 using DT = DistributionType;
 using DC = DistributionCategory;
 
-// FIXME: replace with multi-index containers
+// FIXME: refactor lookup tables
 
 const QMap<DistributionCategory, QString> categoryMap {
     { DC::Uniform,       "Uniform Distributions"       },
@@ -383,8 +382,8 @@ struct PdfLimitsVisitor : public boost::static_visitor<>
     void operator()(const Distribution::PiecewiseConstant d) {}
     void operator()(const Distribution::PiecewiseLinear d) {}
     void operator()(const Distribution::Triangle d) {
-        x1 = d.c();
         x0 = d.a();
+        x1 = d.c();
     }
     void operator()(const Distribution::Constant d) {}
 
@@ -428,6 +427,8 @@ GenericDistributionDialog::GenericDistributionDialog(const GenericDistribution& 
     pdfPlotCurve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
     pdfPlotCurve->attach(pdfPlot);
 
+    QColor baseColor = QWidget::palette().base().color();
+
     QFormLayout *controlsLayout = new QFormLayout;
     controlsLayout->addRow(label1, sb1);
     controlsLayout->addRow(label2, sb2);
@@ -436,7 +437,7 @@ GenericDistributionDialog::GenericDistributionDialog(const GenericDistribution& 
     controlsFrame->setLayout(controlsLayout);
     controlsFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
     QPalette controlsFramePalette = controlsFrame->palette();
-    controlsFramePalette.setColor(QPalette::Window, Qt::white);
+    controlsFramePalette.setColor(QPalette::Window, baseColor);
     controlsFrame->setPalette(controlsFramePalette);
     controlsFrame->setAutoFillBackground(true);
 
@@ -459,7 +460,7 @@ GenericDistributionDialog::GenericDistributionDialog(const GenericDistribution& 
     plotFrame->setLayout(plotFrameLayout);
     plotFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
     QPalette plotFramePalette = plotFrame->palette();
-    plotFramePalette.setColor(QPalette::Window, Qt::white);
+    plotFramePalette.setColor(QPalette::Window, baseColor);
     plotFrame->setPalette(plotFramePalette);
     plotFrame->setAutoFillBackground(true);
 
@@ -564,6 +565,10 @@ void GenericDistributionDialog::resetControls()
     label2->setVisible(false);
     label3->setVisible(false);
 
+    sb1->blockSignals(true);
+    sb2->blockSignals(true);
+    sb3->blockSignals(true);
+
     sb1->setVisible(false);
     sb2->setVisible(false);
     sb3->setVisible(false);
@@ -578,6 +583,7 @@ void GenericDistributionDialog::resetControls()
         sb1->setValue(pi1.value.value());
         label1->setVisible(true);
         sb1->setVisible(true);
+        sb1->blockSignals(false);
     }
     if (n > 1) {
         ParameterInfo pi2 = pv.paramList[1];
@@ -589,6 +595,7 @@ void GenericDistributionDialog::resetControls()
         sb2->setValue(pi2.value.value());
         label2->setVisible(true);
         sb2->setVisible(true);
+        sb2->blockSignals(false);
     }
     if (n > 2) {
         ParameterInfo pi3 = pv.paramList[2];
@@ -600,6 +607,7 @@ void GenericDistributionDialog::resetControls()
         sb3->setValue(pi3.value.value());
         label3->setVisible(true);
         sb3->setVisible(true);
+        sb3->blockSignals(false);
     }
 }
 
@@ -621,7 +629,7 @@ void GenericDistributionDialog::setDistribution(DistributionID id)
             currentDist = Distribution::Geometric();
             break;
         case DistributionID::NegativeBinomial:
-            currentDist = Distribution::NegativeBinomial(1, 0.5);
+            currentDist = Distribution::NegativeBinomial(10, 0.5);
             break;
         case DistributionID::Poisson:
             currentDist = Distribution::Poisson(10);
@@ -630,7 +638,7 @@ void GenericDistributionDialog::setDistribution(DistributionID id)
             currentDist = Distribution::Exponential();
             break;
         case DistributionID::Gamma:
-            currentDist = Distribution::Gamma();
+            currentDist = Distribution::Gamma(5, 1);
             break;
         case DistributionID::Weibull:
             currentDist = Distribution::Weibull(1, 1);
@@ -645,7 +653,7 @@ void GenericDistributionDialog::setDistribution(DistributionID id)
             currentDist = Distribution::Laplace();
             break;
         case DistributionID::Normal:
-            currentDist = Distribution::Normal();
+            currentDist = Distribution::Normal(0, 1);
             break;
         case DistributionID::Lognormal:
             currentDist = Distribution::Lognormal();
@@ -675,7 +683,7 @@ void GenericDistributionDialog::setDistribution(DistributionID id)
             currentDist = Distribution::PiecewiseLinear();
             break;
         case DistributionID::Triangle:
-            currentDist = Distribution::Triangle(0.5, 1.0, 1.5);
+            currentDist = Distribution::Triangle(-1, 0, 1);
             break;
     }
 }

@@ -14,6 +14,8 @@
 
 #include "FluxProfile.h"
 #include "SourceGroup.h"
+#include "Receptor.h"
+#include "Projection.h"
 
 struct SurfaceInfo
 {
@@ -38,6 +40,7 @@ struct SurfaceInfo
 struct Scenario
 {
     Scenario();
+    Scenario(const Scenario& rhs);
 
     void resetSurfaceFileInfo();
     std::string writeInput() const;
@@ -51,7 +54,6 @@ struct Scenario
     std::string title;
     int fumigantId;
     double decayCoefficient;
-    double flagpoleHeight;
 
     // Meteorological Data
     std::string surfaceFile;
@@ -91,12 +93,21 @@ struct Scenario
     std::vector<int> averagingPeriods;
 
     // Receptors
-    //std::vector<ReceptorRing> rings;
-    //std::vector<ReceptorNode> nodes;
-    //std::vector<ReceptorGrid> grids;
+    std::vector<ReceptorGroup> receptors;
 
-    // Containers
+    // Flux Profiles
     using FluxProfilePtr = std::shared_ptr<FluxProfile>;
     std::vector<FluxProfilePtr> fluxProfiles;
-    boost::ptr_vector<SourceGroup> sourceGroups;
+
+    // Source Groups
+    using SourceGroupPtr = std::shared_ptr<SourceGroup>;
+    std::vector<SourceGroupPtr> sourceGroups;
+
+    // Coordinate System
+    Projection::Area domain;
+    std::string conversionCode;
+    std::string hUnitsCode;
+    std::string hDatumCode;
+    std::string vUnitsCode;
+    std::string vDatumCode;
 };

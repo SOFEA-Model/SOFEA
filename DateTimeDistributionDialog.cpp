@@ -10,7 +10,9 @@
 #include <QFormLayout>
 #include <QHeaderView>
 #include <QLabel>
+#include <QPushButton>
 #include <QStandardItemModel>
+
 #include <QDebug>
 
 #include <boost/icl/gregorian.hpp>

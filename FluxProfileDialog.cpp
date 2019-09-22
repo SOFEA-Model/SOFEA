@@ -3,6 +3,8 @@
 #include "StandardPlot.h"
 #include "FluxProfileDialog.h"
 #include "FluxProfilePlot.h"
+#include "widgets/BackgroundFrame.h"
+#include "widgets/GridLayout.h"
 
 #include <boost/log/trivial.hpp>
 #include <boost/log/attributes/scoped_attribute.hpp>
@@ -38,23 +40,23 @@ FluxProfileDialog::FluxProfileDialog(std::shared_ptr<FluxProfile> fp, QWidget *p
     sbRefAppRate->setDecimals(2);
     sbRefAppRate->setSingleStep(1);
 
-    bgFluxMode = new QButtonGroup(this);
-    radioVariableFlux = new QRadioButton(tr("Variable"));
-    radioConstantFlux = new QRadioButton(tr("Constant"));
-    bgFluxMode->addButton(radioVariableFlux, 1);
-    bgFluxMode->addButton(radioConstantFlux, 2);
+    //bgFluxMode = new QButtonGroup(this);
+    //radioVariableFlux = new QRadioButton(tr("Variable"));
+    //radioConstantFlux = new QRadioButton(tr("Constant"));
+    //bgFluxMode->addButton(radioVariableFlux, 1);
+    //bgFluxMode->addButton(radioConstantFlux, 2);
 
-    radioConstantFlux->setDisabled(true); // FIXME - NOT YET IMPLEMENTED
-    radioVariableFlux->setDisabled(true); // FIXME - NOT YET IMPLEMENTED
+    //radioConstantFlux->setDisabled(true); // FIXME - NOT YET IMPLEMENTED
+    //radioVariableFlux->setDisabled(true); // FIXME - NOT YET IMPLEMENTED
 
-    lblConstantFluxInfo = new StatusLabel;
-    lblConstantFluxInfo->setSeverity(2);
-    lblConstantFluxInfo->setText(
-        "Constant flux is determined from the mean scaled hourly flux profile "
-        "for each source, and applies to the full simulation period. "
-        "Application start time is used for flux scaling only."
-    );
-    lblConstantFluxInfo->hide();
+    //lblConstantFluxInfo = new StatusLabel;
+    //lblConstantFluxInfo->setSeverity(2);
+    //lblConstantFluxInfo->setText(
+    //    "Constant flux is determined from the mean scaled hourly flux profile "
+    //    "for each source, and applies to the full simulation period. "
+    //    "Application start time is used for flux scaling only."
+    //);
+    //lblConstantFluxInfo->hide();
 
     refTable = new StandardTableView;
 
@@ -117,19 +119,19 @@ FluxProfileDialog::FluxProfileDialog(std::shared_ptr<FluxProfile> fp, QWidget *p
     btnPlotDS = new QPushButton("Plot...");
 
     // Reference Layout
-    QHBoxLayout *fluxModeLayout = new QHBoxLayout;
-    fluxModeLayout->addWidget(radioVariableFlux);
-    fluxModeLayout->addWidget(radioConstantFlux);
-    fluxModeLayout->setAlignment(radioVariableFlux, Qt::AlignLeft);
-    fluxModeLayout->setAlignment(radioConstantFlux, Qt::AlignLeft);
+    //QHBoxLayout *fluxModeLayout = new QHBoxLayout;
+    //fluxModeLayout->addWidget(radioVariableFlux);
+    //fluxModeLayout->addWidget(radioConstantFlux);
+    //fluxModeLayout->setAlignment(radioVariableFlux, Qt::AlignLeft);
+    //fluxModeLayout->setAlignment(radioConstantFlux, Qt::AlignLeft);
 
     GridLayout *refInputLayout = new GridLayout;
     refInputLayout->setMargin(0);
     refInputLayout->addWidget(new QLabel(tr("Application rate (kg/ha):")), 1, 0);
     refInputLayout->addWidget(sbRefAppRate, 1, 1);
-    refInputLayout->addWidget(new QLabel(tr("Flux calculation mode:")), 2, 0);
-    refInputLayout->addLayout(fluxModeLayout, 2, 1, Qt::AlignLeft);
-    refInputLayout->addWidget(lblConstantFluxInfo, 3, 0, 1, 2);
+    //refInputLayout->addWidget(new QLabel(tr("Flux calculation mode:")), 2, 0);
+    //refInputLayout->addLayout(fluxModeLayout, 2, 1, Qt::AlignLeft);
+    //refInputLayout->addWidget(lblConstantFluxInfo, 3, 0, 1, 2);
 
     QVBoxLayout *refControlsLayout = new QVBoxLayout;
     refControlsLayout->setMargin(0);
@@ -278,7 +280,7 @@ void FluxProfileDialog::init()
     refEditor->setImportCaption(tr("Import Flux Profile"));
 
     // Connections
-    connect(radioConstantFlux, &QRadioButton::toggled, lblConstantFluxInfo, &QLabel::setVisible);
+    //connect(radioConstantFlux, &QRadioButton::toggled, lblConstantFluxInfo, &QLabel::setVisible);
     connect(refEditor, &StandardTableEditor::importRequested, this, &FluxProfileDialog::importFluxProfile);
     connect(btnCalcPhase, &QPushButton::clicked, this, &FluxProfileDialog::calcPhase);
     connect(btnPlot, &QPushButton::clicked, this, &FluxProfileDialog::plotFluxProfile);
@@ -354,10 +356,10 @@ void FluxProfileDialog::load()
     using TSMethod = FluxProfile::TSMethod;
     using DSMethod = FluxProfile::DSMethod;
 
-    if (fp->constantFlux)
-        radioConstantFlux->setChecked(true);
-    else
-        radioVariableFlux->setChecked(true);
+    //if (fp->constantFlux)
+    //    radioConstantFlux->setChecked(true);
+    //else
+    //    radioVariableFlux->setChecked(true);
     deRefDate->setDateTime(fp->refStart);
     sbRefAppRate->setValue(fp->refAppRate);
     sbRefDepth->setValue(fp->refDepth);
@@ -405,7 +407,7 @@ FluxProfile FluxProfileDialog::currentProfile()
 
     fp.tsMethod = static_cast<TSMethod>(cboTemporalScaling->currentData().toInt());
     fp.dsMethod = static_cast<DSMethod>(cboDepthScaling->currentData().toInt());
-    fp.constantFlux = radioConstantFlux->isChecked();
+    //fp.constantFlux = radioConstantFlux->isChecked();
     fp.refStart = deRefDate->dateTime();
     fp.refAppRate = sbRefAppRate->value();
     fp.refDepth = sbRefDepth->value();

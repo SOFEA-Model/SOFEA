@@ -24,16 +24,3 @@ QPixmap PixmapUtilities::brushValuePixmap(const QBrush& brush)
 
     return QPixmap::fromImage(img);
 }
-
-QPixmap PixmapUtilities::gradientPixmap(const QLinearGradient &gradient)
-{
-    QImage img(48, 16, QImage::Format_ARGB32_Premultiplied);
-    img.fill(0);
-
-    QPainter painter(&img);
-    painter.setCompositionMode(QPainter::CompositionMode_Source);
-    painter.fillRect(0, 0, img.width(), img.height(), gradient);
-    painter.end();
-
-    return QPixmap::fromImage(img);
-}

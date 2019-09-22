@@ -9,6 +9,8 @@
 #include <QFileInfo>
 #include <QSettings>
 
+#include <QDebug>
+
 #include <algorithm>
 
 #include <boost/ptr_container/clone_allocator.hpp>
@@ -52,6 +54,12 @@ void SourceModel::import()
     else if (ext == "inp" || ext == "dat")
         RunstreamParser::parseSources(filename, sgPtr);
     endResetModel();
+}
+
+void SourceModel::setProjection(const Projection::Generic& p)
+{
+    // Geographic to projected coordinates
+    transform = Projection::Transform(p.geodeticCRS(), p.compoundCRS(), sPtr->domain);
 }
 
 Source* SourceModel::sourceFromIndex(const QModelIndex &index) const
@@ -129,7 +137,7 @@ int SourceModel::rowCount(const QModelIndex &parent) const
 int SourceModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return 14;
+    return 17;
 }
 
 QVariant SourceModel::data(const QModelIndex &index, int role) const
@@ -146,31 +154,33 @@ QVariant SourceModel::data(const QModelIndex &index, int role) const
     {
         return QVariant();
     }
-
-    if (role == Qt::ForegroundRole)
+    else if (role == Qt::ForegroundRole)
     {
         // Monte Carlo parameters: blue
         // Calculated parameters: red
         switch (index.column()) {
-            case 0:  return QVariant();
-            case 1:  return QVariant();
-            case 2:  return QVariant();
-            case 3:  return QVariant(QColor(Qt::red));
-            case 4:  return QVariant(QColor(Qt::blue));
-            case 5:  return QVariant(QColor(Qt::blue));
-            case 6:  return QVariant(QColor(Qt::blue));
-            case 7:  return QVariant(QColor(Qt::red));
-            case 8:  return QVariant(QColor(Qt::blue));
-            case 9:  return QVariant(QColor(Qt::red));
-            case 10: return QVariant(QColor(Qt::red));
-            case 11: return QVariant(QColor(Qt::red));
-            case 12: return QVariant();
-            case 13: return QVariant();
-            case 14: return QVariant(QColor(Qt::blue));
-            case 15: return QVariant(QColor(Qt::blue));
-            case 16: return QVariant(QColor(Qt::blue));
-            case 17: return QVariant(QColor(Qt::blue));
-            default: return QVariant(QColor(Qt::blue));
+        case Column::ID:                  return QVariant();
+        case Column::X:                   return QVariant();
+        case Column::Y:                   return QVariant();
+        case Column::Z:                   return QVariant();
+        case Column::Longitude:           return QVariant();
+        case Column::Latitude:            return QVariant();
+        case Column::Area:                return QVariant(QColor(Qt::red));
+        case Column::Start:               return QVariant(QColor(Qt::blue));
+        case Column::AppRate:             return QVariant(QColor(Qt::blue));
+        case Column::IncDepth:            return QVariant(QColor(Qt::blue));
+        case Column::MassAF:              return QVariant(QColor(Qt::red));
+        case Column::FluxProfile:         return QVariant(QColor(Qt::blue));
+        case Column::TimeSF:              return QVariant(QColor(Qt::red));
+        case Column::DepthSF:             return QVariant(QColor(Qt::red));
+        case Column::OverallSF:           return QVariant(QColor(Qt::red));
+        case Column::BZDistance:          return QVariant();
+        case Column::BZDuration:          return QVariant();
+        case Column::AirDiffusion:        return QVariant(QColor(Qt::blue));
+        case Column::WaterDiffusion:      return QVariant(QColor(Qt::blue));
+        case Column::CuticularResistance: return QVariant(QColor(Qt::blue));
+        case Column::HenryConstant:       return QVariant(QColor(Qt::blue));
+        default: return QVariant();
         }
     }
 
@@ -206,40 +216,59 @@ QVariant SourceModel::data(const QModelIndex &index, int role) const
         }
     }
 
-    if (role == Qt::EditRole)
+    if (transform.isValid() && (role == Qt::EditRole || role == Qt::DisplayRole) &&
+        (index.column() == Column::Longitude || index.column() == Column::Latitude))
     {
+        double lon, lat, elev;
+        int rc = transform.inverse(s.xs, s.ys, s.zs, lon, lat, elev);
+        if (rc != 0)
+            return QVariant();
+
         switch (index.column()) {
-            case 0:  return QString::fromStdString(s.srcid);
-            case 4:  return s.appStart;
-            case 5:  return s.appRate;
-            case 6:  return s.incorpDepth;
-            case 8:  return fluxProfileName;
-            default: return QVariant();
+        case Column::Longitude:           return lon;
+        case Column::Latitude:            return lat;
+        default:
+            return QVariant();
         }
     }
 
-    if (role == Qt::DisplayRole)
+    if (role == Qt::EditRole)
     {
         switch (index.column()) {
-            case 0:  return QString::fromStdString(s.srcid);
-            case 1:  return s.xs;
-            case 2:  return s.ys;
-            case 3:  return area;
-            case 4:  return s.appStart.toString("yyyy-MM-dd HH:mm");
-            case 5:  return s.appRate;
-            case 6:  return s.incorpDepth;
-            case 7:  return s.appRate * area * sgPtr->appFactor;
-            case 8:  return fluxProfileName;
-            case 9:  return timeScaleFactor;
-            case 10: return depthScaleFactor;
-            case 11: return fluxScaleFactor;
-            case 12: return bufferDistance;
-            case 13: return bufferDuration;
-            case 14: return s.airDiffusion;
-            case 15: return s.waterDiffusion;
-            case 16: return s.cuticularResistance;
-            case 17: return s.henryConstant;
-            default: return QVariant();
+        case Column::ID:                  return QString::fromStdString(s.srcid);
+        case Column::X:                   return s.xs;
+        case Column::Y:                   return s.ys;
+        case Column::Z:                   return s.zs;
+        case Column::Start:               return s.appStart;
+        case Column::AppRate:             return s.appRate;
+        case Column::IncDepth:            return s.incorpDepth;
+        case Column::FluxProfile:         return fluxProfileName;
+        default: return QVariant();
+        }
+    }
+    else if (role == Qt::DisplayRole)
+    {
+        switch (index.column()) {
+        case Column::ID:                  return QString::fromStdString(s.srcid);
+        case Column::X:                   return s.xs;
+        case Column::Y:                   return s.ys;
+        case Column::Z:                   return s.zs;
+        case Column::Area:                return area;
+        case Column::Start:               return s.appStart.toString("yyyy-MM-dd HH:mm");
+        case Column::AppRate:             return s.appRate;
+        case Column::IncDepth:            return s.incorpDepth;
+        case Column::MassAF:              return s.appRate * area * sgPtr->appFactor;
+        case Column::FluxProfile:         return fluxProfileName;
+        case Column::TimeSF:              return timeScaleFactor;
+        case Column::DepthSF:             return depthScaleFactor;
+        case Column::OverallSF:           return fluxScaleFactor;
+        case Column::BZDistance:          return bufferDistance;
+        case Column::BZDuration:          return bufferDuration;
+        case Column::AirDiffusion:        return s.airDiffusion;
+        case Column::WaterDiffusion:      return s.waterDiffusion;
+        case Column::CuticularResistance: return s.cuticularResistance;
+        case Column::HenryConstant:       return s.henryConstant;
+        default: return QVariant();
         }
     }
 
@@ -254,40 +283,81 @@ bool SourceModel::setData(const QModelIndex &index, const QVariant &value, int r
     int row = index.row();
     Source &s = sgPtr->sources.at(row);
 
-    if (role == Qt::EditRole) {
-        switch (index.column()) {
-            case 0: {
-                QString srcid = value.toString();
-                // Remove any non-alphanumeric characters and truncate to max length (100)
-                srcid.remove(QRegExp("[^A-Za-z0-9_]+"));
-                srcid.truncate(100);
-                s.srcid = srcid.toStdString();
-                break;
+    if (role == Qt::EditRole)
+    {
+        if ((index.column() == Column::Longitude || index.column() == Column::Latitude) &&
+            transform.isValid())
+        {
+            double lon, lat;
+            if (index.column() == Column::Longitude) {
+                lon = value.toDouble();
+                lat = data(index.siblingAtColumn(Column::Latitude), Qt::DisplayRole).toDouble();
             }
-            case 4: {
-                QDateTime appStart = value.toDateTime();
-                s.appStart = appStart;
-                break;
+            else {
+                lon = data(index.siblingAtColumn(Column::Longitude), Qt::DisplayRole).toDouble();
+                lat = value.toDouble();
             }
-            case 5: {
-                double appRate = value.toDouble();
-                s.appRate = appRate;
-                break;
-            }
-            case 6: {
-                double incorpDepth = value.toDouble();
-                s.incorpDepth = incorpDepth;
-                break;
-            }
-            default:
+
+            double x, y, z;
+            int rc = transform.forward(lon, lat, 0, x, y, z);
+            if (rc != 0) {
                 return false;
+            }
+
+            s.xs = x;
+            s.ys = y;
+            s.setGeometry();
+            QModelIndex xindex = index.siblingAtColumn(Column::X);
+            QModelIndex yindex = index.siblingAtColumn(Column::Y);
+            emit dataChanged(index, index);
+            emit dataChanged(xindex, yindex);
+            return true;
+        }
+
+        switch (index.column()) {
+        case Column::ID: {
+            QString srcid = value.toString();
+            // Remove any non-alphanumeric characters and truncate to max length (100)
+            srcid.remove(QRegExp("[^A-Za-z0-9_]+"));
+            srcid.truncate(100);
+            s.srcid = srcid.toStdString();
+            break;
+        }
+        case Column::X: {
+            s.xs = value.toDouble();
+            s.setGeometry();
+            break;
+        }
+        case Column::Y: {
+            s.ys = value.toDouble();
+            s.setGeometry();
+            break;
+        }
+        case Column::Z: {
+            s.zs = value.toDouble();
+            break;
+        }
+        case Column::Start: {
+            s.appStart = value.toDateTime();
+            break;
+        }
+        case Column::AppRate: {
+            s.appRate = value.toDouble();
+            break;
+        }
+        case Column::IncDepth: {
+            s.incorpDepth = value.toDouble();
+            break;
+        }
+        default:
+            return false;
         }
 
         emit dataChanged(index, index);
         return true;
     }
-
-    if (role == Qt::UserRole) {
+    else if (role == Qt::UserRole)
+    {
         switch (index.column()) {
             case 8: {
                 int fpIndex = value.toInt();
@@ -306,53 +376,80 @@ bool SourceModel::setData(const QModelIndex &index, const QVariant &value, int r
 
 QVariant SourceModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
-    if (role == Qt::DisplayRole) {
-        if (orientation == Qt::Horizontal) {
+    if (orientation == Qt::Horizontal) {
+        if (role == Qt::DisplayRole) {
             switch (section) {
-                case 0:  return QString("ID");
-                case 1:  return QString("X (m)");
-                case 2:  return QString("Y (m)");
-                case 3:  return QString("Area (ha)");
-                case 4:  return QString("Start");
-                case 5:  return QString("App. Rate (kg/ha)");
-                case 6:  return QString("Inc. Depth (cm)");
-                case 7:  return QLatin1String("Mass \xd7 AF (kg)");
-                case 8:  return QString("Flux Profile");
-                case 9:  return QString("Time SF");
-                case 10: return QString("Depth SF");
-                case 11: return QString("Overall SF");
-                case 12: return QString("BZ Distance (m)");
-                case 13: return QString("BZ Duration (hr)");
-                case 14: return QLatin1String("Da (cm\xb2/sec)");
-                case 15: return QLatin1String("Dw (cm\xb2/sec)");
-                case 16: return QLatin1String("rcl (s/cm)");
-                case 17: return QLatin1String("H (Pa-m\xb3/mol)");
-                default: return QVariant();
+            case Column::ID:                  return QString("ID");
+            case Column::X:                   return QString("X (m)");
+            case Column::Y:                   return QString("Y (m)");
+            case Column::Z:                   return QString("Z (m)");
+            case Column::Longitude:           return QString("Longitude");
+            case Column::Latitude:            return QString("Latitude");
+            case Column::Area:                return QString("Area (ha)");
+            case Column::Start:               return QString("Start");
+            case Column::AppRate:             return QString("App. Rate (kg/ha)");
+            case Column::IncDepth:            return QString("Inc. Depth (cm)");
+            case Column::MassAF:              return QLatin1String("Mass \xd7 AF (kg)");
+            case Column::FluxProfile:         return QString("Flux Profile");
+            case Column::TimeSF:              return QString("Time SF");
+            case Column::DepthSF:             return QString("Depth SF");
+            case Column::OverallSF:           return QString("Overall SF");
+            case Column::BZDistance:          return QString("BZ Distance (m)");
+            case Column::BZDuration:          return QString("BZ Duration (hr)");
+            case Column::AirDiffusion:        return QLatin1String("Da (cm\xb2/sec)");
+            case Column::WaterDiffusion:      return QLatin1String("Dw (cm\xb2/sec)");
+            case Column::CuticularResistance: return QLatin1String("rcl (s/cm)");
+            case Column::HenryConstant:       return QLatin1String("H (Pa-m\xb3/mol)");
+            default: return QVariant();
             }
         }
     }
+    else {
+        if (section >= rowCount() || section < 0)
+            return QVariant();
 
-    if (role == Qt::DecorationRole) {
-        if (orientation == Qt::Vertical) {
-            if (section >= rowCount() || section < 0)
-                return QVariant();
+        const Source &s = sgPtr->sources.at(section);
 
-            const Source &s = sgPtr->sources.at(section);
-
-            switch (s.getType()) {
-                case SourceType::AREA:
-                    return QIcon(":/images/Rectangle_16x.png");
-                case SourceType::AREACIRC:
-                    return QIcon(":/images/Circle_16x.png");
-                case SourceType::AREAPOLY:
-                    return QIcon(":/images/Polygon_16x.png");
-                default:
-                    return QVariant();
-            }
+        if (role == Qt::UserRole) {
+            return QVariant::fromValue(s.getType());
+        }
+        else if (role == Qt::ForegroundRole) {
+            return s.pen;
+        }
+        else if (role == Qt::BackgroundRole) {
+            return s.brush;
         }
     }
 
     return QVariant();
+}
+
+
+bool SourceModel::setHeaderData(int section, Qt::Orientation orientation, const QVariant &value, int role)
+{
+    if (role != Qt::ForegroundRole && role != Qt::BackgroundRole)
+        return false;
+
+    if (orientation != Qt::Vertical)
+        return false;
+
+    if (section >= rowCount() || section < 0)
+        return false;
+
+    Source &s = sgPtr->sources.at(section);
+
+    if (role == Qt::ForegroundRole && value.canConvert<QPen>()) {
+        s.pen = qvariant_cast<QPen>(value);
+        emit headerDataChanged(orientation, section, section);
+        return true;
+    }
+    else if (role == Qt::BackgroundRole && value.canConvert<QBrush>()) {
+        s.brush = qvariant_cast<QBrush>(value);
+        emit headerDataChanged(orientation, section, section);
+        return true;
+    }
+
+    return false;
 }
 
 Qt::ItemFlags SourceModel::flags(const QModelIndex &index) const
@@ -360,14 +457,34 @@ Qt::ItemFlags SourceModel::flags(const QModelIndex &index) const
     if (!index.isValid())
         return Qt::ItemIsEnabled;
 
+    // AREAPOLY coordinates must be set using the source editor,
+    // and the geo transform must be valid to set latitude/longitude.
+    QVariant sourceTypeVar = headerData(index.row(), Qt::Vertical, Qt::UserRole);
+    SourceType sourceType = sourceTypeVar.value<SourceType>();
+    Qt::ItemFlags xyFlags = QAbstractTableModel::flags(index);
+    Qt::ItemFlags llFlags = QAbstractTableModel::flags(index);
+    if (sourceType != SourceType::AREAPOLY) {
+        xyFlags |= Qt::ItemIsEditable;
+        if (transform.isValid())
+            llFlags |= Qt::ItemIsEditable;
+    }
+
     // Set editable flag for selected columns.
     switch (index.column()) {
-        case 0:  return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
-        case 4:  return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
-        case 5:  return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
-        case 6:  return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
-        case 8:  return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
-        default: return QAbstractTableModel::flags(index);
+    case Column::X:
+    case Column::Y:
+        return xyFlags;
+    case Column::Longitude:
+    case Column::Latitude:
+        return llFlags;
+    case Column::Z:
+    case Column::ID:
+    case Column::Start:
+    case Column::AppRate:
+    case Column::IncDepth:
+    case Column::FluxProfile:
+        return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
+    default: return QAbstractTableModel::flags(index);
     }
 }
 

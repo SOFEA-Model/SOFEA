@@ -9,57 +9,19 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include <QDateTime>
-#include <QPointF>
-#include <QPolygonF>
-#include <QColor>
 
 #include "DateTimeDistribution.h"
 #include "GenericDistribution.h"
 #include "SamplingDistribution.h"
 #include "Source.h"
+#include "Receptor.h"
 #include "BufferZone.h"
 #include "FluxProfile.h"
-
-struct ReceptorRing
-{
-    std::string arcid; // length 8
-    double buffer;
-    double spacing;
-    double zElev = 0;
-    double zHill = 0;
-    QPolygonF points;
-    std::vector<QPolygonF> polygons;
-    QColor color;
-};
-
-struct ReceptorNode
-{
-    double x;
-    double y;
-    double zElev = 0;
-    double zHill = 0;
-    QPointF point;
-    QColor color;
-};
-
-struct ReceptorGrid
-{
-    std::string netid; // length 8
-    double xInit;
-    double yInit;
-    double xDelta;
-    double yDelta;
-    int xCount;
-    int yCount;
-    double zElev = 0;
-    double zHill = 0;
-    QPolygonF points;
-    QColor color;
-};
 
 struct SourceGroup
 {
     SourceGroup();
+    SourceGroup(const SourceGroup& rhs) = default;
 
     void initSource(Source *s);
     void initSourceAppStart(Source *s);
@@ -120,10 +82,12 @@ struct SourceGroup
     using FluxProfileDistribution = SamplingDistribution<FluxProfilePtr>;
     FluxProfileDistribution fluxProfile;
 
-    // Containers
+    // Sources
     boost::ptr_vector<Source> sources;
-    std::vector<ReceptorRing> rings;
-    std::vector<ReceptorNode> nodes;
-    std::vector<ReceptorGrid> grids;
+
+    // Receptors
+    std::vector<ReceptorRing> rings; // depreciated, for serialization only
+    std::vector<ReceptorNode> nodes; // depreciated, for serialization only
+    std::vector<ReceptorGrid> grids; // depreciated, for serialization only
 };
 

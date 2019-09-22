@@ -1,7 +1,9 @@
 #include "LogWidget.h"
 
+#include <QApplication>
 #include <QHeaderView>
 #include <QStylePainter>
+#include <QVBoxLayout>
 
 #include <QDebug>
 
@@ -103,11 +105,11 @@ bool LogFilterProxyModel::filterAcceptsRow(int row, const QModelIndex &parent) c
 LogWidget::LogWidget(QWidget *parent) : QWidget(parent)
 {
     // Toolbar Items
-    const QIcon clearIcon = QIcon(":/images/CleanData_16x.png");
-    const QIcon errorsIcon = QIcon(":/images/StatusAnnotations_Invalid_16xLG_color.png");
-    const QIcon warningsIcon = QIcon(":/images/StatusAnnotations_Warning_16xLG_color.png");
-    const QIcon messagesIcon = QIcon(":/images/StatusAnnotations_Information_16xLG_color.png");
-    const QIcon filterIcon = QIcon(":/images/FilterDropdown_16x.png");
+    static const QIcon clearIcon = QIcon(":/images/CleanData_24x.png");
+    static const QIcon errorsIcon = QIcon(":/images/StatusAnnotations_Critical_24xLG_color.png");
+    static const QIcon warningsIcon = QIcon(":/images/StatusAnnotations_Warning_24xLG_color.png");
+    static const QIcon messagesIcon = QIcon(":/images/StatusAnnotations_Information_24xLG_color.png");
+    static const QIcon filterIcon = QIcon(":/images/FilterDropdown_24x.png");
 
     clearAct = new QAction(clearIcon, tr("Clear"), this);
     showErrorsAct = new QAction(errorsIcon, tr("0 Errors"), this);
@@ -126,7 +128,8 @@ LogWidget::LogWidget(QWidget *parent) : QWidget(parent)
 
     // Toolbar
     toolbar = new QToolBar;
-    toolbar->setIconSize(QSize(16,16));
+    int iconSize = style()->pixelMetric(QStyle::PM_SmallIconSize);
+    toolbar->setIconSize(QSize(iconSize, iconSize));
     toolbar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     toolbar->addAction(showErrorsAct);
     toolbar->addAction(showWarningsAct);
@@ -145,10 +148,15 @@ LogWidget::LogWidget(QWidget *parent) : QWidget(parent)
     logView = new QTreeView;
     logView->setModel(proxyModel);
     logView->setRootIsDecorated(false);
-    logView->header()->setStretchLastSection(false);
     logView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     logView->setSelectionBehavior(QAbstractItemView::SelectRows);
     logView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    QHeaderView *header = logView->header();
+    header->setFont(QApplication::font());
+    header->setFixedHeight(32);
+    header->setStretchLastSection(false);
+    header->setSectionResizeMode(QHeaderView::Interactive);
 
     // Layout
     QVBoxLayout *mainLayout = new QVBoxLayout;

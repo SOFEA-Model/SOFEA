@@ -29,9 +29,6 @@ namespace runstream
     {
         namespace detail
         {
-            template <class T>
-            struct generic {};
-
             namespace tag {
                 struct point {};
                 struct pointcap {};
@@ -44,6 +41,9 @@ namespace runstream
                 struct line {};
                 struct buoyline {};
             };
+
+            template <typename T>
+            struct generic {};
 
             template <> struct generic<tag::point> {
                 double xs;

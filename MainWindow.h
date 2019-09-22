@@ -9,15 +9,16 @@
 #include "ScenarioProperties.h"
 #include "SourceGroupProperties.h"
 #include "SourceTable.h"
-#include "Utilities.h"
 
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include <map>
+#include <memory>
 
 QT_BEGIN_NAMESPACE
 class QAction;
 class QDir;
+class QDockWidget;
 class QMenu;
 class QTabWidget;
 class QTextEdit;
@@ -44,8 +45,10 @@ private slots:
     void saveProject();
     void closeProject();
     void exitApplication();
+    void validate();
     void runModel();
     void analyzeOutput();
+    void showHelp();
     void about();
     void contextMenuRequested(QPoint const& pos);
     void handleItemChanged(QTreeWidgetItem *item, int);
@@ -75,7 +78,7 @@ private:
     void cloneSourceGroup(SourceGroup *sg);
     void showScenarioProperties(Scenario *s);
     void showSourceGroupProperties(SourceGroup *sg);
-    void showReceptorEditor(SourceGroup *sg);
+    void showReceptorEditor(Scenario *s);
     void showInputViewer(Scenario *s);
     void showSourceTable(SourceGroup *sg);
     void exportFluxFile(Scenario *s);
@@ -93,18 +96,20 @@ private:
     QTabWidget *centralTabWidget;
     QMenu *fileMenu;
     QMenu *viewMenu;
-    QMenu *modelMenu;
+    QMenu *toolsMenu;
     QMenu *helpMenu;
     QToolBar *toolbar;
-    DockWidget *dwProjectTree;
-    DockWidget *dwMessages;
-    DockWidget *dwOutput;
+    QDockWidget *dwProjectTree;
+    QDockWidget *dwMessages;
+    QDockWidget *dwOutput;
     QTreeWidget *projectTree;
     LogWidget *lwMessages;
     LogWidget *lwOutput;
     AnalysisWindow *analysisWindow = nullptr;
 
     // Scenario/SourceGroup Containers
+    // TODO: implement ProjectModel.
+
     boost::ptr_vector<Scenario> scenarios;
     std::map<SourceGroup *, Scenario *> sourceGroupToScenario;
 
@@ -133,8 +138,10 @@ private:
     QAction *saveAsAct;
     QAction *closeAct;
     QAction *exitAct;
+    QAction *validateAct;
     QAction *runAct;
     QAction *analyzeAct;
+    QAction *optionsAct;
     QAction *helpAct;
     QAction *aboutAct;
 

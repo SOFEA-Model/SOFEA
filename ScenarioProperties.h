@@ -23,6 +23,7 @@ public slots:
 private:
     Scenario *sPtr;
     GeneralPage *generalPage;
+    ProjectionPage *projectionPage;
     MetDataPage *metDataPage;
     FluxProfilesPage *fluxProfilesPage;
     DispersionPage *dispersionPage;

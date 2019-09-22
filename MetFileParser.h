@@ -2,6 +2,7 @@
 #define METFILEPARSER_H
 
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include <QString>
@@ -62,6 +63,11 @@ struct SurfaceData
         std::string subs;       // A12      flags for CCVR and TEMP substitutions
         bool calm;              //          derived
         bool miss;              //          derived
+
+        friend bool operator<(const SurfaceRecord& lhs, const SurfaceRecord& rhs) {
+            return std::tie(lhs.mpyr, lhs.mpcmo, lhs.mpcdy, lhs.j)
+                 < std::tie(rhs.mpyr, rhs.mpcmo, rhs.mpcdy, rhs.j);
+        }
     };
 
     SurfaceHeader header;
@@ -89,6 +95,11 @@ struct ProfileData
         double t;               // F7.1,1X  temperature at the current level (C)
         double sa;              // F6.1,1X  sigma-A (degrees)
         double sw;              // F7.2     sigma-W (m/s)
+
+        friend bool operator<(const ProfileRecord& lhs, const ProfileRecord& rhs) {
+            return std::tie(lhs.mpyr, lhs.mpcmo, lhs.mpcdy, lhs.j)
+                 < std::tie(rhs.mpyr, rhs.mpcmo, rhs.mpcdy, rhs.j);
+        }
     };
 
     std::vector<ProfileRecord> records;

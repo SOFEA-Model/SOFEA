@@ -5,6 +5,7 @@
 #include "MainWindow.h"
 #include "ReceptorDialog.h"
 #include "RunModelDialog.h"
+#include "ProjectValidation.h"
 
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/smart_ptr/make_shared_object.hpp>
@@ -21,11 +22,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
     setWindowIcon(QIcon(":/images/Corteva_64x.png"));
     setUnifiedTitleAndToolBarOnMac(true);
+    setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+    setIconSize(QSize(40, 40));
     setAcceptDrops(true);
 
     taskbarButton = new QWinTaskbarButton(this);
 
-    // TODO: use QProxyStyle for PE_IndicatorTabClose
+    // TODO: use QProxyStyle for PE_IndicatorTabClose (SP_DialogCloseButton)
     centralTabWidget = new QTabWidget;
     centralTabWidget->setTabsClosable(true);
     centralTabWidget->setDocumentMode(true);
@@ -54,35 +57,37 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     projectModified = false;
 
-    statusBar()->showMessage(tr("Ready"), 2000);
+    statusBar()->showMessage(tr("Ready"), 3000);
 }
 
 void MainWindow::createMenus()
 {
     fileMenu = menuBar()->addMenu(tr("&File"));
     viewMenu = menuBar()->addMenu(tr("&View"));
-    modelMenu = menuBar()->addMenu(tr("&Model"));
+    toolsMenu = menuBar()->addMenu(tr("&Tools"));
     helpMenu = menuBar()->addMenu(tr("&Help"));
 }
 
 void MainWindow::createActions()
 {
     // Resources
-    const QIcon newIcon = QIcon(":/images/NewFile_32x.png");
-    const QIcon openIcon = QIcon(":/images/OpenFolder_32x.png");
-    const QIcon saveIcon = QIcon(":/images/Save_32x.png");
-    const QIcon saveAsIcon = QIcon(":/images/SaveAs_32x.png");
-    const QIcon runIcon = QIcon(":/images/Run_32x.png");
-    const QIcon analyzeIcon = QIcon(":/images/RunPerformance_32x.png");
-    const QIcon helpIcon = QIcon(":/images/MSHelpTableOfContent_32x.png");
-    const QIcon cloneIcon = QIcon(":/images/CopyItem_16x.png");
-    const QIcon renameIcon = QIcon(":/images/Rename_16x.png");
-    const QIcon addGroupIcon = QIcon(":/images/AddBuildQueue_16x.png");
-    const QIcon importIcon = QIcon(":/images/ImportFile_16x.png");
-    const QIcon receptorsIcon = QIcon(":/images/EditReceptors_16x.png");
-    const QIcon tableIcon = QIcon(":/images/Table_16x.png");
-    const QIcon textFileIcon = QIcon(":/images/TextFile_16x.png");
-    const QIcon exportFileIcon = QIcon(":/images/ExportFile_16x.png");
+    static const QIcon newIcon = QIcon(":/images/NewFile_40x.png");
+    static const QIcon openIcon = QIcon(":/images/OpenFolder_40x.png");
+    static const QIcon saveIcon = QIcon(":/images/Save_40x.png");
+    static const QIcon saveAsIcon = QIcon(":/images/SaveAs_32x.png");
+    static const QIcon validateIcon = QIcon(":/images/Checkmark_40x.png");
+    static const QIcon runIcon = QIcon(":/images/Run_40x.png");
+    static const QIcon analyzeIcon = QIcon(":/images/Measure_40x.png");
+    static const QIcon helpIcon = QIcon(":/images/MSHelpTableOfContent_32x.png");
+
+    static const QIcon cloneIcon = QIcon(":/images/CopyItem_16x.png");
+    static const QIcon renameIcon = QIcon(":/images/Rename_16x.png");
+    static const QIcon addGroupIcon = QIcon(":/images/AddBuildQueue_16x.png");
+    static const QIcon importIcon = QIcon(":/images/ImportFile_16x.png");
+    static const QIcon receptorsIcon = QIcon(":/images/EditReceptors_16x.png");
+    static const QIcon tableIcon = QIcon(":/images/Table_16x.png");
+    static const QIcon textFileIcon = QIcon(":/images/TextFile_16x.png");
+    static const QIcon exportFileIcon = QIcon(":/images/ExportFile_16x.png");
 
     // File Menu actions
     newAct = new QAction(newIcon, tr("&New Scenario"), this);
@@ -117,21 +122,31 @@ void MainWindow::createActions()
     fileMenu->addAction(closeAct);
     fileMenu->addAction(exitAct);
 
-    // Model Menu actions
+    // Tools Menu actions
+    validateAct = new QAction(validateIcon, tr("Check Project"), this);
+    validateAct->setStatusTip(tr("Check project for errors"));
+    validateAct->setDisabled(true); // FIXME
+
     runAct = new QAction(runIcon, tr("&Run Model..."), this);
     runAct->setStatusTip(tr("Run the current project"));
 
     analyzeAct = new QAction(analyzeIcon, tr("Analyze Results..."), this);
     analyzeAct->setStatusTip(tr("Analyze results"));
 
-    modelMenu->addAction(runAct);
-    modelMenu->addAction(analyzeAct);
+    optionsAct = new QAction(tr("Options..."), this);
+    optionsAct->setStatusTip(tr("Edit global options"));
+    optionsAct->setDisabled(true); // FIXME
+
+    toolsMenu->addAction(validateAct);
+    toolsMenu->addAction(runAct);
+    toolsMenu->addAction(analyzeAct);
+    toolsMenu->addSeparator();
+    toolsMenu->addAction(optionsAct);
 
     // Help Menu actions
     helpAct = new QAction(helpIcon, tr("Open User's Guide"), this);
     helpAct->setShortcuts(QKeySequence::HelpContents);
     helpAct->setStatusTip(tr("Open User's Guide"));
-    helpAct->setDisabled(true); // FIXME
 
     aboutAct = new QAction(tr("About SOFEA"), this);
     aboutAct->setStatusTip(tr("About SOFEA"));
@@ -163,13 +178,18 @@ void MainWindow::createToolbar()
 {
     toolbar = addToolBar(tr("Standard"));
     toolbar->setObjectName("MainToolbar");
-    toolbar->setIconSize(QSize(32, 32));
     toolbar->addAction(newAct);
     toolbar->addAction(openAct);
     toolbar->addAction(saveAct);
     toolbar->addSeparator();
+    toolbar->addAction(validateAct);
     toolbar->addAction(runAct);
     toolbar->addAction(analyzeAct);
+
+    // Override drawPrimitive(PE_PanelButtonCommand)?
+    //toolbar->setContentsMargins(0, 0, 0, 0);
+    //toolbar->layout()->setSpacing(0);
+    //toolbar->layout()->setContentsMargins(0, 0, 0, 20);
 }
 
 void MainWindow::createPanels()
@@ -180,11 +200,14 @@ void MainWindow::createPanels()
     setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
 
     // Project Browser
-    dwProjectTree = new DockWidget(tr("Project Browser"), this);
+    dwProjectTree = new QDockWidget(tr("Project Browser"), this);
     dwProjectTree->setObjectName("ProjectBrowser");
     dwProjectTree->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
 
     projectTree = new QTreeWidget(dwProjectTree);
+    QFont font = QApplication::font();
+    font.setPointSizeF(font.pointSizeF() + 1);
+    projectTree->setFont(font);
     projectTree->setColumnCount(1);
     projectTree->setHeaderHidden(true);
     projectTree->setUniformRowHeights(true);
@@ -200,9 +223,9 @@ void MainWindow::createPanels()
     addDockWidget(Qt::LeftDockWidgetArea, dwProjectTree);
     viewMenu->addAction(dwProjectTree->toggleViewAction());
 
-    // Messages LogWidget
-    dwMessages = new DockWidget(tr("Messages"), this);
-    dwMessages->setObjectName("Messages");
+    // Validation LogWidget
+    dwMessages = new QDockWidget(tr("Validation"), this);
+    dwMessages->setObjectName("Validation");
     dwMessages->setAllowedAreas(Qt::BottomDockWidgetArea);
     lwMessages = new LogWidget(dwMessages);
     dwMessages->setWidget(lwMessages);
@@ -210,7 +233,7 @@ void MainWindow::createPanels()
     viewMenu->addAction(dwMessages->toggleViewAction());
 
     // Model Output LogWidget
-    dwOutput = new DockWidget(tr("Model Output"), this);
+    dwOutput = new QDockWidget(tr("Model Output"), this);
     dwMessages->setObjectName("Model Output");
     dwMessages->setAllowedAreas(Qt::BottomDockWidgetArea);
     lwOutput = new LogWidget(dwOutput);
@@ -240,11 +263,12 @@ void MainWindow::setupConnections()
     connect(exitAct, &QAction::triggered, this, &MainWindow::exitApplication);
 
     // Model Menu
+    connect(validateAct, &QAction::triggered, this, &MainWindow::validate);
     connect(runAct, &QAction::triggered, this, &MainWindow::runModel);
     connect(analyzeAct, &QAction::triggered, this, &MainWindow::analyzeOutput);
 
     // Help Menu
-    //connect(helpAct, &QAction::triggered, this, &MainWindow::viewHelp);
+    connect(helpAct, &QAction::triggered, this, &MainWindow::showHelp);
     connect(aboutAct, &QAction::triggered, this, &MainWindow::about);
 
     // Project Tree
@@ -372,8 +396,15 @@ void MainWindow::openProjectFile(const QString& openFile)
 
     try {
         std::ifstream is(ifile);
-        cereal::JSONInputArchive ia(is);
-        ia(scenarios);
+        // Simple check for JSON: first character is '{'
+        if (is.peek() == 0x7b) {
+            cereal::JSONInputArchive ia(is);
+            ia(scenarios);
+        }
+        else {
+            //cereal::PortableBinaryInputArchive ia(is);
+            //ia(scenarios);
+        }
     } catch (const cereal::Exception &e) {
         QMessageBox::critical(this, "Parse Error", QString::fromLocal8Bit(e.what()));
         return;
@@ -382,9 +413,9 @@ void MainWindow::openProjectFile(const QString& openFile)
     // Update containers and tree.
     for (Scenario &s : scenarios) {
         addScenarioToTree(&s);
-        for (SourceGroup &sg : s.sourceGroups) {
-            sourceGroupToScenario[&sg] = &s;
-            addSourceGroupToTree(&sg, &s);
+        for (auto sgptr : s.sourceGroups) {
+            sourceGroupToScenario[sgptr.get()] = &s;
+            addSourceGroupToTree(sgptr.get(), &s);
         }
     }
 
@@ -438,7 +469,7 @@ void MainWindow::saveProjectFile(const QString& saveFile)
 
     try {
         std::ofstream os(ofile);
-        cereal::JSONOutputArchive oa(os);
+        cereal::JSONOutputArchive oa(os, cereal::JSONOutputArchive::Options::NoIndent());
         oa(scenarios);
     } catch (const cereal::Exception &e) {
         QMessageBox::critical(this, "Parse Error", QString::fromLocal8Bit(e.what()));
@@ -494,10 +525,10 @@ void MainWindow::newScenario()
 
 void MainWindow::newSourceGroup(Scenario *s)
 {
-    SourceGroup *sg = new SourceGroup;
-    sourceGroupToScenario[sg] = s;
-    s->sourceGroups.push_back(sg);
-    addSourceGroupToTree(sg, s);
+    auto sgptr = std::make_shared<SourceGroup>();
+    s->sourceGroups.push_back(sgptr);
+    sourceGroupToScenario[sgptr.get()] = s;
+    addSourceGroupToTree(sgptr.get(), s);
 }
 
 void MainWindow::importValidationData(Scenario *s)
@@ -517,12 +548,12 @@ void MainWindow::importValidationData(Scenario *s)
         return;
 
     // Create a new SourceGroup with area sources
-    SourceGroup *sg = new SourceGroup;
-    sourceGroupToScenario[sg] = s;
-    s->sourceGroups.push_back(sg);
+    auto sgptr = std::make_shared<SourceGroup>();
+    s->sourceGroups.push_back(sgptr);
+    sourceGroupToScenario[sgptr.get()] = s;
 
     // Set validation mode by default
-    sg->validationMode = true;
+    sgptr->validationMode = true;
 
     // Read the CSV file
     std::string srcid;
@@ -548,15 +579,15 @@ void MainWindow::importValidationData(Scenario *s)
             as->appStart.setTimeSpec(Qt::UTC);
             as->incorpDepth = incdepth;
             as->setGeometry();
-            sg->sources.push_back(as);
+            sgptr->sources.push_back(as);
         }
     }
     catch (const std::exception &e) {
-        BOOST_LOG_TRIVIAL(error) << e.what();
+        QMessageBox::critical(this, "Import Failed", QString::fromLocal8Bit(e.what()));
         return;
     }
 
-    addSourceGroupToTree(sg, s);
+    addSourceGroupToTree(sgptr.get(), s);
 }
 
 void MainWindow::addScenarioToTree(Scenario *s)
@@ -608,7 +639,7 @@ void MainWindow::removeScenario(Scenario *s)
 
     // Remove all source groups.
     for (auto it = s->sourceGroups.rbegin(); it != s->sourceGroups.rend(); ++it)
-        removeSourceGroup(&(*it));
+        removeSourceGroup((*it).get());
 
     // Remove from tree.
     QTreeWidgetItem *item = scenarioToTreeWidget[s];
@@ -654,7 +685,7 @@ void MainWindow::removeSourceGroup(SourceGroup *sg)
     // Remove from ptr_vector using erase–remove idiom.
     // Object will be automatically deallocated.
     for (auto it = s->sourceGroups.begin(); it != s->sourceGroups.end(); ) {
-        if (&(*it) == sg)
+        if ((*it).get() == sg)
             it = s->sourceGroups.erase(it);
         else
             ++it;
@@ -668,19 +699,19 @@ void MainWindow::cloneScenario(Scenario *s)
     Scenario *clone = new Scenario(*s); // copy constructor
     scenarios.push_back(clone);
     addScenarioToTree(clone);
-    for (SourceGroup &sg : clone->sourceGroups) {
-        sourceGroupToScenario[&sg] = clone;
-        addSourceGroupToTree(&sg, clone);
+    for (auto sgptr : clone->sourceGroups) {
+        sourceGroupToScenario[sgptr.get()] = clone;
+        addSourceGroupToTree(sgptr.get(), clone);
     }
 }
 
 void MainWindow::cloneSourceGroup(SourceGroup *sg)
 {
-    SourceGroup *clone = new SourceGroup(*sg); // copy constructor
     Scenario *s = sourceGroupToScenario.find(sg)->second;
-    sourceGroupToScenario[clone] = s;
+    auto clone = std::make_shared<SourceGroup>(*sg); // copy constructor
     s->sourceGroups.push_back(clone);
-    addSourceGroupToTree(clone, s);
+    sourceGroupToScenario[clone.get()] = s;
+    addSourceGroupToTree(clone.get(), s);
 }
 
 void MainWindow::showScenarioProperties(Scenario *s)
@@ -703,10 +734,9 @@ void MainWindow::showSourceGroupProperties(SourceGroup *sg)
     dialog->exec();
 }
 
-void MainWindow::showReceptorEditor(SourceGroup *sg)
+void MainWindow::showReceptorEditor(Scenario *s)
 {
-    Scenario *s = sourceGroupToScenario[sg];
-    ReceptorDialog *dialog = new ReceptorDialog(s, sg, this);
+    ReceptorDialog *dialog = new ReceptorDialog(s, this);
     int rc = dialog->exec();
     if (rc == QDialog::Accepted) {
         emit scenarioUpdated(s);
@@ -790,7 +820,7 @@ void MainWindow::contextMenuRequested(QPoint const& pos)
     QAction *selectedItem;
 
     // Scenario Context Menu
-    // TODO: Import Sources, Edit Receptors
+    // TODO: Import Sources
     if (item && treeWidgetToScenario.count(item) > 0)
     {
         Scenario *s = treeWidgetToScenario[item];
@@ -803,6 +833,8 @@ void MainWindow::contextMenuRequested(QPoint const& pos)
         contextMenu.addAction(scenarioFluxFileAct);
         contextMenu.addSeparator();
         contextMenu.addAction(scenarioPropertiesAct);
+        contextMenu.addSeparator();
+        contextMenu.addAction(editReceptorsAct);
         contextMenu.addSeparator();
         contextMenu.addAction(scenarioInputFileAct);
 
@@ -825,6 +857,9 @@ void MainWindow::contextMenuRequested(QPoint const& pos)
         else if (selectedItem && selectedItem == scenarioPropertiesAct) {
             showScenarioProperties(s);
         }
+        else if (selectedItem && selectedItem == editReceptorsAct) {
+            showReceptorEditor(s);
+        }
         else if (selectedItem && selectedItem == scenarioInputFileAct) {
             showInputViewer(s);
         }
@@ -842,8 +877,6 @@ void MainWindow::contextMenuRequested(QPoint const& pos)
         contextMenu.addAction(sourceGroupRenameAct);
         contextMenu.addAction(sourceGroupRemoveAct);
         contextMenu.addSeparator();
-        contextMenu.addAction(editReceptorsAct);
-        contextMenu.addSeparator();
         contextMenu.addAction(sourceGroupPropertiesAct);
         contextMenu.addSeparator();
         contextMenu.addAction(sourceTableAct);
@@ -860,9 +893,6 @@ void MainWindow::contextMenuRequested(QPoint const& pos)
         }
         else if (selectedItem && selectedItem == sourceGroupPropertiesAct) {
             showSourceGroupProperties(sg);
-        }
-        else if (selectedItem && selectedItem == editReceptorsAct) {
-            showReceptorEditor(sg);
         }
         else if (selectedItem && selectedItem == sourceTableAct) {
             showSourceTable(sg);
@@ -961,6 +991,12 @@ void MainWindow::onSourceGroupUpdated(SourceGroup *sg)
     }
 }
 
+void MainWindow::validate()
+{
+    dwMessages->raise();
+    // TODO: call validation routines
+}
+
 void MainWindow::runModel()
 {
     if (projectDir.isEmpty() || !QDir(projectDir).exists())
@@ -1004,10 +1040,21 @@ void MainWindow::analyzeOutput()
                          analysisWindow->rect().center());
 }
 
+void MainWindow::showHelp()
+{
+    static QString helpPath = QDir::cleanPath(QCoreApplication::applicationDirPath()
+        + QDir::separator() + "doc/index.html");
+
+    QFileInfo fi(helpPath);
+    if (fi.exists()) {
+        QDesktopServices::openUrl(QUrl(helpPath));
+    }
+}
+
 void MainWindow::about()
 {
     QString aboutText;
-    aboutText += "<h3>Corteva Agriscience<br />Soil Fumigant Exposure Assessment (SOFEA) Modeling System</h3>";
+    aboutText += "<h3>Soil Fumigant Exposure Assessment (SOFEA) Modeling System</h3>";
     aboutText += QString("<h4>Version %1 <i>ALPHA</i>").arg(SOFEA_VERSION_STRING);
 #if _WIN64
     aboutText += " 64-bit</h4>";
@@ -1016,7 +1063,7 @@ void MainWindow::about()
 #else
     aboutText += "</h4>";
 #endif
-    aboutText += "<p>&copy; 2004-2018 DowDuPont Inc. All rights reserved.</p>";
+    aboutText += "<p>&copy; 2004-2019 DowDuPont Inc. All rights reserved.</p>";
 
     // Compiler Info
     aboutText += QString("Built with MSVC %1").arg(_MSC_VER) +
@@ -1029,9 +1076,9 @@ void MainWindow::about()
 
     // Contributor Info
     aboutText += "<h4>Developers:</h4>";
-    aboutText += "John Buonagurio (jbuonagurio@exponent.com)";
-    aboutText += "Steven A. Cryer (sacryer@dow.com)<br>";
-    aboutText += "Ian van Wesenbeeck (ian@illahe-environmental.com)<br>";
+    aboutText += "John Buonagurio (jbuonagurio@exponent.com)<br>";
+    aboutText += "Steven A. Cryer (steven.cryer@corteva.com)<br>";
+    aboutText += "Ian van Wesenbeeck (ian@illahe-environmental.com)";
 
     QMessageBox::about(this, tr("About SOFEA"), aboutText);
 }

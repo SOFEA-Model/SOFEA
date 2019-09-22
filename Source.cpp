@@ -55,12 +55,12 @@ void AreaSource::setGeometry()
 
 std::string AreaSource::toString(int isrc) const
 {
-    fmt::MemoryWriter w;
-    w.write("** Source {} (S{:0=3})\n", srcid, isrc);
-    w.write("   LOCATION S{:0=3} AREA     {: 10.2f} {: 10.2f} {: 6.1f}\n", isrc, xs, ys, zs);
-    w.write("   SRCPARAM S{:0=3} {} {} {} {} {:5.1f}\n", isrc, aremis, relhgt, xinit, yinit, angle);
-    w.write("   HOUREMIS flux.dat S{:0=3}\n", isrc);
-    return w.str();
+    fmt::memory_buffer w;
+    fmt::format_to(w, "** Source {} (S{:0=3})\n", srcid, isrc);
+    fmt::format_to(w, "   LOCATION S{:0=3} AREA     {: 10.2f} {: 10.2f} {: 6.2f}\n", isrc, xs, ys, zs);
+    fmt::format_to(w, "   SRCPARAM S{:0=3} {} {} {} {} {:5.1f}\n", isrc, aremis, relhgt, xinit, yinit, angle);
+    fmt::format_to(w, "   HOUREMIS flux.dat S{:0=3}\n", isrc);
+    return fmt::to_string(w);
 }
 
 /****************************************************************************
@@ -100,12 +100,12 @@ void AreaCircSource::setGeometry()
 
 std::string AreaCircSource::toString(int isrc) const
 {
-    fmt::MemoryWriter w;
-    w.write("** Source {} (S{:0=3})\n", srcid, isrc);
-    w.write("   LOCATION S{:0=3} AREACIRC {: 10.2f} {: 10.2f} {: 6.1f}\n", isrc, xs, ys, zs);
-    w.write("   SRCPARAM S{:0=3} {} {} {} {}\n", isrc, aremis, relhgt, radius, nverts);
-    w.write("   HOUREMIS FLUX.DAT S{:0=3}\n", isrc);
-    return w.str();
+    fmt::memory_buffer w;
+    fmt::format_to(w, "** Source {} (S{:0=3})\n", srcid, isrc);
+    fmt::format_to(w, "   LOCATION S{:0=3} AREACIRC {: 10.2f} {: 10.2f} {: 6.2f}\n", isrc, xs, ys, zs);
+    fmt::format_to(w, "   SRCPARAM S{:0=3} {} {} {} {}\n", isrc, aremis, relhgt, radius, nverts);
+    fmt::format_to(w, "   HOUREMIS FLUX.DAT S{:0=3}\n", isrc);
+    return fmt::to_string(w);
 }
 
 /****************************************************************************
@@ -138,14 +138,14 @@ std::string AreaPolySource::toString(int isrc) const
     double ys = geometry.first().y();
     int nverts = geometry.size();
 
-    fmt::MemoryWriter w;
-    w.write("** Source {} (S{:0=3})\n", srcid, isrc);
-    w.write("   LOCATION S{:0=3} AREAPOLY {: 10.2f} {: 10.2f} {: 6.1f}\n", isrc, xs, ys, zs);
-    w.write("   SRCPARAM S{:0=3} {} {} {}\n", isrc, aremis, relhgt, nverts);
-    w.write("   AREAVERT S{:0=3}", isrc);
+    fmt::memory_buffer w;
+    fmt::format_to(w, "** Source {} (S{:0=3})\n", srcid, isrc);
+    fmt::format_to(w, "   LOCATION S{:0=3} AREAPOLY {: 10.2f} {: 10.2f} {: 6.2f}\n", isrc, xs, ys, zs);
+    fmt::format_to(w, "   SRCPARAM S{:0=3} {} {} {}\n", isrc, aremis, relhgt, nverts);
+    fmt::format_to(w, "   AREAVERT S{:0=3}", isrc);
     for (const QPointF &p : geometry)
-        w.write(" {: 10.2f} {: 10.2f}", p.x(), p.y());
-    w.write("\n   HOUREMIS FLUX.DAT S{:0=3}\n", isrc);
-    return w.str();
+        fmt::format_to(w, " {: 10.2f} {: 10.2f}", p.x(), p.y());
+    fmt::format_to(w, "\n   HOUREMIS FLUX.DAT S{:0=3}\n", isrc);
+    return fmt::to_string(w);
 }
 

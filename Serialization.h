@@ -1,23 +1,37 @@
 #pragma once
 
 #include <iostream>
+#include <iterator>
+#include <memory>
 #include <string>
+#include <type_traits>
+#include <typeinfo>
 #include <utility>
 #include <vector>
 
+#include <QBrush>
+#include <QBuffer>
+#include <QByteArray>
+#include <QDataStream>
 #include <QDateTime>
+#include <QPen>
 #include <QString>
+#include <QVariant>
 #include <QDebug>
 
 #include <boost/icl/gregorian.hpp>
 #include <boost/icl/ptime.hpp>
 #include <boost/icl/interval_set.hpp>
-#include "boost/numeric/conversion/cast.hpp"
+#include <boost/numeric/conversion/cast.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_sparse.hpp>
+#include <boost/numeric/ublas/storage.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #define CEREAL_XML_STRING_VALUE "sofea"
 #include <cereal/cereal.hpp>
 #include <cereal/archives/json.hpp>
+//#include <cereal/archives/portable_binary.hpp> // Not currently working with flux profiles
 #include <cereal/types/array.hpp>
 #include <cereal/types/boost_variant.hpp>
 #include <cereal/types/map.hpp>
@@ -27,20 +41,63 @@
 #include <cereal/types/utility.hpp>
 #include <cereal/types/vector.hpp>
 
+#include <fmt/format.h>
+
 #include "Scenario.h"
 #include "SourceGroup.h"
 
 // Current version information
 CEREAL_CLASS_VERSION(FluxProfile, 1)
+CEREAL_CLASS_VERSION(ReceptorNode, 4)
 CEREAL_CLASS_VERSION(ReceptorRing, 3)
-CEREAL_CLASS_VERSION(ReceptorNode, 3)
 CEREAL_CLASS_VERSION(ReceptorGrid, 3)
+CEREAL_CLASS_VERSION(ReceptorNodeGroup, 1)
+CEREAL_CLASS_VERSION(ReceptorRingGroup, 1)
+CEREAL_CLASS_VERSION(ReceptorGridGroup, 1)
 CEREAL_CLASS_VERSION(BufferZone, 1)
-CEREAL_CLASS_VERSION(AreaSource, 3)
-CEREAL_CLASS_VERSION(AreaCircSource, 3)
-CEREAL_CLASS_VERSION(AreaPolySource, 3)
-CEREAL_CLASS_VERSION(SourceGroup, 6)
-CEREAL_CLASS_VERSION(Scenario, 4)
+CEREAL_CLASS_VERSION(AreaSource, 4)
+CEREAL_CLASS_VERSION(AreaCircSource, 4)
+CEREAL_CLASS_VERSION(AreaPolySource, 4)
+CEREAL_CLASS_VERSION(SourceGroup, 7)
+CEREAL_CLASS_VERSION(Scenario, 6)
+
+
+namespace traits {
+
+// Concept check for QDataStream support
+template <typename T, typename = void>
+struct is_streamable : std::false_type {};
+
+template <typename T>
+struct is_streamable<T,
+    std::void_t<decltype(std::declval<QDataStream&>() << std::declval<T>())>>
+    : std::true_type
+{};
+
+} // namespace traits
+
+
+template <typename T>
+std::string save_minimal_streamable(const T& var)
+{
+    QBuffer buffer;
+    buffer.open(QIODevice::WriteOnly);
+    QDataStream ds(&buffer);
+    ds.setVersion(QDataStream::Qt_5_13);
+    ds << var;
+    QString base64 = buffer.data().toBase64();
+    return base64.toStdString();
+}
+
+template <typename T>
+void load_minimal_streamable(T& var, const std::string& value)
+{
+    QByteArray base64(value.data(), value.size());
+    QByteArray bytes = QByteArray::fromBase64(base64);
+    QDataStream ds(bytes);
+    ds >> var;
+}
+
 
 namespace cereal {
 
@@ -146,7 +203,7 @@ void load_minimal(Archive const&, QDateTime& dt, std::string const& value)
 
 // External save function for QDate
 template <class Archive>
-std::string save_minimal(Archive const&, QDate const& d)
+std::string save_minimal(const Archive&, const QDate& d)
 {
     QString qs = d.toString(Qt::ISODate);
     return qs.toStdString();
@@ -154,7 +211,7 @@ std::string save_minimal(Archive const&, QDate const& d)
 
 // External load function for QDate
 template <class Archive>
-void load_minimal(Archive const&, QDate& d, std::string const& value)
+void load_minimal(const Archive&, QDate& d, const std::string& value)
 {
     QString qs = QString::fromStdString(value);
     d = QDate::fromString(qs, Qt::ISODate);
@@ -200,6 +257,30 @@ void load(Archive& ar, QColor& color)
     color = QColor::fromRgba64(qRgba64(rgba));
 }
 
+// External save function for QPen
+template <class Archive>
+std::string save_minimal(const Archive&, const QPen& pen) {
+    return ::save_minimal_streamable(pen);
+}
+
+// External load function for QPen
+template <class Archive>
+void load_minimal(const Archive&, QPen& pen, const std::string& value) {
+    ::load_minimal_streamable(pen, value);
+}
+
+// External save function for QBrush
+template <class Archive>
+std::string save_minimal(const Archive&, const QBrush& brush) {
+    return ::save_minimal_streamable(brush);
+}
+
+// External load function for QBrush
+template <class Archive>
+void load_minimal(const Archive&, QBrush& brush, const std::string& value) {
+    ::load_minimal_streamable(brush, value);
+}
+
 //-----------------------------------------------------------------------------
 // Boost.DateTime Types
 //-----------------------------------------------------------------------------
@@ -234,7 +315,7 @@ void load(Archive& ar, boost::gregorian::date& d)
 
 // External save functions for boost::posix_time::time_duration
 template <class TimeResTraitsSize, class Archive>
-void save_td(Archive& ar, boost::posix_time::time_duration const& td)
+void save_td(Archive& ar, const boost::posix_time::time_duration& td)
 {
     TimeResTraitsSize h = boost::numeric_cast<TimeResTraitsSize>(td.hours());
     TimeResTraitsSize m = boost::numeric_cast<TimeResTraitsSize>(td.minutes());
@@ -247,7 +328,7 @@ void save_td(Archive& ar, boost::posix_time::time_duration const& td)
 }
 
 template <class Archive>
-void save(Archive& ar, boost::posix_time::time_duration const& td)
+void save(Archive& ar, const boost::posix_time::time_duration& td)
 {
     // serialize a bool so we know how to read this back in later
     bool is_special = td.is_special();
@@ -298,7 +379,7 @@ void load(Archive& ar, boost::posix_time::time_duration& td)
 
 // External save function for boost::posix_time::ptime
 template <class Archive>
-void save(Archive& ar, boost::posix_time::ptime const& pt)
+void save(Archive& ar, const boost::posix_time::ptime& pt)
 {
     // from_iso_string does not include fractional seconds
     // therefore date and time_duration are used
@@ -329,57 +410,131 @@ void load(Archive& ar, boost::posix_time::ptime& pt)
 }
 
 //-----------------------------------------------------------------------------
-// Boost.ICL Types
+// Boost.uBLAS Types
 //-----------------------------------------------------------------------------
-/*
-// External save function for boost::icl::discrete_interval<DomainT>
-template <class Archive, class DomainT>
-void save(Archive& ar, boost::icl::discrete_interval<DomainT> const& di)
+
+// External save function for boost::numeric::ublas::unbounded_array
+template <class Archive, class T, class ALLOC>
+void save(Archive& ar, const boost::numeric::ublas::unbounded_array<T, ALLOC>& ua)
 {
-    auto const& bb = di.bounds().bits();
-    auto const& l  = di.lower();
-    auto const& u  = di.upper();
-    ar(bb, l, u);
+    ar(cereal::make_nvp("size", ua.size()));
+    for (const auto& element : ua)
+        ar(element);
 }
 
-// External load function for boost::icl::discrete_interval<DomainT>
-template <class Archive, class DomainT>
-void load(Archive& ar, boost::icl::discrete_interval<DomainT>& di)
+// External load function for boost::numeric::ublas::unbounded_array
+template <class Archive, class T, class ALLOC>
+void load(Archive& ar, boost::numeric::ublas::unbounded_array<T, ALLOC>& ua)
 {
-    auto bb = di.bounds().bits();
-    DomainT l, u;
-    ar(bb, l, u);
-    di = boost::icl::discrete_interval<DomainT>(l, u, boost::icl::interval_bounds(bb));
+    typename ALLOC::size_type s(ua.size());
+    ar(cereal::make_nvp("size", s));
+    ua.resize(s);
+    for (auto&& element : ua)
+        ar(element);
 }
 
-// External save function for boost::icl::interval_map<DomainT, CodomainT>
-template <class Archive>
-void save(Archive& ar, IntervalMap const& im)
+// External save function for boost::numeric::ublas::compressed_matrix
+template <class Archive, class T, class L, std::size_t IB, class IA, class TA>
+void save(Archive& ar, const boost::numeric::ublas::compressed_matrix<T, L, IB, IA, TA>& m)
 {
-    auto sz = im.iterative_size();
-    ar(sz);
-    for (auto& value : im) {
-        ar(value.first(), value.second());
-    }
+    ar(cereal::make_nvp("size1", m.size1()));
+    ar(cereal::make_nvp("size2", m.size2()));
+    ar(cereal::make_nvp("capacity", m.nnz_capacity()));
+    ar(cereal::make_nvp("filled1", m.filled1()));
+    ar(cereal::make_nvp("filled2", m.filled2()));
+    ar(cereal::make_nvp("index1_data", m.index1_data()));
+    ar(cereal::make_nvp("index2_data", m.index2_data()));
+    ar(cereal::make_nvp("value_data", m.value_data()));
 }
 
-// Enternal load function for boost::icl::interval_map<DomainT, CodomainT>
-template <class Archive>
-void load(Archive& ar, IntervalMap& im)
+// External load function for boost::numeric::ublas::compressed_matrix
+template <class Archive, class T, class L, std::size_t IB, class IA, class TA>
+void load(Archive& ar, boost::numeric::ublas::compressed_matrix<T, L, IB, IA, TA>& m)
 {
-    im.clear();
-    size_t sz;
-    ar(sz);
-    size_t counter = sz;
-    while (counter--) {
-        typename IntervalMap::value_type value;
-        ar(value);
-        im.insert(im.end(), value);
-    }
+    typename IA::value_type s1(m.size1()), s2(m.size2());
+    typename IA::size_type filled1, filled2;
+    auto& index1_data = m.index1_data();
+    auto& index2_data = m.index2_data();
+    auto& value_data = m.value_data();
+
+    ar(cereal::make_nvp("size1", s1));
+    ar(cereal::make_nvp("size2", s2));
+    m.resize(s1, s2, false);
+
+    ar(cereal::make_nvp("filled1", filled1));
+    ar(cereal::make_nvp("filled2", filled2));
+    ar(cereal::make_nvp("index1_data", index1_data));
+    ar(cereal::make_nvp("index2_data", index2_data));
+    ar(cereal::make_nvp("value_data", value_data));
+    m.set_filled(filled1, filled2);
 }
-*/
+
+// Resolve ambiguities with Boost Serialization functions in uBLAS.
+template <class Archive, class T, class ALLOC>
+struct specialize<
+    Archive,
+    boost::numeric::ublas::unbounded_array<T, ALLOC>,
+    cereal::specialization::non_member_load_save>
+{};
+
+template <class Archive, class T, class L, std::size_t IB, class IA, class TA>
+struct specialize<
+    Archive,
+    boost::numeric::ublas::compressed_matrix<T, L, IB, IA, TA>,
+    cereal::specialization::non_member_load_save>
+{};
 
 } // namespace cereal
+
+//-----------------------------------------------------------------------------
+// Boost.ICL Types
+//-----------------------------------------------------------------------------
+
+//// External save function for boost::icl::discrete_interval<DomainT>
+//template <class Archive, class DomainT>
+//void save(Archive& ar, boost::icl::discrete_interval<DomainT> const& di)
+//{
+//    auto const& bb = di.bounds().bits();
+//    auto const& l  = di.lower();
+//    auto const& u  = di.upper();
+//    ar(bb, l, u);
+//}
+//
+//// External load function for boost::icl::discrete_interval<DomainT>
+//template <class Archive, class DomainT>
+//void load(Archive& ar, boost::icl::discrete_interval<DomainT>& di)
+//{
+//    auto bb = di.bounds().bits();
+//    DomainT l, u;
+//    ar(bb, l, u);
+//    di = boost::icl::discrete_interval<DomainT>(l, u, boost::icl::interval_bounds(bb));
+//}
+//
+//// External save function for boost::icl::interval_map<DomainT, CodomainT>
+//template <class Archive>
+//void save(Archive& ar, IntervalMap const& im)
+//{
+//    auto sz = im.iterative_size();
+//    ar(sz);
+//    for (auto& value : im) {
+//        ar(value.first(), value.second());
+//    }
+//}
+//
+//// Enternal load function for boost::icl::interval_map<DomainT, CodomainT>
+//template <class Archive>
+//void load(Archive& ar, IntervalMap& im)
+//{
+//    im.clear();
+//    size_t sz;
+//    ar(sz);
+//    size_t counter = sz;
+//    while (counter--) {
+//        typename IntervalMap::value_type value;
+//        ar(value);
+//        im.insert(im.end(), value);
+//    }
+//}
 
 //-----------------------------------------------------------------------------
 // SOFEA Classes
@@ -411,7 +566,29 @@ void serialize(Archive& archive, FluxProfile& fp, const std::uint32_t version)
     }
 }
 
+// External serialize function for ReceptorNode
+template <class Archive>
+void serialize(Archive& archive, ReceptorNode& rn, const std::uint32_t version)
+{
+    // VERSION HISTORY:
+    // - V3:  adds support for elevation and color
+    // - V4:  adds support for zFlag; color support moved to receptor groups
+
+    if (version >= 1) {
+        archive(cereal::make_nvp("x", rn.x),
+                cereal::make_nvp("y", rn.y));
+    }
+    if (version >= 3) {
+        archive(cereal::make_nvp("zelev", rn.zElev),
+                cereal::make_nvp("zhill", rn.zHill));
+    }
+    if (version >= 4){
+        archive(cereal::make_nvp("zflag", rn.zFlag));
+    }
+}
+
 // External serialize function for ReceptorRing
+// DEPRECIATED
 template <class Archive>
 void serialize(Archive& archive, ReceptorRing& rr, const std::uint32_t version)
 {
@@ -431,25 +608,9 @@ void serialize(Archive& archive, ReceptorRing& rr, const std::uint32_t version)
     }
 }
 
-// External serialize function for ReceptorNode
-template <class Archive>
-void serialize(Archive& archive, ReceptorNode& rn, const std::uint32_t version)
-{
-    // VERSION HISTORY:
-    // - V3:  adds support for elevation and color
-
-    if (version >= 1) {
-        archive(cereal::make_nvp("x", rn.x),
-                cereal::make_nvp("y", rn.y));
-    }
-    if (version >= 3) {
-        archive(cereal::make_nvp("zelev", rn.zElev),
-                cereal::make_nvp("zhill", rn.zHill),
-                cereal::make_nvp("color", rn.color));
-    }
-}
 
 // External serialize function for ReceptorGrid
+// DEPRECIATED
 template <class Archive>
 void serialize(Archive& archive, ReceptorGrid& rg, const std::uint32_t version)
 {
@@ -463,13 +624,66 @@ void serialize(Archive& archive, ReceptorGrid& rg, const std::uint32_t version)
                 cereal::make_nvp("xdelta", rg.xDelta),
                 cereal::make_nvp("ydelta", rg.yDelta),
                 cereal::make_nvp("xcount", rg.xCount),
-                cereal::make_nvp("ycount", rg.yCount),
-                cereal::make_nvp("points", rg.points));
+                cereal::make_nvp("ycount", rg.yCount));
     }
     if (version >= 3) {
         archive(cereal::make_nvp("zelev", rg.zElev),
                 cereal::make_nvp("zhill", rg.zHill),
                 cereal::make_nvp("color", rg.color));
+    }
+}
+
+// External serialize function for ReceptorNodeGroup
+template <class Archive>
+void serialize(Archive& archive, ReceptorNodeGroup& rg, const std::uint32_t version)
+{
+    // VERSION HISTORY:
+    // -
+
+    if (version >= 1) {
+        archive(cereal::make_nvp("grpid", rg.grpid),
+                cereal::make_nvp("color", rg.color),
+                cereal::make_nvp("nodes", rg.nodes));
+    }
+}
+
+// External serialize function for ReceptorRingGroup
+template <class Archive>
+void serialize(Archive& archive, ReceptorRingGroup& rg, const std::uint32_t version)
+{
+    // VERSION HISTORY:
+    // -
+
+    if (version >= 1) {
+        archive(cereal::make_nvp("grpid", rg.grpid),
+                cereal::make_nvp("color", rg.color),
+                cereal::make_nvp("sgptr", rg.sgPtr),
+                cereal::make_nvp("buffer", rg.buffer),
+                cereal::make_nvp("spacing", rg.spacing),
+                cereal::make_nvp("polygons", rg.polygons),
+                cereal::make_nvp("nodes", rg.nodes));
+    }
+}
+
+// External serialize function for ReceptorGridGroup
+template <class Archive>
+void serialize(Archive& archive, ReceptorGridGroup& rg, const std::uint32_t version)
+{
+    // VERSION HISTORY:
+    // -
+
+    if (version >= 1) {
+        archive(cereal::make_nvp("grpid", rg.grpid),
+                cereal::make_nvp("color", rg.color),
+                cereal::make_nvp("xinit", rg.xInit),
+                cereal::make_nvp("yinit", rg.yInit),
+                cereal::make_nvp("xcount", rg.xCount),
+                cereal::make_nvp("ycount", rg.yCount),
+                cereal::make_nvp("xdelta", rg.xDelta),
+                cereal::make_nvp("ydelta", rg.yDelta),
+                cereal::make_nvp("zelevm", rg.zElevM),
+                cereal::make_nvp("zhillm", rg.zHillM),
+                cereal::make_nvp("zflagm", rg.zFlagM));
     }
 }
 
@@ -492,6 +706,7 @@ void serialize(Archive& archive, AreaSource& s, const std::uint32_t version)
     // VERSION HISTORY:
     // - V2:  adds support for deposition
     // - V3:  adds support for flux profile
+    // - V4:  adds support for pen/brush
 
     if (version >= 1) {
         archive(cereal::make_nvp("src_id", s.srcid),
@@ -518,6 +733,10 @@ void serialize(Archive& archive, AreaSource& s, const std::uint32_t version)
     if (version >= 3) {
         archive(cereal::make_nvp("flux_profile", s.fluxProfile));
     }
+    if (version >= 4) {
+        archive(cereal::make_nvp("pen", s.pen),
+                cereal::make_nvp("brush", s.brush));
+    }
 }
 
 // External serialize function for AreaCircSource
@@ -527,6 +746,7 @@ void serialize(Archive& archive, AreaCircSource& s, const std::uint32_t version)
     // VERSION HISTORY:
     // - V2:  adds support for deposition
     // - V3:  adds support for flux profile
+    // - V4:  adds support for pen/brush
 
     if (version >= 1) {
         archive(cereal::make_nvp("src_id", s.srcid),
@@ -552,6 +772,10 @@ void serialize(Archive& archive, AreaCircSource& s, const std::uint32_t version)
     if (version >= 3) {
         archive(cereal::make_nvp("flux_profile", s.fluxProfile));
     }
+    if (version >= 4) {
+        archive(cereal::make_nvp("pen", s.pen),
+                cereal::make_nvp("brush", s.brush));
+    }
 }
 
 // External serialize function for AreaPolySource
@@ -561,6 +785,7 @@ void serialize(Archive& archive, AreaPolySource& s, const std::uint32_t version)
     // VERSION HISTORY:
     // - V2:  adds support for deposition
     // - V3:  adds support for flux profile
+    // - V4:  adds support for pen/brush
 
     if (version >= 1) {
         archive(cereal::make_nvp("src_id", s.srcid),
@@ -584,6 +809,10 @@ void serialize(Archive& archive, AreaPolySource& s, const std::uint32_t version)
     if (version >= 3) {
         archive(cereal::make_nvp("flux_profile", s.fluxProfile));
     }
+    if (version >= 4) {
+        archive(cereal::make_nvp("pen", s.pen),
+                cereal::make_nvp("brush", s.brush));
+    }
 }
 
 // External serialize function for SourceGroup
@@ -595,7 +824,8 @@ void serialize(Archive& archive, SourceGroup& sg, const std::uint32_t version)
     // - V3:  adds support for deposition
     // - V4:  adds support for app. start distribution
     // - V5:  adds support for flux profile distribution
-    // - V6:  new buffer zone format
+    // - V6:  new dynamic buffer zone implementation
+    // - V7:  receptor nodes and grids moved to scenario
 
     if (version >= 1) {
         archive(cereal::make_nvp("group_id", sg.grpid),
@@ -624,12 +854,14 @@ void serialize(Archive& archive, SourceGroup& sg, const std::uint32_t version)
                 cereal::make_nvp("buffer_zones", sg.zones));
     }
     if (version >= 1) {
-        archive(cereal::make_nvp("sources", sg.sources),
-                cereal::make_nvp("receptor_rings", sg.rings),
-                cereal::make_nvp("receptor_grids", sg.grids));
+        archive(cereal::make_nvp("sources", sg.sources));
     }
-    if (version >= 2) {
-        archive(cereal::make_nvp("receptor_nodes", sg.nodes));
+    if (version >= 1 && version < 7) {
+        archive(cereal::make_nvp("receptor_rings", sg.rings),
+                cereal::make_nvp("receptor_grids", sg.grids)); // for compatibility only
+    }
+    if (version >= 2 && version < 7) {
+        archive(cereal::make_nvp("receptor_nodes", sg.nodes)); // for compatibility only
     }
 }
 
@@ -641,14 +873,15 @@ void serialize(Archive& archive, Scenario& s, const std::uint32_t version)
     // - V2:  adds support for flagpole height
     // - V3:  adds support for deposition, averaging periods
     // - V4:  adds support for flux profiles
+    // - V5:  receptor groups replace previous receptor classes
+    //        boost::ptr_vector<SourceGroup> replaced with std::vector<std::shared_ptr<SourceGroup>>
+    // - V6:  remove flagpole height from scenario, assign directly to receptors
+    //        adds support for projections
 
     if (version >= 1) {
         archive(cereal::make_nvp("title", s.title),
                 cereal::make_nvp("fumigant_id", s.fumigantId),
                 cereal::make_nvp("decay_coefficient", s.decayCoefficient));
-    }
-    if (version >= 2) {
-        archive(cereal::make_nvp("flagpole_height", s.flagpoleHeight));
     }
     if (version >= 3) {
         archive(cereal::make_nvp("averaging_periods", s.averagingPeriods));
@@ -683,8 +916,85 @@ void serialize(Archive& archive, Scenario& s, const std::uint32_t version)
         archive(cereal::make_nvp("aermod_low_wind", s.aermodLowWind),
                 cereal::make_nvp("aermod_low_wind_svmin", s.aermodSVmin),
                 cereal::make_nvp("aermod_low_wind_wsmin", s.aermodWSmin),
-                cereal::make_nvp("aermod_low_wind_franmax", s.aermodFRANmax),
-                cereal::make_nvp("source_groups", s.sourceGroups));
+                cereal::make_nvp("aermod_low_wind_franmax", s.aermodFRANmax));
+
+    }
+
+    if (version >= 5) {
+        archive(cereal::make_nvp("source_groups", s.sourceGroups));
+    }
+    else {
+        // Move source groups from boost::ptr_vector when loading earlier class versions.
+        if constexpr (std::is_base_of_v<cereal::detail::InputArchiveBase, Archive>)
+        {
+            boost::ptr_vector<SourceGroup> pv;
+            archive(cereal::make_nvp("source_groups", pv));
+            s.sourceGroups.clear();
+            s.sourceGroups.reserve(pv.size());
+            for (auto&& sg : pv) {
+                s.sourceGroups.emplace_back(std::make_shared<SourceGroup>(std::move(sg)));
+            }
+        }
+    }
+
+    if (version >= 5) {
+        archive(cereal::make_nvp("receptor_groups", s.receptors));
+    }
+    else {
+        // Move receptors from source group and convert to new group format.
+        if constexpr (std::is_base_of_v<cereal::detail::InputArchiveBase, Archive>)
+        {
+            //double zflag = 0;
+            //if (version >= 2) {
+            //    archive(cereal::make_nvp("flagpole_height", zflag));
+            //}
+
+            int isg = 1;
+            for (auto sgptr : s.sourceGroups) {
+                if (!sgptr->nodes.empty()) {
+                    ReceptorNodeGroup ng;
+                    ng.grpid = fmt::format("G{:0=3}DISC", isg);
+                    for (const auto& node : sgptr->nodes) {
+                        ng.nodes.insert(node);
+                    }
+                    s.receptors.push_back(ng);
+                    sgptr->nodes.clear();
+                }
+
+                int iring = 1;
+                for (const auto& ring : sgptr->rings) {
+                    ReceptorRingGroup rg;
+                    rg.grpid = fmt::format("G{:0=3}R{:0=3}", isg, iring++);
+                    rg.setSourceGroup(sgptr);
+                    rg.setBuffer(ring.buffer);
+                    rg.setSpacing(ring.spacing);
+                    rg.updateGeometry();
+                    s.receptors.push_back(rg);
+                }
+                sgptr->rings.clear();
+
+                int igrid = 1;
+                for (const auto& grid : sgptr->grids) {
+                    ReceptorGridGroup gg;
+                    gg.grpid = fmt::format("G{:0=3}C{:0=3}", isg, igrid++);
+                    gg.setDimensions(grid.xCount, grid.yCount);
+                    gg.setOrigin(grid.xInit, grid.yInit);
+                    gg.setSpacing(grid.xDelta, grid.yDelta);
+                    s.receptors.push_back(gg);
+                }
+                sgptr->rings.clear();
+
+                isg++;
+            }
+        }
+    }
+
+    if (version >= 6) {
+        archive(cereal::make_nvp("conversion_code", s.conversionCode),
+                cereal::make_nvp("horizontal_units_code", s.hUnitsCode),
+                cereal::make_nvp("horizontal_datum_code", s.hDatumCode),
+                cereal::make_nvp("vertical_units_code", s.vUnitsCode),
+                cereal::make_nvp("vertical_datum_code", s.vDatumCode));
     }
 }
 

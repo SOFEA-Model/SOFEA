@@ -181,7 +181,7 @@ struct FluxProfile
         if (refAppRate > 0)
             sf = (appRate / refAppRate) * timeScaleFactor(dt) * depthScaleFactor(depth);
         else
-            sf = 1;
+            sf = timeScaleFactor(dt) * depthScaleFactor(depth);
         return sf;
     }
 

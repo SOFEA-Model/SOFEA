@@ -1,20 +1,36 @@
-#include <QtWidgets>
-
+#include <algorithm>
 #include <array>
-
-#include <qwt_series_data.h>
-#include <qwt_polar_grid.h>
-#include <qwt_polar_curve.h>
-#include <qwt_scale_engine.h>
-#include <qwt_painter.h>
-
-// Master branch as of 2018-07-17:
-// https://github.com/HDembinski/histogram/tree/bff0c7bb
 
 #include <boost/histogram.hpp>
 
+#include <QBoxLayout>
+#include <QButtonGroup>
+#include <QDateTimeEdit>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QDoubleSpinBox>
+#include <QLabel>
+#include <QListView>
+#include <QPainter>
+#include <QPointF>
+#include <QRadioButton>
+#include <QSignalBlocker>
+#include <QSpinBox>
+#include <QStandardItemModel>
+
+#include <QDebug>
+
+#include <qwt_series_data.h>
+#include <qwt_polar_grid.h>
+#include <qwt_scale_engine.h>
+#include <qwt_painter.h>
+
 #include "MetFileInfoDialog.h"
 #include "PixmapUtilities.h"
+#include "ctk/ctkRangeSlider.h"
+//#include "delegate/GradientItemDelegate.h"
+#include "widgets/ReadOnlyLineEdit.h"
+#include "widgets/StandardTableView.h"
 
 //-----------------------------------------------------------------------------
 // WindRoseSector
@@ -180,13 +196,22 @@ MetFileInfoDialog::MetFileInfoDialog(std::shared_ptr<SurfaceData> sd, QWidget *p
     : QDialog(parent), sd(sd)
 {
     setWindowTitle("Diagnostics");
-    setWindowFlag(Qt::Tool);
+    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
     // Data Controls
     timeRangeSlider = new ctkRangeSlider(Qt::Horizontal);
     timeRangeSlider->setEnabled(false);
-    leStartTime = new ReadOnlyLineEdit;
-    leEndTime = new ReadOnlyLineEdit;
+
+    dteMinTime = new QDateTimeEdit;
+    dteMinTime->setTimeSpec(Qt::UTC);
+    dteMinTime->setDisplayFormat("yyyy-MM-dd HH:mm");
+    dteMinTime->setEnabled(false);
+
+    dteMaxTime = new QDateTimeEdit;
+    dteMaxTime->setTimeSpec(Qt::UTC);
+    dteMaxTime->setDisplayFormat("yyyy-MM-dd HH:mm");
+    dteMaxTime->setEnabled(false);
+
     leTotalHours = new ReadOnlyLineEdit;
     leCalmHours = new ReadOnlyLineEdit;
     leMissingHours = new ReadOnlyLineEdit;
@@ -231,22 +256,21 @@ MetFileInfoDialog::MetFileInfoDialog(std::shared_ptr<SurfaceData> sd, QWidget *p
     gradientModel->setItem(1, 0, item2);
     */
 
-
     // Bin Editor Model
     binModel = new QStandardItemModel;
 
     // Bin Editor
-    binEditor = new QListView;
-    binEditor->setModel(binModel);
-    binEditor->setFrameShape(QFrame::NoFrame);
-    binEditor->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    binEditor->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    binEditor->setMovement(QListView::Static);
-    binEditor->setResizeMode(QListView::Adjust);
-    binEditor->setFlow(QListView::LeftToRight);
-    binEditor->setWrapping(true);
-    binEditor->setIconSize(QSize(16,16));
-    binEditor->setFixedHeight(16+5+5); // FIXME, subclass and set sizeHint
+    binView = new QListView;
+    binView->setModel(binModel);
+    binView->setFrameShape(QFrame::NoFrame);
+    binView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    binView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    binView->setMovement(QListView::Static);
+    binView->setResizeMode(QListView::Adjust);
+    binView->setFlow(QListView::LeftToRight);
+    binView->setWrapping(true);
+    binView->setIconSize(QSize(16,16));
+    binView->setFixedHeight(16+5+5); // FIXME, subclass and set sizeHint
     // https://stackoverflow.com/questions/25613456/adjust-the-height-of-qlistview-to-fit-the-content
 
     // Radio Button Layout
@@ -266,9 +290,9 @@ MetFileInfoDialog::MetFileInfoDialog(std::shared_ptr<SurfaceData> sd, QWidget *p
     controlsLayout->addWidget(new QLabel(tr("Interval: ")),           0, 0);
     controlsLayout->addWidget(timeRangeSlider,                        0, 1);
     controlsLayout->addWidget(new QLabel(tr("Start time:")),          1, 0);
-    controlsLayout->addWidget(leStartTime,                            1, 1);
+    controlsLayout->addWidget(dteMinTime,                             1, 1);
     controlsLayout->addWidget(new QLabel(tr("End time:")),            2, 0);
-    controlsLayout->addWidget(leEndTime,                              2, 1);
+    controlsLayout->addWidget(dteMaxTime,                             2, 1);
     // Time Metrics
     controlsLayout->addWidget(new QLabel(tr("Total hours: ")),        0, 3);
     controlsLayout->addWidget(leTotalHours,                           0, 4);
@@ -281,9 +305,8 @@ MetFileInfoDialog::MetFileInfoDialog(std::shared_ptr<SurfaceData> sd, QWidget *p
     controlsLayout->addLayout(sectorSizeLayout,                       0, 7);
     controlsLayout->addWidget(new QLabel(tr("Bin count: ")),          1, 6);
     controlsLayout->addWidget(sbBinCount,                             1, 7);
-    //controlsLayout->addWidget(new QLabel(tr("Gradient: ")),           2, 6);
-    //controlsLayout->addWidget(cboGradient,                            2, 7);
 
+    // TODO:
     // Azimuth Spacing (degrees)
     // Automatic Radius, or Min/Max
     // Min/Max Wind Speed
@@ -292,7 +315,7 @@ MetFileInfoDialog::MetFileInfoDialog(std::shared_ptr<SurfaceData> sd, QWidget *p
     QVBoxLayout *frameLayout = new QVBoxLayout;
     frameLayout->addLayout(controlsLayout);
     frameLayout->addSpacing(10);
-    frameLayout->addWidget(binEditor);
+    frameLayout->addWidget(binView);
 
     // Controls Frame
     QFrame *controlsFrame = new QFrame;
@@ -308,17 +331,6 @@ MetFileInfoDialog::MetFileInfoDialog(std::shared_ptr<SurfaceData> sd, QWidget *p
     mainLayout->addWidget(wrPlot, 1);
     setLayout(mainLayout);
 
-    if (sd == nullptr)
-        return;
-
-    if (sd->records.size() == 0)
-        return;
-
-    init();
-}
-
-void MetFileInfoDialog::init()
-{
     // Default Color Map
     wrColors.push_back(QColor(0,   41,  255, 192));
     wrColors.push_back(QColor(0,   213, 255, 192));
@@ -331,9 +343,19 @@ void MetFileInfoDialog::init()
     rbSectorSize15->setChecked(true);
     sbBinCount->setValue(6);
 
-    // Connections
+    init();
+}
+
+void MetFileInfoDialog::init()
+{
+    if (sd == nullptr)
+        return;
+
+    if (sd->records.size() == 0)
+        return;
+
     connect(timeRangeSlider, &ctkRangeSlider::valuesChanged,
-            this, &MetFileInfoDialog::onIntervalChanged);
+            this, &MetFileInfoDialog::onSliderChanged);
 
     connect(bgSectorSize, QOverload<int>::of(&QButtonGroup::buttonClicked),
             this, &MetFileInfoDialog::onSectorSizeChanged);
@@ -345,11 +367,36 @@ void MetFileInfoDialog::init()
     timeRangeSlider->setRange(1, sd->nrec);
     timeRangeSlider->setPositions(1, sd->nrec);
     timeRangeSlider->setEnabled(true);
+
+    auto sr0 = sd->records.front();
+    auto sr1 = sd->records.back();
+
+    QDateTime minTime = QDateTime(QDate(sr0.mpyr, sr0.mpcmo, sr0.mpcdy),
+                                  QTime(sr0.j - 1, 0, 0), Qt::UTC);
+    QDateTime maxTime = QDateTime(QDate(sr1.mpyr, sr1.mpcmo, sr1.mpcdy),
+                                  QTime(sr1.j - 1, 0, 0), Qt::UTC);
+
+    dteMinTime->setDateTime(minTime);
+    dteMinTime->setDateTimeRange(minTime, maxTime);
+    dteMinTime->setEnabled(true);
+
+    dteMaxTime->setDateTime(maxTime);
+    dteMaxTime->setDateTimeRange(minTime, maxTime);
+    dteMaxTime->setEnabled(true);
+
+    connect(dteMinTime, &QDateTimeEdit::dateTimeChanged,
+            this, &MetFileInfoDialog::onDateTimeChanged);
+
+    connect(dteMaxTime, &QDateTimeEdit::dateTimeChanged,
+            this, &MetFileInfoDialog::onDateTimeChanged);
 }
 
-void MetFileInfoDialog::onIntervalChanged(const int min, const int max)
+void MetFileInfoDialog::onSliderChanged(const int min, const int max)
 {
-    if (min < 1 || max > sd->records.size())
+    const QSignalBlocker blocker1(dteMinTime);
+    const QSignalBlocker blocker2(dteMaxTime);
+
+    if (min < 1 || max < min || max > sd->records.size())
         return;
 
     // Update member variables.
@@ -378,11 +425,67 @@ void MetFileInfoDialog::onIntervalChanged(const int min, const int max)
     QDateTime maxTime = QDateTime(QDate(sr1.mpyr, sr1.mpcmo, sr1.mpcdy),
                                   QTime(sr1.j - 1, 0, 0), Qt::UTC);
 
-    const QString dateFormat = "yyyy-MM-dd HH:mm";
-    leStartTime->setText(minTime.toString(dateFormat));
-    leEndTime->setText(maxTime.toString(dateFormat));
+    dteMinTime->setDateTime(minTime);
+    dteMaxTime->setDateTime(maxTime);
 
     drawSectors();
+}
+
+void MetFileInfoDialog::onDateTimeChanged(const QDateTime& datetime)
+{
+    const QSignalBlocker blocker1(dteMinTime);
+    const QSignalBlocker blocker2(dteMaxTime);
+
+    QDateTime minDT, maxDT;
+
+    QObject* obj = sender();
+
+    // Synchronize min and max time controls.
+    if (obj == dteMinTime) {
+        minDT = datetime;
+        maxDT = dteMaxTime->dateTime();
+        if (maxDT < minDT) {
+            //dteMaxTime->setDateTime(minDT);
+            maxDT = minDT;
+        }
+    }
+    else if (obj == dteMaxTime) {
+        maxDT = datetime;
+        minDT = dteMinTime->dateTime();
+        if (minDT > maxDT) {
+            //dteMinTime->setDateTime(maxDT);
+            minDT = maxDT;
+        }
+    }
+    else {
+        return;
+    }
+
+    SurfaceData::SurfaceRecord minCompare;
+    const QDate minDate = minDT.date();
+    minCompare.mpyr = minDate.year();
+    minCompare.mpcmo = minDate.month();
+    minCompare.mpcdy = minDate.day();
+    minCompare.j = minDT.time().hour() + 1;
+
+    SurfaceData::SurfaceRecord maxCompare;
+    const QDate maxDate = maxDT.date();
+    maxCompare.mpyr = maxDate.year();
+    maxCompare.mpcmo = maxDate.month();
+    maxCompare.mpcdy = maxDate.day();
+    maxCompare.j = maxDT.time().hour() + 1;
+
+    // Get iterators to the range inside the requested bounds.
+    auto lower = std::upper_bound(sd->records.begin(), sd->records.end(), minCompare);
+    auto upper = std::lower_bound(sd->records.begin(), sd->records.end(), maxCompare);
+    if (lower == sd->records.end() || upper == sd->records.end()) {
+        return;
+    }
+
+    // Update the slider.
+    int pos0 = std::distance(sd->records.begin(), lower);
+    int pos1 = std::distance(sd->records.begin(), upper) + 1;
+    timeRangeSlider->setPositions(pos0, pos1);
 }
 
 void MetFileInfoDialog::onSectorSizeChanged(int id)
@@ -401,13 +504,17 @@ void MetFileInfoDialog::onSectorSizeChanged(int id)
 
 void MetFileInfoDialog::onBinCountChanged(int value)
 {
-
+    // TODO
 }
 
 void MetFileInfoDialog::drawSectors()
 {
     namespace bh = boost::histogram;
     using namespace bh::literals; // enables _c suffix
+
+    // Remove and detach existing curves.
+    wrSectors.clear();
+    wrPlot->detachItems(QwtPolarItem::Rtti_PolarCurve, true);
 
     if (idxMin < 1 || idxMax > sd->records.size())
         return;
@@ -416,11 +523,9 @@ void MetFileInfoDialog::drawSectors()
     int nvalid = 0;
 
     // Generate the histogram.
-    using wdir_axis_t = bh::axis::circular<>;
-    using wspd_axis_t = bh::axis::regular<>;
-    auto hist = bh::make_static_histogram(
-        wdir_axis_t(wdBinCount, 0.0, 360.0, "wdir"),  // wdir (azimuth)
-        wspd_axis_t(wsBinCount, wsMin, wsMax, "wspd") // wspd (color)
+    auto hist = bh::make_histogram(
+        bh::axis::circular<>(wdBinCount, 0.0, 360.0), // wdir (azimuth)
+        bh::axis::regular<>(wsBinCount, wsMin, wsMax) // wspd (color)
     );
 
     for (int i = idxMin-1; i < idxMax; ++i) {
@@ -434,23 +539,19 @@ void MetFileInfoDialog::drawSectors()
     if (nvalid <= 0)
         return;
 
-    // Remove and detach existing curves.
-    wrSectors.clear();
-    wrPlot->detachItems(QwtPolarItem::Rtti_PolarCurve, true);
-
     // Generate the sector curves.
     // Radius represents proportion of valid observations.
     double max_radius = 0;
-    for (auto wdir : hist.axis(0_c))
+    for (int i = 0; i <= hist.axis(0_c).size(); ++i)
     {
         double prev_radius = 0;
-        for (auto wspd : hist.axis(1_c))
+        double azimuth0 = hist.axis(0_c).bin(i).lower() + azimuthSpacing;
+        double azimuth1 = hist.axis(0_c).bin(i).upper() - azimuthSpacing;
+
+        for (int j = 0; j <= hist.axis(1_c).size(); ++j)
         {
-            double azimuth0 = wdir.lower() + azimuthSpacing;
-            double azimuth1 = wdir.upper() - azimuthSpacing;
             double radius0 = prev_radius;
-            double radius1 = prev_radius + (hist.at(wdir, wspd).value() /
-                                            static_cast<double>(nvalid));
+            double radius1 = prev_radius + (hist.at(i, j) / static_cast<double>(nvalid));
 
             if (radius1 > max_radius)
                 max_radius = radius1;
@@ -459,10 +560,10 @@ void MetFileInfoDialog::drawSectors()
             PolarPointSeriesData *series = new PolarPointSeriesData(
                 { QwtPointPolar(azimuth0, radius0), QwtPointPolar(azimuth1, radius1) });
 
-            // Get the brush associated with the bin.
+            // Get the brush associated with the wind speed bin.
             QBrush brush = QBrush(QColor(128, 128, 128, 200));
-            if (wspd.idx() < wrColors.size())
-                brush = QBrush(wrColors[wspd.idx()]);
+            if (j < wrColors.size())
+                brush = QBrush(wrColors[j]);
 
             WindRoseSector *sector = new WindRoseSector;
             sector->setStyle(QwtPolarCurve::UserCurve);
@@ -488,20 +589,20 @@ void MetFileInfoDialog::drawSectors()
     wrPlot->replot();
 
     // Set legend labels for wind speed.
-    for (auto wspd : hist.axis(1_c))
+    for (int i = 0; i < hist.axis(1_c).size(); ++i)
     {
-        double radial0 = wspd.lower();
-        double radial1 = wspd.upper();
+        double radial0 = hist.axis(1_c).bin(i).lower();
+        double radial1 = hist.axis(1_c).bin(i).upper();
         QString label = tr("[")  + QString::number(radial0, 'g', 5) +
                         tr(", ") + QString::number(radial1, 'g', 5) + tr(")");
 
-        QBrush brush = QBrush(wrColors[wspd.idx()]);
+        QBrush brush = QBrush(wrColors[i]);
         QPixmap pm = PixmapUtilities::brushValuePixmap(brush);
         QStandardItem *item = new QStandardItem;
         item->setEditable(false);
         item->setData(label, Qt::DisplayRole);
         item->setData(pm, Qt::DecorationRole);
-        binModel->setItem(wspd.idx(), 0, item);
+        binModel->setItem(i, 0, item);
     }
 }
 

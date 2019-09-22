@@ -7,7 +7,6 @@
 #include <QVector>
 
 #include "FluxProfilePlot.h"
-#include "Utilities.h"
 
 FluxProfilePlot::FluxProfilePlot(FluxProfile fp, QWidget *parent)
     : QWidget(parent), fluxProfile(fp)
@@ -35,6 +34,9 @@ FluxProfilePlot::FluxProfilePlot(FluxProfile fp, QWidget *parent)
     curve->setStyle(QwtPlotCurve::Steps);
     curve->setCurveAttribute(QwtPlotCurve::Inverted);
     curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
+    QPen curvePen = curve->pen();
+    curvePen.setColor(QWidget::palette().text().color());
+    curve->setPen(curvePen);
     curve->attach(plot);
 
     QwtDateScaleDraw *scaleDraw = new QwtDateScaleDraw(Qt::UTC);
@@ -51,10 +53,13 @@ FluxProfilePlot::FluxProfilePlot(FluxProfile fp, QWidget *parent)
     controlsLayout->addRow("Application rate (kg/ha): ", sbAppRate);
     controlsLayout->addRow("Incorporation depth (cm):", sbIncorpDepth);
 
-    BackgroundFrame *plotFrame = new BackgroundFrame;
+    QFrame *plotFrame = new QFrame;
     QVBoxLayout *plotLayout = new QVBoxLayout;
     plotLayout->addWidget(plot);
     plotFrame->setLayout(plotLayout);
+    plotFrame->setFrameShape(QFrame::StyledPanel);
+    plotFrame->setBackgroundRole(QPalette::Base);
+    plotFrame->setAutoFillBackground(true);
 
     // Main Layout
     QHBoxLayout *mainLayout = new QHBoxLayout;
@@ -111,7 +116,7 @@ void FluxProfilePlot::updatePlot()
         return;
 
     QVector<QPointF> series;
-    series.reserve(flux.size() + 1);
+    series.reserve(static_cast<int>(flux.size()) + 1);
 
     for (const auto& xy : flux) {
         double x = QwtDate::toDouble(xy.first);

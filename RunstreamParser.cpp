@@ -8,13 +8,14 @@
 #include <QTextStream>
 #include <QPolygonF>
 #include <QTransform>
+#include <QDebug>
 
 #include <boost/log/trivial.hpp>
 #include <boost/log/attributes/scoped_attribute.hpp>
 
 // FIXME: allow reading without SO STARTING / SO FINISHED
 // TODO:
-// - add DISCCART and EVALCART receptor parsing
+// - add DISCCART, EVALCART, GRIDCART receptor parsing
 // - use variant visitation and operator>> for parsing
 
 bool parseInternalLocation(QTextStream& is, runstream::source::container& sc, int iline)
@@ -146,12 +147,14 @@ bool parseInternalSrcParam(QTextStream& is, runstream::source::container& sc, in
     case 4: { // AREA
         auto s = boost::get<runstream::source::area>(sv);
         is >> s.aremis >> s.relhgt >> s.xinit;
-        if (is.status() != QTextStream::Ok)
-            return false; // read failure
+        is.skipWhiteSpace();
         if (!is.atEnd())
             is >> s.yinit;
         else
             s.yinit = s.xinit;
+        if (is.status() != QTextStream::Ok)
+            return false; // read failure
+        is.skipWhiteSpace();
         if (!is.atEnd())
             is >> s.angle;
         if (!is.atEnd())
@@ -166,6 +169,7 @@ bool parseInternalSrcParam(QTextStream& is, runstream::source::container& sc, in
         is >> s.aremis >> s.relhgt >> s.nverts;
         if (is.status() != QTextStream::Ok)
             return false; // read failure
+        is.skipWhiteSpace();
         if (!is.atEnd())
             is >> s.szinit;
         s.complete = false; // non-terminal parse
@@ -178,8 +182,11 @@ bool parseInternalSrcParam(QTextStream& is, runstream::source::container& sc, in
         is >> s.aremis >> s.relhgt >> s.radius;
         if (is.status() != QTextStream::Ok)
             return false; // read failure
+        is.skipWhiteSpace();
         if (!is.atEnd())
-            is >> s.nverts >> s.szinit;
+            is >> s.nverts;
+        if (!is.atEnd())
+            is >> s.szinit;
         s.complete = true; // terminal parse
         kvp.var = s;
         v.replace(it, kvp); // update record
@@ -213,6 +220,7 @@ bool parseInternalAreaVert(QTextStream& is, runstream::source::container& sc, in
         return false; // not areapoly type
 
     auto s = boost::get<runstream::source::areapoly>(sv);
+
     while (true) {
         double xs, ys;
         is >> xs >> ys;
@@ -222,10 +230,11 @@ bool parseInternalAreaVert(QTextStream& is, runstream::source::container& sc, in
     }
 
     if (s.areavert.size() == s.nverts) {
-        s.complete = true; // terminal parse
-        kvp.var = s;
-        v.replace(it, kvp); // update record
+        s.complete = true; // terminal parse    
     }
+
+    kvp.var = s;
+    v.replace(it, kvp); // update record
 
     return true;
 }
@@ -328,8 +337,10 @@ void RunstreamParser::parseSources(const QString& filename, SourceGroup *sgPtr)
         }
         case 4: { // AREA
             auto rs = boost::get<runstream::source::area>(sv);
-            if (!rs.complete)
+            if (!rs.complete) {
+                BOOST_LOG_TRIVIAL(error) << "Incomplete parse for SRCID '" << kvp.srcid.toStdString() << "'";
                 break;
+            }
             AreaSource *s = new AreaSource;
             s->srcid = kvp.srcid.toStdString();
             s->xs = rs.xs;
@@ -344,8 +355,10 @@ void RunstreamParser::parseSources(const QString& filename, SourceGroup *sgPtr)
         }
         case 5: { // AREAPOLY
             auto rs = boost::get<runstream::source::areapoly>(sv);
-            if (!rs.complete)
+            if (!rs.complete) {
+                BOOST_LOG_TRIVIAL(error) << "Incomplete parse for SRCID '" << kvp.srcid.toStdString() << "'";
                 break;
+            }
             AreaPolySource *s = new AreaPolySource;
             s->srcid = kvp.srcid.toStdString();
             s->geometry = rs.areavert;
@@ -356,8 +369,18 @@ void RunstreamParser::parseSources(const QString& filename, SourceGroup *sgPtr)
         }
         case 6: { // AREACIRC
             auto rs = boost::get<runstream::source::areacirc>(sv);
-            if (!rs.complete)
+            if (!rs.complete) {
+                BOOST_LOG_TRIVIAL(error) << "Incomplete parse for SRCID '" << kvp.srcid.toStdString() << "'";
                 break;
+            }
+            if (rs.radius <= 0) {
+                BOOST_LOG_TRIVIAL(error) << "Invalid radius for SRCID '" << kvp.srcid.toStdString() << "'";
+                break;
+            }
+            if (rs.nverts <= 3) {
+                BOOST_LOG_TRIVIAL(error) << "Invalid vertex count for SRCID '" << kvp.srcid.toStdString() << "'";
+                break;
+            }
             AreaCircSource *s = new AreaCircSource;
             s->srcid = kvp.srcid.toStdString();
             s->xs = rs.xs;

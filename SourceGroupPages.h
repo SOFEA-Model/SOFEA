@@ -8,9 +8,9 @@
 #include "SamplingDistributionEditor.h"
 #include "MonteCarloLineEdit.h"
 #include "MonteCarloDateTimeEdit.h"
-#include "StandardTableView.h"
-#include "StandardTableEditor.h"
-#include "Utilities.h"
+#include "widgets/StandardTableEditor.h"
+#include "widgets/StandardTableView.h"
+#include "widgets/StatusLabel.h"
 
 #include "Scenario.h"
 #include "SourceGroup.h"
@@ -108,6 +108,7 @@ private:
 
     FluxProfileModel *model;
     SamplingDistributionEditor *editor;
+    StatusLabel *lblNoFluxProfile;
 };
 
 /****************************************************************************
@@ -137,6 +138,7 @@ private:
     BufferZoneModel *zoneModel;
     StandardTableView *zoneTable;
     StandardTableEditor *zoneEditor;
+    StatusLabel *lblThresholdInfo;
 };
 
 #endif // SOURCEGROUPPAGES_H

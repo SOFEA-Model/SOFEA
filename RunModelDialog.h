@@ -14,8 +14,8 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include "Scenario.h"
-#include "StandardTableView.h"
 #include "IPCServer.h"
+#include "widgets/StandardTableView.h"
 
 QT_BEGIN_NAMESPACE
 class QDialogButtonBox;

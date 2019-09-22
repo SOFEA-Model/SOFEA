@@ -47,8 +47,8 @@ MonteCarloLineEdit::MonteCarloLineEdit(QWidget *parent)
     m_distributionSet = false;
 
     // Actions
-    const QIcon chartIcon = QIcon(":/images/Effects_16x.png");
-    m_selectDistributionAct = new QAction(chartIcon, "Define Distribution");
+    static const QIcon functionIcon = QIcon(":/images/Effects_32x.png");
+    m_selectDistributionAct = new QAction(functionIcon, "Define Distribution");
     addAction(m_selectDistributionAct, QLineEdit::TrailingPosition);
 
     // Connections

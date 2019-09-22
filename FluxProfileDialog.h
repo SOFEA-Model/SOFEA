@@ -6,15 +6,14 @@
 #include <QDialog>
 #include <QMap>
 
-#include "StandardTableView.h"
-#include "StandardTableEditor.h"
-#include "Utilities.h"
-
 #include "FluxProfile.h"
+#include "widgets/StandardTableEditor.h"
+#include "widgets/StandardTableView.h"
 
 QT_BEGIN_NAMESPACE
 class QButtonGroup;
 class QComboBox;
+class QDateEdit;
 class QDateTimeEdit;
 class QDialogButtonBox;
 class QDoubleSpinBox;
@@ -60,10 +59,10 @@ private:
     // Reference
     QDateTimeEdit *deRefDate;
     QDoubleSpinBox *sbRefAppRate;
-    QButtonGroup *bgFluxMode;
-    StatusLabel *lblConstantFluxInfo;
-    QRadioButton *radioConstantFlux;
-    QRadioButton *radioVariableFlux;
+    //QButtonGroup *bgFluxMode;
+    //StatusLabel *lblConstantFluxInfo;
+    //QRadioButton *radioConstantFlux;
+    //QRadioButton *radioVariableFlux;
     QDoubleSpinBox *sbRefDepth;
     QDoubleSpinBox *sbRefVL;
     QDoubleSpinBox *sbMaxVL;

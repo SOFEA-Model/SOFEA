@@ -4,8 +4,14 @@
 #include <string>
 #include <memory>
 
+#include <QDebug>
+
 #include <boost/log/trivial.hpp>
 #include <boost/log/attributes/scoped_attribute.hpp>
+
+#ifdef GEOS_INLINE
+#undef GEOS_INLINE
+#endif
 
 #include <geos_c.h>
 
@@ -18,6 +24,11 @@ static void noticeHandler(const char *fmt, ...)
     va_start(ap, fmt);
     vsnprintf(buf, 1024, fmt, ap);
     BOOST_LOG_TRIVIAL(info) << "geos: " << buf;
+
+    QString message = QString::fromLocal8Bit(buf);
+    qDebug() << "geos:";
+    qDebug() << message;
+
     va_end(ap);
 }
 
@@ -30,6 +41,11 @@ static void errorHandler(const char *fmt, ...)
     va_start(ap, fmt);
     vsnprintf(buf, 1024, fmt, ap);
     BOOST_LOG_TRIVIAL(error) << "geos: " << buf;
+
+    QString message = QString::fromLocal8Bit(buf);
+    qDebug() << "geos:";
+    qDebug() << message;
+
     va_end(ap);
 }
 
@@ -40,6 +56,7 @@ static void errorHandler(const char *fmt, ...)
 static GEOSGeometry* polygonsToGeos(const std::vector<QPolygonF>& input)
 {
     std::vector<GEOSGeometry*> geoms;
+    geoms.reserve(input.size());
 
     for (const QPolygonF& polygon : input)
     {
@@ -61,6 +78,21 @@ static GEOSGeometry* polygonsToGeos(const std::vector<QPolygonF>& input)
     // Collection takes ownership of individual geometries
     return GEOSGeom_createCollection(GEOS_MULTIPOLYGON,
         geoms.data(), static_cast<int>(geoms.size()));
+}
+
+static GEOSGeometry* polygonToGeos(const QPolygonF& polygon)
+{
+    // Add points to coordinate sequence
+    GEOSCoordSequence *seq = GEOSCoordSeq_create(polygon.size(), 2);
+    for (int i = 0; i < polygon.size(); ++i) {
+        const QPointF& point = polygon.at(i);
+        GEOSCoordSeq_setX(seq, i, point.x());
+        GEOSCoordSeq_setY(seq, i, point.y());
+    }
+
+    // Create polygon from coordinate sequence
+    GEOSGeometry *shell = GEOSGeom_createLinearRing(seq);
+    return GEOSGeom_createPolygon(shell, nullptr, 0);
 }
 
 static QPolygonF geosToPolygon(const GEOSGeometry* input)
@@ -102,25 +134,28 @@ static QPolygonF geosToPolygon(const GEOSGeometry* input)
 static std::vector<QPolygonF> geosToPolygons(const GEOSGeometry* input)
 {
     std::vector<QPolygonF> result;
-    QPolygonF polygon;
 
     switch (GEOSGeomTypeId(input))
     {
     case GEOS_LINESTRING:
     case GEOS_LINEARRING:
-    case GEOS_POLYGON:
-        polygon = geosToPolygon(input);
+    case GEOS_POLYGON: {
+        QPolygonF polygon = geosToPolygon(input);
         result.push_back(polygon);
         break;
+    }
     case GEOS_MULTILINESTRING:
     case GEOS_MULTIPOLYGON:
-    case GEOS_GEOMETRYCOLLECTION:
-        for (int i = 0; i < GEOSGetNumGeometries(input); ++i) {
+    case GEOS_GEOMETRYCOLLECTION: {
+        int ngeom = GEOSGetNumGeometries(input);
+        result.reserve(ngeom);
+        for (int i = 0; i < ngeom; ++i) {
             const GEOSGeometry *g = GEOSGetGeometryN(input, i);
             QPolygonF polygon = geosToPolygon(g);
             result.push_back(polygon);
         }
         break;
+    }
     default:
         break;
     }
@@ -140,6 +175,22 @@ GeosOp::GeosOp()
 GeosOp::~GeosOp()
 {
     finishGEOS();
+}
+
+QPointF GeosOp::interiorPoint(const QPolygonF& polygon)
+{
+    GEOSGeometry *geom = polygonToGeos(polygon);
+    GEOSGeometry *p = GEOSPointOnSurface(geom);
+
+    double px, py;
+    GEOSGeomGetX(p, &px);
+    GEOSGeomGetY(p, &py);
+    QPointF result{px, py};
+
+    GEOSGeom_destroy(geom);
+    GEOSGeom_destroy(p);
+
+    return result;
 }
 
 std::vector<QPolygonF> GeosOp::unionCascaded(const std::vector<QPolygonF>& mpolygon)
@@ -200,7 +251,7 @@ std::vector<QPolygonF> GeosOp::measurePoints(std::vector<QPolygonF> const& mpoly
 
         // Generate points along ring using linear referencing
         QPolygonF points;
-        points.reserve(static_cast<int>(ns + 1));
+        points.reserve(ns + 1);
         for (int i = 0; i <= ns; ++i) {
             double px, py;
             double pd = static_cast<double>(i) * spacing;

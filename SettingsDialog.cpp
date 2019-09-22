@@ -15,6 +15,7 @@
 SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent)
 {
     setAttribute(Qt::WA_DeleteOnClose, true);
+    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
     // Navigation Tree
     navTree = new QTreeWidget();
@@ -22,6 +23,9 @@ SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent)
     navTree->setUniformRowHeights(true);
     navTree->setHeaderHidden(true);
     navTree->setColumnCount(1);
+    QFont font = QApplication::font();
+    font.setPointSizeF(font.pointSizeF() + 1);
+    navTree->setFont(font);
 
     QPalette navPalette = navTree->viewport()->palette();
     QColor baseColor = QWidget::palette().window().color().lighter(104);

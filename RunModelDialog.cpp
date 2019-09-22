@@ -1,7 +1,7 @@
 #include <QtWidgets>
 
 #include "RunModelDialog.h"
-#include "ItemDelegate.h"
+#include "delegate/ProgressBarDelegate.h"
 
 const QString AERMODEXE = "sofea_aermod.exe";
 

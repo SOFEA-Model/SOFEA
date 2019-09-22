@@ -3,11 +3,14 @@
 
 #include <QMainWindow>
 
-#include "Analysis.h"
-#include "ListEditor.h"
-#include "StandardTableView.h"
+#include "analysis/Analysis.h"
+#include "analysis/AnalysisOptions.h"
+
 #include "UDUnitsLineEdit.h"
-#include "Utilities.h"
+#include "widgets/ListEditor.h"
+#include "widgets/ReadOnlyLineEdit.h"
+#include "widgets/StandardTableView.h"
+#include "widgets/StatusLabel.h"
 
 QT_BEGIN_NAMESPACE
 class QCheckBox;
@@ -35,7 +38,7 @@ class ReceptorAnalysisTool : public QWidget
 
 public:
     ReceptorAnalysisTool(QWidget *parent = nullptr);
-    ReceptorAnalysisOpts analysisOpts() const;
+    ncpost::options::statistics analysisOpts() const;
 
 signals:
     void calcRequested();
@@ -67,7 +70,7 @@ class HistogramAnalysisTool : public QWidget
 
 public:
     HistogramAnalysisTool(QWidget *parent = nullptr);
-    HistogramAnalysisOpts analysisOpts() const;
+    ncpost::options::histogram analysisOpts() const;
 
 signals:
     void calcRequested();
@@ -91,9 +94,9 @@ class OptionsPanel : public QWidget
 
 public:
     OptionsPanel(QWidget *parent = nullptr);
-    GeneralAnalysisOpts analysisOpts() const;
-    ReceptorAnalysisOpts receptorAnalysisOpts() const;
-    HistogramAnalysisOpts histogramAnalysisOpts() const;
+    ncpost::options::general analysisOpts() const;
+    ncpost::options::statistics receptorAnalysisOpts() const;
+    ncpost::options::histogram histogramAnalysisOpts() const;
     QString currentFile() const;
     void addType(const std::string& type, const std::string& units);
     void resetType();
@@ -175,8 +178,10 @@ private slots:
     void calcHistogram();
 
 private:
-    void showReceptorStats(const GeneralAnalysisOpts genOpts, const ReceptorAnalysisOpts opts, const ReceptorStats& out);
-    void showHistogram(const GeneralAnalysisOpts genOpts, const HistogramAnalysisOpts opts, const Histogram& out);
+    void showReceptorStats(const ncpost::options::general& opts, const ncpost::options::statistics& statopts,
+                           const ncpost::statistics_type& out, const ncpost::metadata_type& metadata);
+    void showHistogram(const ncpost::options::general& opts, const ncpost::options::histogram& histopts,
+                       const ncpost::histogram_type& out, const ncpost::metadata_type& metadata);
     void setupConnections();
 
     QString filename;
@@ -186,9 +191,6 @@ private:
 
     QTabWidget *tabWidget;
     QDialogButtonBox *buttonBox;
-
-protected:
-    //bool eventFilter(QObject *obj, QEvent *event);
 };
 
 #endif // ANALYSISWINDOW_H

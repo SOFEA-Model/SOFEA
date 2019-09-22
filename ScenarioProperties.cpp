@@ -12,11 +12,13 @@ ScenarioProperties::ScenarioProperties(Scenario *s, QWidget *parent)
     setWindowIcon(QIcon(":/images/Settings_32x.png"));
 
     generalPage = new GeneralPage(s);
+    projectionPage = new ProjectionPage(s);
     metDataPage = new MetDataPage(s);
     fluxProfilesPage = new FluxProfilesPage(s);
     dispersionPage = new DispersionPage(s);
 
     addPage("General Settings", generalPage);
+    addPage("Coordinate System", projectionPage);
     addPage("Meteorological Data", metDataPage);
     addPage("Flux Profiles", fluxProfilesPage);
     addPage("Dispersion Model", dispersionPage);
@@ -29,6 +31,7 @@ ScenarioProperties::ScenarioProperties(Scenario *s, QWidget *parent)
 void ScenarioProperties::apply()
 {
     generalPage->save();
+    projectionPage->save();
     metDataPage->save();
     fluxProfilesPage->save();
     dispersionPage->save();

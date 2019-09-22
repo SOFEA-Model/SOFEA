@@ -6,7 +6,7 @@
 
 #include "SamplingProxyModel.h"
 #include "SamplingDistribution.h"
-#include "StandardTableView.h"
+#include "widgets/StandardTableView.h"
 
 QT_BEGIN_NAMESPACE
 class QAbstractItemModel;

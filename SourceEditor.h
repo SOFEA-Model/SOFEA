@@ -6,7 +6,6 @@
 #include <QWidget>
 
 #include "SourceGroup.h"
-#include "Utilities.h"
 
 QT_BEGIN_NAMESPACE
 class QDateTimeEdit;

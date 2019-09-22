@@ -1,8 +1,6 @@
 #ifndef LOGWIDGET_H
 #define LOGWIDGET_H
 
-#include "Utilities.h"
-
 #include <boost/log/trivial.hpp>
 #include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/sinks/basic_sink_backend.hpp>

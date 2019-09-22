@@ -1,26 +1,36 @@
 #ifndef METFILEINFODIALOG_H
 #define METFILEINFODIALOG_H
 
-#include <QBrush>
-#include <QButtonGroup>
-#include <QDialog>
-#include <QDoubleSpinBox>
-#include <QListView>
-#include <QPainter>
-#include <QPointF>
-#include <QRadioButton>
-#include <QSpinBox>
-#include <QStandardItemModel>
+#include <memory>
+#include <vector>
 
-#include <ctkRangeSlider.h>
-#include <qwt_polar_plot.h>
+#include <QBrush>
+#include <QDialog>
+#include <QPointF>
+
+QT_BEGIN_NAMESPACE
+class QButtonGroup;
+class QDateTimeEdit;
+class QDialog;
+class QDialogButtonBox;
+class QDoubleSpinBox;
+class QListView;
+class QPainter;
+class QPointF;
+class QRadioButton;
+class QSpinBox;
+class QStandardItemModel;
+QT_END_NAMESPACE
+
+class ctkRangeSlider;
+class QwtPolarGrid;
+class ReadOnlyLineEdit;
+
 #include <qwt_polar_curve.h>
+#include <qwt_polar_plot.h>
+#include <qwt_scale_map.h>
 
 #include "MetFileParser.h"
-#include "Utilities.h"
-#include "StandardTableView.h"
-
-class QwtPolarGrid;
 
 //-----------------------------------------------------------------------------
 // WindRoseSector
@@ -73,7 +83,8 @@ private:
     void drawSectors();
 
 private slots:
-    void onIntervalChanged(const int min, const int max);
+    void onSliderChanged(const int min, const int max);
+    void onDateTimeChanged(const QDateTime& datetime);
     void onSectorSizeChanged(int id);
     void onBinCountChanged(int value);
 
@@ -82,8 +93,8 @@ private:
 
     // Data Controls
     ctkRangeSlider *timeRangeSlider;
-    ReadOnlyLineEdit *leStartTime;
-    ReadOnlyLineEdit *leEndTime;
+    QDateTimeEdit *dteMinTime;
+    QDateTimeEdit *dteMaxTime;
     ReadOnlyLineEdit *leTotalHours;
     ReadOnlyLineEdit *leCalmHours;
     ReadOnlyLineEdit *leMissingHours;
@@ -96,8 +107,8 @@ private:
     QSpinBox *sbBinCount;
 
     QStandardItemModel *binModel;
-    StandardTableView *binTable;
-    QListView *binEditor;
+    QListView *binView;
+    QDialogButtonBox *buttonBox;
 
     WindRosePlot *wrPlot;
     std::vector<WindRoseSector *> wrSectors;

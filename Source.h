@@ -5,7 +5,10 @@
 #include <string>
 
 #include <QDateTime>
+#include <QMetaType>
 #include <QPolygonF>
+#include <QPen>
+#include <QBrush>
 
 #include "FluxProfile.h"
 
@@ -23,6 +26,8 @@ enum class SourceType
     BUOYLINE
 };
 
+Q_DECLARE_METATYPE(SourceType)
+
 struct Source
 {
     Source() {}
@@ -36,8 +41,6 @@ struct Source
     virtual Source* clone() const = 0;
 
     std::string srcid;
-    double xshift = 0; // x truncation
-    double yshift = 0; // y truncation
     double xs = 0;
     double ys = 0;
     double zs = 0;
@@ -49,6 +52,8 @@ struct Source
     double cuticularResistance = 0;
     double henryConstant = 0;
     QPolygonF geometry;
+    QPen pen;
+    QBrush brush;
 
     using FluxProfilePtr = std::weak_ptr<FluxProfile>;
     FluxProfilePtr fluxProfile;

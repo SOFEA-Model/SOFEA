@@ -1,6 +1,8 @@
 #include <QtWidgets>
 
 #include "SourceGroupPages.h"
+#include "widgets/BackgroundFrame.h"
+#include "widgets/GridLayout.h"
 
 #include <boost/log/trivial.hpp>
 #include <boost/log/attributes/scoped_attribute.hpp>
@@ -153,11 +155,11 @@ DepositionPage::DepositionPage(SourceGroup *sg, QWidget *parent)
     mcHenryConstant->setDecimals(8);
 
     lblDepoNotEnabled = new StatusLabel;
-    lblDepoNotEnabled->setSeverity(3);
+    lblDepoNotEnabled->setSeverity(2);
     lblDepoNotEnabled->setText("Deposition must be enabled for these parameters to take effect.");
 
     lblDepoUserVelocity = new StatusLabel;
-    lblDepoUserVelocity->setSeverity(3);
+    lblDepoUserVelocity->setSeverity(2);
     lblDepoUserVelocity->setText("Custom gas dry deposition velocity must be disabled for these parameters to take effect.");
 
     // Layout
@@ -168,7 +170,7 @@ DepositionPage::DepositionPage(SourceGroup *sg, QWidget *parent)
     layout1->addWidget(mcWaterDiffusion, 1, 1);
     layout1->addWidget(new QLabel(QLatin1String("Cuticular resistance [rcl] (s/cm):")), 2, 0);
     layout1->addWidget(mcCuticularResistance, 2, 1);
-    layout1->addWidget(new QLabel(QLatin1String("Henry's law constant [H] (Pa-m\xb3/mol):")), 3, 0);
+    layout1->addWidget(new QLabel(QLatin1String("Henry's law constant (Pa-m\xb3/mol):")), 3, 0);
     layout1->addWidget(mcHenryConstant, 3, 1);
 
     QGroupBox *gbMonteCarlo = new QGroupBox("Monte Carlo Parameters");
@@ -178,10 +180,10 @@ DepositionPage::DepositionPage(SourceGroup *sg, QWidget *parent)
     // Main Layout
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(gbMonteCarlo);
-    mainLayout->addSpacing(5);
+    mainLayout->addStretch(1);
     mainLayout->addWidget(lblDepoNotEnabled);
     mainLayout->addWidget(lblDepoUserVelocity);
-    mainLayout->addStretch(1);
+    mainLayout->addSpacing(5);
 
     BackgroundFrame *frame = new BackgroundFrame;
     frame->setLayout(mainLayout);
@@ -244,10 +246,17 @@ FluxProfilePage::FluxProfilePage(Scenario *s, SourceGroup *sg, QWidget *parent)
     editor->setColumnHidden(2);
     editor->setColumnHidden(3);
 
+    lblNoFluxProfile = new StatusLabel;
+    lblNoFluxProfile->setSeverity(3);
+    lblNoFluxProfile->setText("No flux profiles have been defined in the scenario.");
+    lblNoFluxProfile->setVisible(model->rowCount() == 0);
+
     // Main Layout
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(editor);
     mainLayout->addStretch(1);
+    mainLayout->addWidget(lblNoFluxProfile);
+    mainLayout->addSpacing(5);
 
     BackgroundFrame *frame = new BackgroundFrame;
     frame->setLayout(mainLayout);
@@ -339,6 +348,12 @@ BufferZonePage::BufferZonePage(SourceGroup *sg, QWidget *parent)
 
     zoneEditor = new StandardTableEditor(Qt::Vertical, zoneEditorOpts);
 
+    lblThresholdInfo = new StatusLabel;
+    lblThresholdInfo->setSeverity(2);
+    lblThresholdInfo->setText(
+        "The buffer zone assigned to a source is the last row for which area "
+        "and application rate are less than the threshold values.");
+
     // Layout
     GridLayout *zoneInputLayout = new GridLayout;
     zoneInputLayout->setMargin(0);
@@ -358,6 +373,9 @@ BufferZonePage::BufferZonePage(SourceGroup *sg, QWidget *parent)
     mainLayout->addLayout(zoneInputLayout);
     mainLayout->addSpacing(5);
     mainLayout->addLayout(zoneTableLayout);
+    mainLayout->addStretch(1);
+    mainLayout->addWidget(lblThresholdInfo);
+    mainLayout->addSpacing(5);
 
     BackgroundFrame *frame = new BackgroundFrame;
     frame->setLayout(mainLayout);

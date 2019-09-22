@@ -13,9 +13,6 @@
         <file>images/Copy_16x.png</file>
         <file>images/CopyItem_16x.png</file>
         <file>images/DeleteVariables_16x.png</file>
-        <file>images/Dow_16x.png</file>
-        <file>images/Dow_32x.png</file>
-        <file>images/Dow_64x.png</file>
         <file>images/Effects_16x.png</file>
         <file>images/MSHelpTableOfContent_16x.png</file>
         <file>images/MSHelpTableOfContent_32x.png</file>
@@ -63,26 +60,9 @@
         <file>images/CleanData_16x.png</file>
         <file>images/Filter_16x.png</file>
         <file>images/FilterDropdown_16x.png</file>
-        <file>images/StatusAnnotations_Alert_16xLG_color.png</file>
-        <file>images/StatusAnnotations_Alert_32xLG_color.png</file>
-        <file>images/StatusAnnotations_Complete_and_ok_16xLG_color.png</file>
-        <file>images/StatusAnnotations_Complete_and_ok_32xLG_color.png</file>
-        <file>images/StatusAnnotations_Critical_16xLG_color.png</file>
-        <file>images/StatusAnnotations_Critical_32xLG_color.png</file>
-        <file>images/StatusAnnotations_Information_16xLG.png</file>
-        <file>images/StatusAnnotations_Information_16xLG_color.png</file>
-        <file>images/StatusAnnotations_Information_32xLG.png</file>
-        <file>images/StatusAnnotations_Information_32xLG_color.png</file>
-        <file>images/StatusAnnotations_Invalid_16xLG_color.png</file>
-        <file>images/StatusAnnotations_Invalid_32xLG_color.png</file>
-        <file>images/StatusAnnotations_Warning_16xLG_color.png</file>
-        <file>images/StatusAnnotations_Warning_32xLG_color.png</file>
-        <file>images/StatusAnnotations_Warning_16xLG.png</file>
-        <file>images/StatusAnnotations_Warning_32xLG.png</file>
         <file>images/SyncArrow_16x.png</file>
         <file>images/SyncArrow_32x.png</file>
         <file>images/KagiChart_16x.png</file>
-        <file>images/MeasureCalculate_16x.png</file>
         <file>images/Effects_32x.png</file>
         <file>images/TableFunction_16x.png</file>
         <file>images/TableFunction_32x.png</file>
@@ -90,5 +70,44 @@
         <file>images/Close_24x.png</file>
         <file>images/Close_NoHalo_24x.png</file>
         <file>images/Restore_NoHalo_24x.png</file>
+        <file>images/Add_color_16x@2x.png</file>
+        <file>images/Add_grey_16x@2x.png</file>
+        <file>images/CleanData_24x.png</file>
+        <file>images/FilterDropdown_24x.png</file>
+        <file>images/StatusAnnotations_Critical_16xLG_color.png</file>
+        <file>images/StatusAnnotations_Critical_24xLG_color.png</file>
+        <file>images/StatusAnnotations_Information_16xLG.png</file>
+        <file>images/StatusAnnotations_Information_16xLG_color.png</file>
+        <file>images/StatusAnnotations_Information_24xLG_color.png</file>
+        <file>images/StatusAnnotations_Invalid_16xLG_color.png</file>
+        <file>images/StatusAnnotations_Invalid_24xLG_color.png</file>
+        <file>images/StatusAnnotations_Warning_16xLG_color.png</file>
+        <file>images/StatusAnnotations_Warning_24xLG_color.png</file>
+        <file>images/SortAscending_16x.png</file>
+        <file>images/SortDescending_16x.png</file>
+        <file>images/DeleteFilter_16x.png</file>
+        <file>images/EditFilter_16x.png</file>
+        <file>images/Measure_48x.png</file>
+        <file>images/OpenFolder_48x.png</file>
+        <file>images/Save_48x.png</file>
+        <file>images/Run_48x.png</file>
+        <file>images/Measure_32x.png</file>
+        <file>images/Measure_40x.png</file>
+        <file>images/NewFile_40x.png</file>
+        <file>images/OpenFolder_40x.png</file>
+        <file>images/Run_40x.png</file>
+        <file>images/Save_40x.png</file>
+        <file>images/Grid_24x.png</file>
+        <file>images/Node_24x.png</file>
+        <file>images/Ring_24x.png</file>
+        <file>images/Ring_16x.png</file>
+        <file>images/Grid_16x.png</file>
+        <file>images/Node_16x.png</file>
+        <file>images/ColorPalette_16x.png</file>
+        <file>images/Checkmark_40x.png</file>
+        <file>images/StatusAnnotations_Information_24xLG.png</file>
+        <file>images/Calculator_16x.png</file>
+        <file>images/Calculator_32x.png</file>
+        <file>images/Calculator_24x.png</file>
     </qresource>
 </RCC>

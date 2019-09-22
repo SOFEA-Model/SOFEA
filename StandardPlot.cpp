@@ -1,10 +1,10 @@
 #include "StandardPlot.h"
 
 #include <QApplication>
+#include <QDebug>
 
 #include <qwt_picker_machine.h>
 #include <qwt_plot_layout.h>
-#include <qwt_plot_shapeitem.h>
 #include <qwt_scale_widget.h>
 #include <qwt_symbol.h>
 
@@ -25,7 +25,7 @@ StandardPlot::StandardPlot(QWidget *parent) : QwtPlot(parent)
         axisWidget(axis)->setMargin(0);
         axisScaleDraw(axis)->enableComponent(QwtAbstractScaleDraw::Backbone, false);
         QFont axisFont = QApplication::font();
-        axisFont.setPointSize(8);
+        //axisFont.setPointSize(8);
         setAxisFont(axis, axisFont);
     }
 
@@ -38,6 +38,9 @@ StandardPlot::StandardPlot(QWidget *parent) : QwtPlot(parent)
     // Layout
     plotLayout()->setCanvasMargin(10);
 }
+
+StandardPlot::~StandardPlot()
+{}
 
 void StandardPlot::setXAxisTitle(const QString& text)
 {
@@ -65,7 +68,7 @@ void StandardPlot::setAxisTitleInternal(QwtPlot::Axis axis, const QString& text)
 {
     QwtText title(text);
     QFont axisTitleFont = QApplication::font();
-    axisTitleFont.setPointSize(8);
+    //axisTitleFont.setPointSize(8);
     title.setFont(axisTitleFont);
     setAxisTitle(axis, title);
 }
@@ -80,22 +83,22 @@ void StandardPlot::clear()
 void StandardPlot::setPanZoomMode(bool on)
 {
     // initialized on first use
-    if (on && (m_magnifier == nullptr || m_panner == nullptr)) {
+    if (on && m_magnifier == nullptr) {
         m_magnifier = new QwtPlotMagnifier(this->canvas());
-        m_panner = new QwtPlotPanner(this->canvas());
+        m_magnifier->setEnabled(on);
     }
-
-    m_magnifier->setEnabled(on);
-    m_panner->setEnabled(on);
+    if (on && m_panner == nullptr) {
+        m_panner = new QwtPlotPanner(this->canvas());
+        m_panner->setEnabled(on);
+    }
 }
 
 void StandardPlot::setCurveTracker(bool on)
 {
     // initialize on first use
-    if (on && m_tracker == nullptr) {
-        m_tracker = new CurveTracker(this->canvas());
-        m_tracker->setStateMachine(new QwtPickerTrackerMachine());
-        m_tracker->setRubberBandPen(QPen(QColor(Qt::black)));
+    if (on && m_curveTracker == nullptr) {
+        m_curveTracker = new PlotCurveTracker(this->canvas());
+        m_curveTracker->setRubberBandPen(QPen(QColor(Qt::black)));
     }
 
     // Use appropriate cursor type
@@ -104,8 +107,19 @@ void StandardPlot::setCurveTracker(bool on)
     else
         m_canvas->setCursor(Qt::ArrowCursor);
 
-    m_tracker->setEnabled(on);
+    m_curveTracker->setEnabled(on);
 }
+
+void StandardPlot::setItemTitleTracker(bool on)
+{
+    // initialize on first use
+    if (on && m_titleTracker == nullptr) {
+        m_titleTracker = new PlotItemTitleTracker(this->canvas());
+    }
+
+    m_titleTracker->setEnabled(on);
+}
+
 
 void StandardPlot::setRescaler(bool on)
 {
@@ -115,6 +129,7 @@ void StandardPlot::setRescaler(bool on)
         m_rescaler->setRescalePolicy(QwtPlotRescaler::Expanding);
         m_rescaler->setExpandingDirection(QwtPlotRescaler::ExpandBoth);
         m_rescaler->setReferenceAxis(QwtPlot::xBottom);
+        m_rescaler->setAspectRatio(QwtPlot::xBottom, 1.0);
         m_rescaler->setAspectRatio(QwtPlot::yLeft, 1.0);
         m_rescaler->setAspectRatio(QwtPlot::yRight, 0.0);
         m_rescaler->setAspectRatio(QwtPlot::xTop, 0.0);
@@ -124,7 +139,7 @@ void StandardPlot::setRescaler(bool on)
     updateAxes();
 }
 
-void StandardPlot::addPoint(QPointF const& point, const int size, QBrush const& brush)
+void StandardPlot::addPoint(const QPointF& point, const int size, const QBrush& brush)
 {
     QwtPlotMarker *marker = new QwtPlotMarker;
     marker->setValue(point);
@@ -136,7 +151,7 @@ void StandardPlot::addPoint(QPointF const& point, const int size, QBrush const& 
     marker->attach(this);
 }
 
-void StandardPlot::addPoints(QPolygonF const& ring, const int size, QBrush const& brush)
+void StandardPlot::addPoints(const QPolygonF& ring, const int size, const QBrush& brush)
 {
     // QPolygonF is QVector<QPointF>
     for (QPointF p : ring) {
@@ -151,12 +166,13 @@ void StandardPlot::addPoints(QPolygonF const& ring, const int size, QBrush const
     }
 }
 
-void StandardPlot::addRing(QPolygonF const& ring, QPen const& pen, QBrush const& brush)
+void StandardPlot::addRing(const QPolygonF& ring, const QPen& pen, const QBrush& brush, const QString& title)
 {
     QwtPlotShapeItem *item = new QwtPlotShapeItem;
     item->setPolygon(ring);
     item->setPen(pen);
     item->setBrush(brush);
+    item->setTitle(title);
     item->attach(this);
 }
 
@@ -169,8 +185,7 @@ void StandardPlot::addRefVLine(double x, double y, const QString& label)
     // Label
     // TODO: make sure label is inside plotLayout()->canvasRect()
     QwtText reflabel(label);
-    QFont font = reflabel.font();
-    font.setPointSize(8);
+    QFont font = QApplication::font();
     reflabel.setFont(font);
     refline->setLabel(reflabel);
     refline->setLabelAlignment(Qt::AlignRight);
@@ -181,21 +196,20 @@ void StandardPlot::addRefVLine(double x, double y, const QString& label)
 void StandardPlot::autoScale()
 {
     QwtInterval intv[axisCnt];
+    const QwtPlotItemList &items = itemList();
+    if (items.empty())
+        return;
 
-    const QwtPlotItemList &itmList = itemList();
-
+    // Calculate union of item bounding rects.
     QwtPlotItemIterator it;
-    for (it = itmList.begin(); it != itmList.end(); ++it) {
+    for (it = items.begin(); it != items.end(); ++it) {
         const QwtPlotItem *item = *it;
-
         if (!item->isVisible())
             continue;
 
         const QRectF rect = item->boundingRect();
-
-        // Union the intervals.
         intv[item->xAxis()] |= QwtInterval(rect.left(), rect.right());
-        intv[item->xAxis()] |= QwtInterval(rect.top(), rect.bottom());
+        intv[item->yAxis()] |= QwtInterval(rect.top(), rect.bottom());
     }
 
     // Adjust scale for each axis.
@@ -213,7 +227,11 @@ void StandardPlot::autoScale()
     // Rescale axes according to RescalePolicy, if enabled.
     if (m_rescaler != nullptr && m_rescaler->isEnabled())
     {
-        // Set interval hints corresponding to bounding rectangles.
+        if (intv[QwtPlot::xBottom].width() > intv[QwtPlot::yLeft].width())
+            m_rescaler->setReferenceAxis(QwtPlot::xBottom);
+        else
+            m_rescaler->setReferenceAxis(QwtPlot::yLeft);
+
         for (int axisId = 0; axisId < axisCnt; axisId++) {
             if (intv[axisId].isValid()) {
                 m_rescaler->setIntervalHint(axisId, intv[axisId]);

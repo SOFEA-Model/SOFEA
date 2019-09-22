@@ -4,11 +4,13 @@
 #include <QWidget>
 
 #include "Scenario.h"
-#include "StandardTableView.h"
-#include "StandardTableEditor.h"
-#include "ListEditor.h"
-#include "Utilities.h"
 #include "FluxProfileModel.h"
+#include "ProjectionEditor.h"
+#include "widgets/DoubleLineEdit.h"
+#include "widgets/ListEditor.h"
+#include "widgets/ReadOnlyLineEdit.h"
+#include "widgets/StandardTableEditor.h"
+#include "widgets/StandardTableView.h"
 
 QT_BEGIN_NAMESPACE
 class QAction;
@@ -45,8 +47,25 @@ private:
 
     QComboBox *cboFumigant;
     DoubleLineEdit *leDecayCoefficient;
-    QDoubleSpinBox *sbFlagpoleHeight;
     ListEditor *periodEditor;
+};
+
+/****************************************************************************
+** Projection
+****************************************************************************/
+
+class ProjectionPage : public QWidget
+{
+public:
+    ProjectionPage(Scenario *s, QWidget *parent = nullptr);
+    void init();
+    void save();
+    void load();
+
+private:
+    Scenario *scenario;
+
+    ProjectionEditor *editor;
 };
 
 /****************************************************************************
@@ -64,9 +83,10 @@ public:
     void load();
 
 private slots:
-    void showInfoDialog();
-    void update();
     void browseMetDataFile();
+    void showInfoDialog();
+    void showDeclinationCalc();
+    void update();
 
 private:
     Scenario *scenario;
@@ -77,6 +97,7 @@ private:
     QToolButton *btnUpperAirDataFile;
     QDoubleSpinBox *sbAnemometerHeight;  // PROFBASE/ANEMHGHT
     QDoubleSpinBox *sbWindRotation;      // WDROTATE
+    QToolButton *btnDeclinationCalc;
 
     ReadOnlyLineEdit *leSurfaceStationId;
     ReadOnlyLineEdit *leUpperAirStationId;

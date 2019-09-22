@@ -82,5 +82,3 @@ struct SamplingDistribution
 
     ProbabilityMap data;
 };
-
-//} // namespace Distribution

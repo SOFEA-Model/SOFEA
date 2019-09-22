@@ -16,8 +16,8 @@ MonteCarloDateTimeEdit::MonteCarloDateTimeEdit(QWidget *parent)
     setSpecialValueText("Custom"); // minimumDateTime()
 
     // Actions
-    const QIcon chartIcon = QIcon(":/images/Effects_16x.png");
-    selectDistributionAct = new QAction(chartIcon, "Define Distribution");
+    static const QIcon functionIcon = QIcon(":/images/Effects_32x.png");
+    selectDistributionAct = new QAction(functionIcon, "Define Distribution");
     lineEdit()->addAction(selectDistributionAct, QLineEdit::TrailingPosition);
 
     // Connections

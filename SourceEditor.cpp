@@ -54,25 +54,21 @@ AreaSourceEditor::AreaSourceEditor(QWidget *parent) : QWidget(parent)
     sbXCoord->setRange(-10000000, 10000000);
     sbXCoord->setDecimals(2);
     sbXCoord->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    //sbXCoord->setPrefix("X=");
 
     sbYCoord = new QDoubleSpinBox();
     sbYCoord->setRange(-10000000, 10000000);
     sbYCoord->setDecimals(2);
     sbYCoord->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    //sbYCoord->setPrefix("Y=");
 
     sbXInit = new QDoubleSpinBox();
     sbXInit->setRange(0, 10000);
     sbXInit->setDecimals(2);
     sbXInit->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    //sbXInit->setPrefix("X=");
 
     sbYInit = new QDoubleSpinBox();
     sbYInit->setRange(0, 10000);
     sbYInit->setDecimals(2);
     sbYInit->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    //sbYInit->setPrefix("Y=");
 
     sbAngle = new QDoubleSpinBox;
     sbAngle->setMinimum(0);
@@ -101,10 +97,10 @@ AreaSourceEditor::AreaSourceEditor(QWidget *parent) : QWidget(parent)
     QGridLayout *layout1 = new QGridLayout;
     layout1->setContentsMargins(0,0,0,0);
     layout1->setColumnMinimumWidth(0, 120);
-    layout1->addWidget(new QLabel(tr("Coordinates (m):")), 0, 0);
+    layout1->addWidget(new QLabel(tr("Coordinates:")), 0, 0);
     layout1->addWidget(sbXCoord, 0, 1);
     layout1->addWidget(sbYCoord, 0, 2);
-    layout1->addWidget(new QLabel(tr("Dimensions (m):")), 1, 0);
+    layout1->addWidget(new QLabel(tr("Dimensions:")), 1, 0);
     layout1->addWidget(sbXInit, 1, 1);
     layout1->addWidget(sbYInit, 1, 2);
     layout1->addWidget(new QLabel(QLatin1String("Angle (\u00b0CW):")), 2, 0);
@@ -151,13 +147,11 @@ AreaCircSourceEditor::AreaCircSourceEditor(QWidget *parent) : QWidget(parent)
     sbXCoord->setRange(-10000000, 10000000);
     sbXCoord->setDecimals(2);
     sbXCoord->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    //sbXCoord->setPrefix("X=");
 
     sbYCoord = new QDoubleSpinBox();
     sbYCoord->setRange(-10000000, 10000000);
     sbYCoord->setDecimals(2);
     sbYCoord->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    //sbYCoord->setPrefix("Y=");
 
     sbRadius = new QDoubleSpinBox();
     sbRadius->setRange(0, 10000);
@@ -185,10 +179,10 @@ AreaCircSourceEditor::AreaCircSourceEditor(QWidget *parent) : QWidget(parent)
     QGridLayout *layout1 = new QGridLayout;
     layout1->setContentsMargins(0,0,0,0);
     layout1->setColumnMinimumWidth(0, 120);
-    layout1->addWidget(new QLabel(tr("Coordinates (m):")), 0, 0);
+    layout1->addWidget(new QLabel(tr("Coordinates:")), 0, 0);
     layout1->addWidget(sbXCoord, 0, 1);
     layout1->addWidget(sbYCoord, 0, 2);
-    layout1->addWidget(new QLabel(tr("Radius (m):")), 1, 0);
+    layout1->addWidget(new QLabel(tr("Radius:")), 1, 0);
     layout1->addWidget(sbRadius, 1, 1, 1, 2);
     layout1->addWidget(new QLabel(tr("Vertex count:")), 2, 0);
     layout1->addWidget(sbVertexCount, 2, 1, 1, 2);
@@ -242,13 +236,11 @@ AreaPolySourceEditor::AreaPolySourceEditor(QWidget *parent) : QWidget(parent)
     sbXCoord->setRange(-10000000, 10000000);
     sbXCoord->setDecimals(2);
     sbXCoord->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    //sbXCoord->setPrefix("X=");
 
     sbYCoord = new QDoubleSpinBox();
     sbYCoord->setRange(-10000000, 10000000);
     sbYCoord->setDecimals(2);
     sbYCoord->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    //sbYCoord->setPrefix("Y=");
 
     // Connections
     connect(sbVertexCount, QOverload<int>::of(&QSpinBox::valueChanged),
@@ -271,7 +263,7 @@ AreaPolySourceEditor::AreaPolySourceEditor(QWidget *parent) : QWidget(parent)
     layout1->addWidget(sbVertexCount, 0, 1, 1, 2);
     layout1->addWidget(new QLabel(tr("Selected vertex:")), 1, 0);
     layout1->addWidget(sbVertex, 1, 1, 1, 2);
-    layout1->addWidget(new QLabel(tr("Coordinates (m):")), 2, 0);
+    layout1->addWidget(new QLabel(tr("Coordinates:")), 2, 0);
     layout1->addWidget(sbXCoord, 2, 1);
     layout1->addWidget(sbYCoord, 2, 2);
 

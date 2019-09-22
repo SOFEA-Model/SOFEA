@@ -1,5 +1,6 @@
 #include "InputViewer.h"
 
+#include <QApplication>
 #include <QScrollBar>
 #include <QSet>
 #include <QString>
@@ -13,6 +14,15 @@ const int FOLD_MARGIN_INDEX = 1;
 
 QSet<QString> pathways;
 QSet<QString> keywords;
+
+int QColorToCA(const QColor& c)
+{
+    int r = (c.red() & 0xff);
+    int g = (c.green() & 0xff) << 8;
+    int b = (c.blue() & 0xff) << 16;
+    int ca = r | g | b;
+    return ca;
+}
 
 InputViewer::InputViewer(Scenario *s, QWidget *parent)
     : QWidget(parent), sPtr(s)
@@ -82,6 +92,16 @@ void InputViewer::defineMarker(int marker, int markerType, int fg, int bg)
 
 void InputViewer::setupStyles()
 {
+    QColor baseColor = QApplication::palette().base().color();
+    QColor caretColor = baseColor.lighter(110);
+    QColor marginColor = QApplication::palette().window().color();
+    QColor markerColor = QApplication::palette().shadow().color();
+    QColor textColor = QApplication::palette().windowText().color();
+    QColor commentColor = QColor(106, 153, 85);
+    QColor keywordColor = QColor(86, 156, 214);
+
+    sendMessage(SCI_STYLESETBACK, STYLE_DEFAULT, QColorToCA(baseColor));
+
     // Fonts
     sendMessage(SCI_STYLESETFONT, STYLE_DEFAULT, (uptr_t)("Consolas"));
     sendMessage(SCI_STYLESETSIZE, STYLE_DEFAULT, 10);
@@ -92,34 +112,37 @@ void InputViewer::setupStyles()
     sendMessage(SCI_SETSCROLLWIDTHTRACKING, 1, 0);
 
     // Syntax Highlighting
-    sendMessage(SCI_STYLESETFORE, SCE_C_COMMENT,     0x008000);
-    sendMessage(SCI_STYLESETFORE, SCE_C_COMMENTLINE, 0x008000);
-    sendMessage(SCI_STYLESETFORE, SCE_C_NUMBER,      0x808000);
-    sendMessage(SCI_STYLESETFORE, SCE_C_STRING,      0x800080);
-    sendMessage(SCI_STYLESETFORE, SCE_C_WORD,        0xff0000);
+    sendMessage(SCI_STYLESETFORE, SCE_C_DEFAULT,     QColorToCA(textColor));
+    sendMessage(SCI_STYLESETFORE, SCE_C_COMMENT,     QColorToCA(commentColor)); // 0x008000
+    sendMessage(SCI_STYLESETFORE, SCE_C_COMMENTLINE, QColorToCA(commentColor)); // 0x008000
+    sendMessage(SCI_STYLESETFORE, SCE_C_NUMBER,      QColorToCA(textColor));    // 0x808000
+    sendMessage(SCI_STYLESETFORE, SCE_C_STRING,      QColorToCA(textColor));    // 0x800080
+    sendMessage(SCI_STYLESETFORE, SCE_C_WORD,        QColorToCA(keywordColor)); // 0xff0000
     sendMessage(SCI_STYLESETBOLD, SCE_C_WORD,        1);
-    sendMessage(SCI_STYLESETFORE, SCE_C_WORD2,       0xff0000);
+    sendMessage(SCI_STYLESETFORE, SCE_C_WORD2,       QColorToCA(keywordColor)); // 0xff0000
 
     // Caret Line
-    sendMessage(SCI_SETCARETLINEBACK, 0xe1ffff);
+    sendMessage(SCI_SETCARETLINEBACK, QColorToCA(caretColor)); // 0xe1ffff
     sendMessage(SCI_SETCARETLINEVISIBLE, 1);
 
     // Line Numbers
-    sendMessage(SCI_STYLESETBACK, STYLE_LINENUMBER, 0xf0f0f0);
+    sendMessage(SCI_STYLESETBACK, STYLE_LINENUMBER, QColorToCA(marginColor)); // 0xf0f0f0
     sendMessage(SCI_STYLESETFORE, STYLE_LINENUMBER, 0xaf912b);
 
     // Markers
-    defineMarker(SC_MARKNUM_FOLDEROPEN,    SC_MARK_BOXMINUS,          0xffffff, 0x808080);
-    defineMarker(SC_MARKNUM_FOLDER,        SC_MARK_BOXPLUS,           0xffffff, 0x808080);
-    defineMarker(SC_MARKNUM_FOLDERSUB,     SC_MARK_VLINE,             0xffffff, 0x808080);
-    defineMarker(SC_MARKNUM_FOLDERTAIL,    SC_MARK_LCORNER,           0xffffff, 0x808080);
-    defineMarker(SC_MARKNUM_FOLDEREND,     SC_MARK_BOXPLUSCONNECTED,  0xffffff, 0x808080);
-    defineMarker(SC_MARKNUM_FOLDEROPENMID, SC_MARK_BOXMINUSCONNECTED, 0xffffff, 0x808080);
-    defineMarker(SC_MARKNUM_FOLDERMIDTAIL, SC_MARK_TCORNER,           0xffffff, 0x808080);
+    defineMarker(SC_MARKNUM_FOLDEROPEN,    SC_MARK_BOXMINUS,          0xffffff, QColorToCA(markerColor)); // 0x808080
+    defineMarker(SC_MARKNUM_FOLDER,        SC_MARK_BOXPLUS,           0xffffff, QColorToCA(markerColor)); // 0x808080
+    defineMarker(SC_MARKNUM_FOLDERSUB,     SC_MARK_VLINE,             0xffffff, QColorToCA(markerColor)); // 0x808080
+    defineMarker(SC_MARKNUM_FOLDERTAIL,    SC_MARK_LCORNER,           0xffffff, QColorToCA(markerColor)); // 0x808080
+    defineMarker(SC_MARKNUM_FOLDEREND,     SC_MARK_BOXPLUSCONNECTED,  0xffffff, QColorToCA(markerColor)); // 0x808080
+    defineMarker(SC_MARKNUM_FOLDEROPENMID, SC_MARK_BOXMINUSCONNECTED, 0xffffff, QColorToCA(markerColor)); // 0x808080
+    defineMarker(SC_MARKNUM_FOLDERMIDTAIL, SC_MARK_TCORNER,           0xffffff, QColorToCA(markerColor)); // 0x808080
 }
 
 void InputViewer::setupMargins()
 {
+    QColor marginColor = QApplication::palette().window().color().lighter(104);
+
     // Line Number
     sendMessage(SCI_SETMARGINTYPEN,        LINE_MARGIN_INDEX, SC_MARGIN_NUMBER);
     sendMessage(SCI_SETMARGINWIDTHN,       LINE_MARGIN_INDEX, 56);
@@ -129,8 +152,8 @@ void InputViewer::setupMargins()
     sendMessage(SCI_SETMARGINWIDTHN,       FOLD_MARGIN_INDEX, 28);
     sendMessage(SCI_SETMARGINMASKN,        FOLD_MARGIN_INDEX, SC_MASK_FOLDERS);
     sendMessage(SCI_SETMARGINSENSITIVEN,   FOLD_MARGIN_INDEX, 1);
-    sendMessage(SCI_SETFOLDMARGINCOLOUR,   FOLD_MARGIN_INDEX, 0xfafafa);
-    sendMessage(SCI_SETFOLDMARGINHICOLOUR, FOLD_MARGIN_INDEX, 0xfafafa);
+    sendMessage(SCI_SETFOLDMARGINCOLOUR,   FOLD_MARGIN_INDEX, QColorToCA(marginColor)); // 0xfafafa
+    sendMessage(SCI_SETFOLDMARGINHICOLOUR, FOLD_MARGIN_INDEX, QColorToCA(marginColor)); // 0xfafafa
 
     sendMessage(SCI_SETFOLDFLAGS, SC_FOLDFLAG_LINEAFTER_CONTRACTED);
 

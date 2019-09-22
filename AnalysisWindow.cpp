@@ -1,3 +1,4 @@
+#include <QApplication>
 #include <QtWidgets>
 
 #include "AnalysisWindow.h"
@@ -89,18 +90,20 @@ ReceptorAnalysisTool::ReceptorAnalysisTool(QWidget *parent)
     hideWarning();
 }
 
-ReceptorAnalysisOpts ReceptorAnalysisTool::analysisOpts() const
+ncpost::options::statistics ReceptorAnalysisTool::analysisOpts() const
 {
-    ReceptorAnalysisOpts opts;
-
-    opts.calcRecMean = cbMean->isChecked();
-    opts.calcRecMax = cbMax->isChecked();
-    opts.calcRecStdDev = cbStdDev->isChecked();
-    opts.calcRecP2 = gbPercentile->isChecked();
-    opts.recPercentiles = pctEditor->values();
-    opts.calcRecMaxRM = gbMovingAverage->isChecked();
-    opts.recWindowSizes = windowEditor->values();
-
+    ncpost::options::statistics opts;
+    opts.calc_avg = cbMean->isChecked();
+    opts.calc_max = cbMax->isChecked();
+    opts.calc_std = cbStdDev->isChecked();
+    if (gbPercentile->isChecked()) {
+        opts.percentiles = pctEditor->values();
+    }
+    if (gbMovingAverage->isChecked()) {
+        for (const auto& w : windowEditor->values()) {
+            opts.maxrm_windows.push_back(static_cast<int>(w));
+        }
+    }
     return opts;
 }
 
@@ -163,16 +166,14 @@ HistogramAnalysisTool::HistogramAnalysisTool(QWidget *parent)
             this, &HistogramAnalysisTool::calcRequested);
 }
 
-HistogramAnalysisOpts HistogramAnalysisTool::analysisOpts() const
+ncpost::options::histogram HistogramAnalysisTool::analysisOpts() const
 {
-    HistogramAnalysisOpts opts;
-
-    opts.calcCDF = gbCDF->isChecked();
-    opts.calcPDF = gbPDF->isChecked();
-    opts.cdfBins = sbBinsCDF->value();
-    opts.pdfBins = sbBinsPDF->value();
-    opts.pdfCacheSize = sbCacheSizePDF->value();
-
+    ncpost::options::histogram opts;
+    opts.calc_cdf = gbCDF->isChecked();
+    opts.calc_pdf = gbPDF->isChecked();
+    opts.cdf_bins = sbBinsCDF->value();
+    opts.pdf_bins = sbBinsPDF->value();
+    opts.pdf_cache_size = sbCacheSizePDF->value();
     return opts;
 }
 
@@ -191,8 +192,7 @@ OptionsPanel::OptionsPanel(QWidget *parent)
     cboAvePeriod = new QComboBox;
     cboSourceGroup = new QComboBox;
 
-    QFont font = cboType->font();
-    font.setPointSize(8);
+    QFont font = QApplication::font();
     cboType->setFont(font);
     cboAvePeriod->setFont(font);
     cboSourceGroup->setFont(font);
@@ -212,11 +212,10 @@ OptionsPanel::OptionsPanel(QWidget *parent)
     leScaleFactor->setBasePalette();
     leScaleFactor->setText("1");
 
-    QPixmap syncArrow(":/images/SyncArrow_16x.png");
-    QLabel *syncLabel1 = new QLabel;
-    syncLabel1->setPixmap(syncArrow);
-    QLabel *syncLabel2 = new QLabel;
-    syncLabel2->setPixmap(syncArrow);
+    const QIcon syncIcon = QIcon(":/images/SyncArrow_32x.png");
+    const QPixmap syncPixmap = syncIcon.pixmap(QSize(16, 16));
+    QLabel *syncLabel = new QLabel;
+    syncLabel->setPixmap(syncPixmap);
 
     btnExport = new QPushButton("Export...");
 
@@ -233,12 +232,12 @@ OptionsPanel::OptionsPanel(QWidget *parent)
     // Unit Layouts
     QHBoxLayout *unitLayout1 = new QHBoxLayout;
     unitLayout1->addWidget(leUnitIn);
-    unitLayout1->addWidget(syncLabel1);
+    unitLayout1->addWidget(syncLabel);
     unitLayout1->addWidget(leUnitInVal);
 
     QHBoxLayout *unitLayout2 = new QHBoxLayout;
     unitLayout2->addWidget(leUnitOut);
-    unitLayout2->addWidget(syncLabel2);
+    unitLayout2->addWidget(syncLabel);
     unitLayout2->addWidget(leUnitOutVal);
 
     // Button Layout
@@ -325,25 +324,25 @@ void OptionsPanel::setupConnections()
             this, &OptionsPanel::histogramAnalysisRequested);
 }
 
-GeneralAnalysisOpts OptionsPanel::analysisOpts() const
+ncpost::options::general OptionsPanel::analysisOpts() const
 {
-    GeneralAnalysisOpts opts;
-    opts.type = cboType->currentData(Qt::UserRole).toString().toStdString();
-    opts.avePeriod = cboAvePeriod->currentData().toInt();
-    opts.scaleFactor = leUnitOut->scaleFactor();
-    opts.sourceGroup = cboSourceGroup->currentText().toStdString();
+    ncpost::options::general opts;
+    opts.output_type = cboType->currentData(Qt::UserRole).toString().toStdString();
+    opts.averaging_period = cboAvePeriod->currentData().toInt();
+    opts.scale_factor = leUnitOut->scaleFactor();
+    opts.source_group = cboSourceGroup->currentText().toStdString();
     return opts;
 }
 
-ReceptorAnalysisOpts OptionsPanel::receptorAnalysisOpts() const
+ncpost::options::statistics OptionsPanel::receptorAnalysisOpts() const
 {
-    ReceptorAnalysisOpts opts = receptorTool->analysisOpts();
+    ncpost::options::statistics opts = receptorTool->analysisOpts();
     return opts;
 }
 
-HistogramAnalysisOpts OptionsPanel::histogramAnalysisOpts() const
+ncpost::options::histogram OptionsPanel::histogramAnalysisOpts() const
 {
-    HistogramAnalysisOpts opts = histogramTool->analysisOpts();
+    ncpost::options::histogram opts = histogramTool->analysisOpts();
     return opts;
 }
 
@@ -462,11 +461,11 @@ void OptionsPanel::exportTimeSeries()
     QString dir = fi.absoluteDir().absolutePath();
     settings.setValue(settingsKey, dir);
 
-    GeneralAnalysisOpts genOpts = analysisOpts();
+    ncpost::options::general genOpts = analysisOpts();
 
     try {
-        Analysis analysis(currentFile().toStdString());
-        analysis.exportTimeSeries(genOpts, csvfile.toStdString());
+        ncpost::analysis analysis(currentFile().toStdString());
+        analysis.export_time_series(genOpts, csvfile.toStdString());
     } catch (const std::exception &e) {
         QMessageBox::critical(this, "Export Error", QString::fromLocal8Bit(e.what()));
         return;
@@ -483,11 +482,10 @@ FileInfoPanel::FileInfoPanel(QWidget *parent)
     infoTree = new QTreeWidget;
     infoTree->setEditTriggers(QAbstractItemView::NoEditTriggers);
     infoTree->setRootIsDecorated(false);
-    //infoTree->setAlternatingRowColors(true);
     infoTree->setColumnCount(2);
     infoTree->header()->setVisible(false);
     QFont font = infoTree->font();
-    font.setPointSize(9);
+    font.setPointSizeF(QApplication::font().pointSizeF());
     infoTree->setFont(font);
 
     itemTitle = new QTreeWidgetItem;
@@ -556,12 +554,11 @@ void FileInfoPanel::clearContents()
 AnalysisWindow::AnalysisWindow(QWidget *parent) : QMainWindow(parent)
 {
     setWindowTitle("Analysis");
-    setWindowIcon(QIcon(":/images/RunPerformance_32x.png"));
+    setWindowIcon(QIcon(":/images/Measure_32x.png"));
     setAttribute(Qt::WA_DeleteOnClose, false);
-    setMinimumWidth(1200);
 
     // File Information
-    DockWidget *dwInfo = new DockWidget(tr("File Information"), this);
+    QDockWidget *dwInfo = new QDockWidget(tr("File Information"), this);
     dwInfo->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     dwInfo->setFeatures(QDockWidget::DockWidgetMovable |
                         QDockWidget::DockWidgetFloatable);
@@ -571,7 +568,7 @@ AnalysisWindow::AnalysisWindow(QWidget *parent) : QMainWindow(parent)
     addDockWidget(Qt::LeftDockWidgetArea, dwInfo);
 
     // Analysis Options
-    DockWidget *dwOpts = new DockWidget(tr("Analysis Options"), this);
+    QDockWidget *dwOpts = new QDockWidget(tr("Analysis Options"), this);
     dwOpts->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     dwOpts->setFeatures(QDockWidget::DockWidgetMovable |
                         QDockWidget::DockWidgetFloatable);
@@ -584,6 +581,7 @@ AnalysisWindow::AnalysisWindow(QWidget *parent) : QMainWindow(parent)
     tabWidget = new QTabWidget(this);
     tabWidget->setTabsClosable(true);
     tabWidget->setAutoFillBackground(true);
+    tabWidget->setMinimumWidth(1200);
     //tabWidget->setBackgroundRole(QPalette::AlternateBase);
     //tabWidget->setDocumentMode(true);
 
@@ -626,15 +624,16 @@ void AnalysisWindow::setCurrentFile()
 
     try
     {
-        Analysis analysis(filename.toStdString());
-        int nr = analysis.getReceptorCount();
-        int nt = analysis.getTimeStepCount();
-        std::string title = analysis.getTitle();
-        std::string options = analysis.getModelOptions();
-        std::string version = analysis.getModelVersion();
-        auto types = analysis.getTypes();
-        auto periods = analysis.getAveragingPeriods();
-        auto groups = analysis.getSourceGroups();
+        ncpost::analysis analysis(filename.toStdString());
+        auto metadata = analysis.metadata();
+        int nr = static_cast<int>(metadata.receptors.size());
+        int nt = static_cast<int>(metadata.time_steps.size());
+        std::string title = metadata.title;
+        std::string options = metadata.model_options;
+        std::string version = metadata.model_version;
+        auto types = metadata.output_types;
+        auto periods = metadata.averaging_periods;
+        auto groups = metadata.source_groups;
 
         fileInfoPanel->setTitle(QString::fromStdString(title).trimmed());
         fileInfoPanel->setOptions(QString::fromStdString(options));
@@ -647,7 +646,7 @@ void AnalysisWindow::setCurrentFile()
             return;
 
         for (const auto& type : types) {
-            optionsPanel->addType(type.first, type.second);
+            optionsPanel->addType(type.name, type.units);
         }
 
         optionsPanel->setAveragingPeriods(periods);
@@ -655,9 +654,9 @@ void AnalysisWindow::setCurrentFile()
         optionsPanel->resetType();
         optionsPanel->enableTools();
     }
-    catch (const std::exception &)
+    catch (const std::exception& e)
     {
-        // Exceptions are logged in Analysis.cpp
+        QMessageBox::critical(this, "File Error", QString::fromLocal8Bit(e.what()));
     }
 }
 
@@ -666,19 +665,18 @@ void AnalysisWindow::calcReceptorStats()
     if (filename.isEmpty())
         return;
 
-    GeneralAnalysisOpts genOpts = optionsPanel->analysisOpts();
-    ReceptorAnalysisOpts opts = optionsPanel->receptorAnalysisOpts();
-    ReceptorStats out;
+    auto opts = optionsPanel->analysisOpts();
+    auto statopts = optionsPanel->receptorAnalysisOpts();
+    ncpost::statistics_type out;
 
     try {
-        Analysis analysis(filename.toStdString());
-        analysis.calcReceptorStats(genOpts, opts, out);
+        ncpost::analysis analysis(filename.toStdString());
+        analysis.calc_receptor_stats(opts, statopts, out);
+        showReceptorStats(opts, statopts, out, analysis.metadata());
     } catch (const std::exception &e) {
         QMessageBox::critical(this, "Analysis Error", QString::fromLocal8Bit(e.what()));
         return;
     }
-
-    showReceptorStats(genOpts, opts, out);
 }
 
 void AnalysisWindow::calcHistogram()
@@ -686,77 +684,85 @@ void AnalysisWindow::calcHistogram()
     if (filename.isEmpty())
         return;
 
-    GeneralAnalysisOpts genOpts = optionsPanel->analysisOpts();
-    HistogramAnalysisOpts opts = optionsPanel->histogramAnalysisOpts();
-    Histogram out;
+    auto opts = optionsPanel->analysisOpts();
+    auto histopts = optionsPanel->histogramAnalysisOpts();
+    ncpost::histogram_type out;
 
     try {
-        Analysis analysis(filename.toStdString());
-        analysis.calcHistogram(genOpts, opts, out);
+        ncpost::analysis analysis(filename.toStdString());
+        analysis.calc_histogram(opts, histopts, out);
+        showHistogram(opts, histopts, out, analysis.metadata());
     } catch (const std::exception &e) {
         QMessageBox::critical(this, "Analysis Error", QString::fromLocal8Bit(e.what()));
         return;
     }
-
-    showHistogram(genOpts, opts, out);
 }
 
-void AnalysisWindow::showReceptorStats(const GeneralAnalysisOpts genOpts, const ReceptorAnalysisOpts opts, const ReceptorStats &out)
+void AnalysisWindow::showReceptorStats(const ncpost::options::general& opts, const ncpost::options::statistics& statopts,
+                                       const ncpost::statistics_type& out, const ncpost::metadata_type& metadata)
 {
     QStringList headers;
-    headers << "Receptor" << "X" << "Y" << "Z";
-    if (opts.calcRecMean) headers << "Mean";
-    if (opts.calcRecMax)  headers << "Max";
-    if (opts.calcRecStdDev) headers << "Std. Dev.";
-    if (opts.calcRecP2) {
-        for (double p : opts.recPercentiles)
-            headers << QString("P%1").arg(p * 100);
-    }
-    if (opts.calcRecMaxRM) {
-        for (double w : opts.recWindowSizes)
-            headers << QString("Max[MA%1]").arg(w);
-    }
+    headers << "Group" << "Receptor" << "X" << "Y" << "Z" << "Z Hill" << "Z Flag";
+    if (statopts.calc_avg) headers << "Mean";
+    if (statopts.calc_max)  headers << "Max";
+    if (statopts.calc_std) headers << "Std. Dev.";
+    for (double p : statopts.percentiles)
+        headers << QString("P%1").arg(p * 100);
+    for (double w : statopts.maxrm_windows)
+        headers << QString("Max[MA%1]").arg(w);
 
     StandardTableView *table = outputTable();
-    int nrows = static_cast<int>(out.id.size());
+    const int nrows = static_cast<int>(metadata.receptors.size());
     QStandardItemModel *model = new QStandardItemModel(table);
     table->setModel(model);
     model->setRowCount(nrows);
     model->setColumnCount(headers.size());
     model->setHorizontalHeaderLabels(headers);
 
-    int col = 0;
-    table->setColumnData(col++, out.id);
-    table->setColumnData(col++, out.x);
-    table->setColumnData(col++, out.y);
-    table->setColumnData(col++, out.z);
-    if (opts.calcRecMean) table->setColumnData(col++, out.avg);
-    if (opts.calcRecMax) table->setColumnData(col++, out.max);
-    if (opts.calcRecStdDev) table->setColumnData(col++, out.std);
-    if (opts.calcRecP2) {
+    for (int i = 0; i < nrows; ++i) {
+        int col = 0;
+        const auto& rec = metadata.receptors.at(i);
+        QString recgrp;
+        if (metadata.receptor_netid.count(rec.id))
+            recgrp = QString::fromStdString(metadata.receptor_netid.at(rec.id));
+        else if (metadata.receptor_arcid.count(rec.id))
+            recgrp = QString::fromStdString(metadata.receptor_arcid.at(rec.id));
+
+        model->setData(model->index(i, col++), recgrp, Qt::DisplayRole);
+        model->setData(model->index(i, col++), rec.id, Qt::DisplayRole);
+        model->setData(model->index(i, col++), rec.x, Qt::DisplayRole);
+        model->setData(model->index(i, col++), rec.y, Qt::DisplayRole);
+        model->setData(model->index(i, col++), rec.zelev, Qt::DisplayRole);
+        model->setData(model->index(i, col++), rec.zhill, Qt::DisplayRole);
+        model->setData(model->index(i, col++), rec.zflag, Qt::DisplayRole);
+        if (statopts.calc_avg)
+            model->setData(model->index(i, col++), out.avg.at(i), Qt::DisplayRole);
+        if (statopts.calc_max)
+            model->setData(model->index(i, col++), out.max.at(i), Qt::DisplayRole);
+        if (statopts.calc_std)
+            model->setData(model->index(i, col++), out.std.at(i), Qt::DisplayRole);
         for (std::vector<double> v : out.p2)
-            table->setColumnData(col++, v);
-    }
-    if (opts.calcRecMaxRM) {
+            model->setData(model->index(i, col++), v.at(i), Qt::DisplayRole);
         for (std::vector<double> v : out.rm)
-            table->setColumnData(col++, v);
+            model->setData(model->index(i, col++), v.at(i), Qt::DisplayRole);
     }
 
     QString title = QString("Receptors (%1/%2/%3)")
-            .arg(QString::fromStdString(genOpts.type).toUpper())
-            .arg(genOpts.avePeriod)
-            .arg(QString::fromStdString(genOpts.sourceGroup).trimmed());
+            .arg(QString::fromStdString(opts.output_type).toUpper())
+            .arg(opts.averaging_period)
+            .arg(QString::fromStdString(opts.source_group).trimmed());
 
     tabWidget->addTab(table, title);
     tabWidget->setCurrentIndex(tabWidget->count() - 1);
 }
 
-void AnalysisWindow::showHistogram(const GeneralAnalysisOpts genOpts, const HistogramAnalysisOpts opts, const Histogram& out)
+void AnalysisWindow::showHistogram(const ncpost::options::general& opts, const ncpost::options::histogram& histopts,
+                                   const ncpost::histogram_type& out, const ncpost::metadata_type& metadata)
 {
-    if (opts.calcCDF)
+    if (histopts.calc_cdf)
     {
         StandardTableView *table = outputTable();
-        int nrows = static_cast<int>(out.cdf.size());
+        const int nrows = static_cast<int>(out.cdf.size());
         QStandardItemModel *model = new QStandardItemModel(table);
         table->setModel(model);
         model->setRowCount(nrows);
@@ -769,15 +775,15 @@ void AnalysisWindow::showHistogram(const GeneralAnalysisOpts genOpts, const Hist
         }
 
         QString title = QString("CDF (%1/%2/%3)")
-                .arg(QString::fromStdString(genOpts.type).toUpper())
-                .arg(genOpts.avePeriod)
-                .arg(QString::fromStdString(genOpts.sourceGroup).trimmed());
+                .arg(QString::fromStdString(opts.output_type).toUpper())
+                .arg(opts.averaging_period)
+                .arg(QString::fromStdString(opts.source_group).trimmed());
 
         tabWidget->addTab(table, title);
         tabWidget->setCurrentIndex(tabWidget->count() - 1);
     }
 
-    if (opts.calcPDF)
+    if (histopts.calc_pdf)
     {
         StandardTableView *table = outputTable();
         int nrows = static_cast<int>(out.pdf.size());
@@ -793,9 +799,9 @@ void AnalysisWindow::showHistogram(const GeneralAnalysisOpts genOpts, const Hist
         }
 
         QString title = QString("PDF (%1/%2/%3)")
-                .arg(QString::fromStdString(genOpts.type).toUpper())
-                .arg(genOpts.avePeriod)
-                .arg(QString::fromStdString(genOpts.sourceGroup).trimmed());
+                .arg(QString::fromStdString(opts.output_type).toUpper())
+                .arg(opts.averaging_period)
+                .arg(QString::fromStdString(opts.source_group).trimmed());
 
         tabWidget->addTab(table, title);
         tabWidget->setCurrentIndex(tabWidget->count() - 1);
@@ -804,12 +810,12 @@ void AnalysisWindow::showHistogram(const GeneralAnalysisOpts genOpts, const Hist
 
 StandardTableView *AnalysisWindow::outputTable(QWidget *parent)
 {
-    StandardTableView *table = new StandardTableView;
-
+    StandardTableView *table = new StandardTableView(parent);
     table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     table->horizontalHeader()->setStretchLastSection(false);
     table->setFrameStyle(QFrame::NoFrame);
     table->setSelectionBehavior(QAbstractItemView::SelectItems);
+    table->setAutoFilterEnabled(true);
 
     return table;
 }

@@ -4,8 +4,8 @@
 #include <QDialog>
 
 #include "DateTimeDistribution.h"
-#include "StandardTableView.h"
-#include "Utilities.h" // StatusLabel
+#include "widgets/StandardTableView.h"
+#include "widgets/StatusLabel.h"
 
 QT_BEGIN_NAMESPACE
 class QDateTimeEdit;
