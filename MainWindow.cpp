@@ -1,11 +1,50 @@
-#include <QtWidgets>
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
-#include "Common.h"
-#include "Serialization.h"
+#include <QAction>
+#include <QApplication>
+#include <QBoxLayout>
+#include <QDesktopServices>
+#include <QDir>
+#include <QDockWidget>
+#include <QFileDialog>
+#include <QMainWindow>
+#include <QMenu>
+#include <QMenuBar>
+#include <QMessageBox>
+#include <QScreen>
+#include <QSettings>
+#include <QStatusBar>
+#include <QTabWidget>
+#include <QToolBar>
+#include <QTreeWidget>
+#include <QTreeWidgetItem>
+
+#ifdef Q_OS_WIN
+#include <QWinTaskbarButton>
+#include <QWinTaskbarProgress>
+#endif
+
+#include "AppStyle.h"
 #include "MainWindow.h"
+#include "Common.h"
+//#include "RibbonDefinition.h"
 #include "ReceptorDialog.h"
 #include "RunModelDialog.h"
-#include "ProjectValidation.h"
+#include "Serialization.h"
+#include "Validation.h"
 
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/smart_ptr/make_shared_object.hpp>
@@ -18,15 +57,13 @@
 
 #include <fstream>
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
+MainWindow::MainWindow()
 {
     setWindowIcon(QIcon(":/images/Corteva_64x.png"));
-    setUnifiedTitleAndToolBarOnMac(true);
     setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-    setIconSize(QSize(40, 40));
+    int largeIconSize = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
+    setIconSize(QSize(largeIconSize, largeIconSize));
     setAcceptDrops(true);
-
-    taskbarButton = new QWinTaskbarButton(this);
 
     // TODO: use QProxyStyle for PE_IndicatorTabClose (SP_DialogCloseButton)
     centralTabWidget = new QTabWidget;
@@ -71,23 +108,23 @@ void MainWindow::createMenus()
 void MainWindow::createActions()
 {
     // Resources
-    static const QIcon newIcon = QIcon(":/images/NewFile_40x.png");
-    static const QIcon openIcon = QIcon(":/images/OpenFolder_40x.png");
-    static const QIcon saveIcon = QIcon(":/images/Save_40x.png");
-    static const QIcon saveAsIcon = QIcon(":/images/SaveAs_32x.png");
-    static const QIcon validateIcon = QIcon(":/images/Checkmark_40x.png");
-    static const QIcon runIcon = QIcon(":/images/Run_40x.png");
-    static const QIcon analyzeIcon = QIcon(":/images/Measure_40x.png");
-    static const QIcon helpIcon = QIcon(":/images/MSHelpTableOfContent_32x.png");
+    const QIcon newIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_NewFile));
+    const QIcon openIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_OpenFile));
+    const QIcon saveIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_Save));
+    const QIcon saveAsIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_SaveAs));
+    const QIcon validateIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_Checkmark));
+    const QIcon runIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_Run));
+    const QIcon analyzeIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_Measure));
+    const QIcon helpIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusHelp));
 
-    static const QIcon cloneIcon = QIcon(":/images/CopyItem_16x.png");
-    static const QIcon renameIcon = QIcon(":/images/Rename_16x.png");
-    static const QIcon addGroupIcon = QIcon(":/images/AddBuildQueue_16x.png");
-    static const QIcon importIcon = QIcon(":/images/ImportFile_16x.png");
-    static const QIcon receptorsIcon = QIcon(":/images/EditReceptors_16x.png");
-    static const QIcon tableIcon = QIcon(":/images/Table_16x.png");
-    static const QIcon textFileIcon = QIcon(":/images/TextFile_16x.png");
-    static const QIcon exportFileIcon = QIcon(":/images/ExportFile_16x.png");
+    const QIcon cloneIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionClone));
+    const QIcon renameIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionRename));
+    const QIcon addGroupIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionAddBuildQueue));
+    const QIcon importDataIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionImport));
+    const QIcon editReceptorsIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionEditorZone));
+    const QIcon showTableIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionTable));
+    const QIcon showInputFileIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionTextFile));
+    const QIcon exportFluxFileIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionExportFile));
 
     // File Menu actions
     newAct = new QAction(newIcon, tr("&New Scenario"), this);
@@ -125,7 +162,6 @@ void MainWindow::createActions()
     // Tools Menu actions
     validateAct = new QAction(validateIcon, tr("Check Project"), this);
     validateAct->setStatusTip(tr("Check project for errors"));
-    validateAct->setDisabled(true); // FIXME
 
     runAct = new QAction(runIcon, tr("&Run Model..."), this);
     runAct->setStatusTip(tr("Run the current project"));
@@ -160,18 +196,18 @@ void MainWindow::createActions()
     scenarioRenameAct = new QAction(renameIcon, tr("Rename"), this);
     scenarioRemoveAct = new QAction(tr("Remove"), this);
     scenarioAddSourceGroupAct = new QAction(addGroupIcon, tr("Add Source Group"), this);
-    scenarioImportValidationAct = new QAction(importIcon, tr("Import Retrospective Data..."), this);
+    scenarioImportValidationAct = new QAction(importDataIcon, tr("Import Retrospective Data..."), this);
     scenarioPropertiesAct = new QAction(tr("Properties..."), this);
-    scenarioInputFileAct = new QAction(textFileIcon, tr("Show Input File"), this);
-    scenarioFluxFileAct = new QAction(exportFileIcon, tr("Export Flux File..."), this);
+    scenarioInputFileAct = new QAction(showInputFileIcon, tr("Show Input File"), this);
+    scenarioFluxFileAct = new QAction(exportFluxFileIcon, tr("Export Flux File..."), this);
 
     // Source Group Context Menu actions
     sourceGroupCloneAct = new QAction(cloneIcon, tr("Clone"), this);
     sourceGroupRenameAct = new QAction(renameIcon, tr("Rename"), this);
     sourceGroupRemoveAct = new QAction(tr("Remove"), this);
     sourceGroupPropertiesAct = new QAction(tr("Properties..."), this);
-    editReceptorsAct = new QAction(receptorsIcon, tr("Edit Receptors..."), this);
-    sourceTableAct = new QAction(tableIcon, tr("Show Source Table"), this);
+    editReceptorsAct = new QAction(editReceptorsIcon, tr("Edit Receptors..."), this);
+    sourceTableAct = new QAction(showTableIcon, tr("Show Source Table"), this);
 }
 
 void MainWindow::createToolbar()
@@ -204,6 +240,22 @@ void MainWindow::createPanels()
     dwProjectTree->setObjectName("ProjectBrowser");
     dwProjectTree->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
 
+
+    //QDockWidget *dwProjectTreeView = new QDockWidget(tr("Project Browser"), this);
+    //dwProjectTreeView->setObjectName("ProjectBrowser");
+    //dwProjectTreeView->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    //
+    //projectTreeView = new ProjectTreeView(dwProjectTreeView);
+    //projectModel = new ProjectModel(this);
+    //auto project = std::make_shared<Project>();
+    //project->scenarios.emplace_back(std::make_shared<Scenario>());
+    //projectModel->setProject(project);
+    //projectTreeView->setModel(projectModel);
+    //
+    //dwProjectTreeView->setWidget(projectTreeView);
+    //addDockWidget(Qt::LeftDockWidgetArea, dwProjectTreeView);
+
+
     projectTree = new QTreeWidget(dwProjectTree);
     QFont font = QApplication::font();
     font.setPointSizeF(font.pointSizeF() + 1);
@@ -221,7 +273,6 @@ void MainWindow::createPanels()
 
     dwProjectTree->setWidget(projectTree);
     addDockWidget(Qt::LeftDockWidgetArea, dwProjectTree);
-    viewMenu->addAction(dwProjectTree->toggleViewAction());
 
     // Validation LogWidget
     dwMessages = new QDockWidget(tr("Validation"), this);
@@ -230,7 +281,6 @@ void MainWindow::createPanels()
     lwMessages = new LogWidget(dwMessages);
     dwMessages->setWidget(lwMessages);
     addDockWidget(Qt::BottomDockWidgetArea, dwMessages);
-    viewMenu->addAction(dwMessages->toggleViewAction());
 
     // Model Output LogWidget
     dwOutput = new QDockWidget(tr("Model Output"), this);
@@ -239,6 +289,9 @@ void MainWindow::createPanels()
     lwOutput = new LogWidget(dwOutput);
     dwOutput->setWidget(lwOutput);
     addDockWidget(Qt::BottomDockWidgetArea, dwOutput);
+
+    viewMenu->addAction(dwProjectTree->toggleViewAction());
+    viewMenu->addAction(dwMessages->toggleViewAction());
     viewMenu->addAction(dwOutput->toggleViewAction());
 
     // Tabify LogWidgets
@@ -251,8 +304,12 @@ void MainWindow::setupConnections()
     connect(centralTabWidget, &QTabWidget::tabCloseRequested,
             this, &MainWindow::deleteTab);
 
+    //connect(this, &MainWindow::commandActivated, this, &MainWindow::onCommandActivated);
+    //connect(this, &MainWindow::commandToggled, this, &MainWindow::onCommandToggled);
+
     connect(this, &MainWindow::scenarioUpdated, this, &MainWindow::onScenarioUpdated);
     connect(this, &MainWindow::sourceGroupUpdated, this, &MainWindow::onSourceGroupUpdated);
+
 
     // File Menu
     connect(newAct, &QAction::triggered, this, &MainWindow::newScenario);
@@ -273,7 +330,8 @@ void MainWindow::setupConnections()
 
     // Project Tree
     connect(projectTree, &QTreeWidget::customContextMenuRequested, this, &MainWindow::contextMenuRequested);
-    connect(projectTree, &QTreeWidget::itemChanged, this, &MainWindow::handleItemChanged);
+    connect(projectTree, &QTreeWidget::itemChanged, this, &MainWindow::onItemChanged);
+    //connect(projectTree, &QTreeWidget::currentItemChanged, this, &MainWindow::onCurrentItemChanged);
 }
 
 void MainWindow::setupLogging()
@@ -329,8 +387,8 @@ void MainWindow::loadSettings()
     settings.beginGroup("MainWindow");
 
     // Default main window size is 75% main screen size
-    QDesktopWidget desktop;
-    QSize defaultSize = desktop.availableGeometry(desktop.primaryScreen()).size() * 0.75;
+    QScreen *primaryScreen = QGuiApplication::primaryScreen();
+    QSize defaultSize = primaryScreen->availableGeometry().size() * 0.75;
 
     // Load settings
     QByteArray state = settings.value("State", QByteArray()).toByteArray();
@@ -363,6 +421,243 @@ void MainWindow::saveSettings()
         settings.setValue("Size", this->size());
 
     settings.endGroup();
+}
+
+/****************************************************************************
+** Slots
+****************************************************************************/
+/*
+void MainWindow::onCommandActivated(int commandId)
+{
+    switch (commandId) {
+    case IDC_RIBBONHELP:
+        showHelp();
+        break;
+    case IDC_OPEN:
+    case IDC_OPENPROJECT:
+        openProject();
+        break;
+    case IDC_VALIDATE:
+        validate();
+        break;
+    case IDC_RUN:
+        runModel();
+        break;
+    case IDC_ANALYZE:
+        analyzeOutput();
+        break;
+    case IDC_INPUTFILE:
+    case IDC_SOURCETABLE:
+    case IDC_RECEPTOREDITOR:
+        break;
+    case IDC_SELECTALL:
+        emit selectAllClicked();
+        break;
+    case IDC_SELECTNONE:
+        emit selectNoneClicked();
+        break;
+    case IDC_SELECTINVERSE:
+        emit selectInverseClicked();
+        break;
+    default:
+        break;
+    }
+}
+
+void MainWindow::onCommandToggled(int commandId, bool checked)
+{
+    switch (commandId) {
+    case IDC_SHOWPROJECTBROWSER:
+        dwProjectTree->setVisible(checked);
+        break;
+    case IDC_SHOWVALIDATION:
+        dwMessages->setVisible(checked);
+        break;
+    case IDC_SHOWMODELOUTPUT:
+        dwOutput->setVisible(checked);
+        break;
+    default:
+        break;
+    }
+}
+
+void MainWindow::onCurrentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous)
+{
+    Q_UNUSED(previous)
+
+    if (current && treeWidgetToScenario.count(current) > 0) {
+        //Scenario *s = treeWidgetToScenario[current];
+        setCommandEnabled(IDC_PROPERTIES, true);
+        setCommandEnabled(IDC_INPUTFILE, true);
+        setCommandEnabled(IDC_SOURCETABLE, false);
+        setCommandEnabled(IDC_RECEPTOREDITOR, true);
+        setCommandEnabled(IDC_WINDROSE, true);
+    }
+    else if (current && treeWidgetToSourceGroup.count(current) > 0) {
+        //SourceGroup *sg = treeWidgetToSourceGroup[current];
+        setCommandEnabled(IDC_PROPERTIES, true);
+        setCommandEnabled(IDC_INPUTFILE, false);
+        setCommandEnabled(IDC_SOURCETABLE, true);
+        setCommandEnabled(IDC_RECEPTOREDITOR, false);
+        setCommandEnabled(IDC_WINDROSE, false);
+    }
+    else {
+        setCommandEnabled(IDC_PROPERTIES, false);
+        setCommandEnabled(IDC_INPUTFILE, false);
+        setCommandEnabled(IDC_SOURCETABLE, false);
+        setCommandEnabled(IDC_RECEPTOREDITOR, false);
+        setCommandEnabled(IDC_WINDROSE, false);
+    }
+}
+*/
+void MainWindow::onItemChanged(QTreeWidgetItem *item, int)
+{
+    // Handle rename, making sure name is valid.
+    QString text = item->text(0); // new text
+
+    // Remove any non-alphanumeric characters and truncate to max length (100)
+    text.remove(QRegExp("[^A-Za-z0-9_]+"));
+    text.truncate(100);
+    item->setText(0, text);
+
+    if (treeWidgetToScenario.count(item) > 0) {
+        Scenario *s = treeWidgetToScenario[item];
+        s->name = text.toStdString();
+        emit scenarioUpdated(s);
+        return;
+    }
+
+    if (treeWidgetToSourceGroup.count(item) > 0) {
+        SourceGroup *sg = treeWidgetToSourceGroup[item];
+        sg->grpid = text.toStdString();
+        emit sourceGroupUpdated(sg);
+        return;
+    }
+}
+
+void MainWindow::contextMenuRequested(QPoint const& pos)
+{
+    QPoint globalPos = projectTree->viewport()->mapToGlobal(pos);
+    QMenu contextMenu;
+
+    QTreeWidgetItem *item = projectTree->itemAt(pos);
+    QAction *selectedItem;
+
+    // Scenario Context Menu
+    // TODO: Import Sources
+    if (item && treeWidgetToScenario.count(item) > 0)
+    {
+        Scenario *s = treeWidgetToScenario[item];
+        contextMenu.addAction(scenarioCloneAct);
+        contextMenu.addAction(scenarioRenameAct);
+        contextMenu.addAction(scenarioRemoveAct);
+        contextMenu.addSeparator();
+        contextMenu.addAction(scenarioAddSourceGroupAct);
+        contextMenu.addAction(scenarioImportValidationAct);
+        contextMenu.addAction(scenarioFluxFileAct);
+        contextMenu.addSeparator();
+        contextMenu.addAction(scenarioPropertiesAct);
+        contextMenu.addSeparator();
+        contextMenu.addAction(editReceptorsAct);
+        contextMenu.addSeparator();
+        contextMenu.addAction(scenarioInputFileAct);
+
+        selectedItem = contextMenu.exec(globalPos);
+        if (selectedItem && selectedItem == scenarioCloneAct) {
+            cloneScenario(s);
+        }
+        else if (selectedItem && selectedItem == scenarioRenameAct) {
+            projectTree->editItem(item);
+        }
+        else if (selectedItem && selectedItem == scenarioRemoveAct) {
+            removeScenario(s);
+        }
+        else if (selectedItem && selectedItem == scenarioAddSourceGroupAct) {
+            newSourceGroup(s);
+        }
+        else if (selectedItem && selectedItem == scenarioImportValidationAct) {
+            importValidationData(s);
+        }
+        else if (selectedItem && selectedItem == scenarioPropertiesAct) {
+            showScenarioProperties(s);
+        }
+        else if (selectedItem && selectedItem == editReceptorsAct) {
+            showReceptorEditor(s);
+        }
+        else if (selectedItem && selectedItem == scenarioInputFileAct) {
+            showInputViewer(s);
+        }
+        else if (selectedItem && selectedItem == scenarioFluxFileAct) {
+            exportFluxFile(s);
+        }
+        return;
+    }
+
+    // Source Group Context Menu
+    if (item && treeWidgetToSourceGroup.count(item) > 0)
+    {
+        SourceGroup *sg = treeWidgetToSourceGroup[item];
+        contextMenu.addAction(sourceGroupCloneAct);
+        contextMenu.addAction(sourceGroupRenameAct);
+        contextMenu.addAction(sourceGroupRemoveAct);
+        contextMenu.addSeparator();
+        contextMenu.addAction(sourceGroupPropertiesAct);
+        contextMenu.addSeparator();
+        contextMenu.addAction(sourceTableAct);
+
+        selectedItem = contextMenu.exec(globalPos);
+        if (selectedItem && selectedItem == sourceGroupCloneAct) {
+            cloneSourceGroup(sg);
+        }
+        else if (selectedItem && selectedItem == sourceGroupRenameAct) {
+            projectTree->editItem(item);
+        }
+        else if (selectedItem && selectedItem == sourceGroupRemoveAct) {
+            removeSourceGroup(sg);
+        }
+        else if (selectedItem && selectedItem == sourceGroupPropertiesAct) {
+            showSourceGroupProperties(sg);
+        }
+        else if (selectedItem && selectedItem == sourceTableAct) {
+            showSourceTable(sg);
+        }
+        return;
+    }
+}
+
+void MainWindow::onScenarioUpdated(Scenario *s)
+{
+    projectModified = true;
+    if (scenarioToInputViewer.count(s) > 0) {
+        InputViewer *viewer = scenarioToInputViewer[s];
+        int viewerIndex = centralTabWidget->indexOf(viewer);
+        if (viewerIndex >= 0) {
+            viewer->refresh();
+            QString viewerTitle = QString::fromStdString(s->name);
+            centralTabWidget->setTabText(viewerIndex, viewerTitle);
+        }
+    }
+    for (const auto &item : sourceTableToSourceGroup) {
+        SourceTable *table = item.first;
+        SourceGroup *sg = item.second;
+        if (sourceGroupToScenario[sg] == s) {
+            table->refresh();
+        }
+    }
+}
+
+void MainWindow::onSourceGroupUpdated(SourceGroup *sg)
+{
+    projectModified = true;
+    if (sourceGroupToSourceTable.count(sg) > 0) {
+        SourceTable *table = sourceGroupToSourceTable[sg];
+        int tableIndex = centralTabWidget->indexOf(table);
+        if (tableIndex >= 0) {
+            table->refresh();
+            QString tableTitle = QString::fromStdString(sg->grpid);
+            centralTabWidget->setTabText(tableIndex, tableTitle);
+        }
+    }
 }
 
 void MainWindow::openProject()
@@ -599,7 +894,7 @@ void MainWindow::addScenarioToTree(Scenario *s)
 
     item->setFlags(Qt::ItemIsEditable | Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled);
     item->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
-    item->setText(0, QString::fromStdString(s->title));
+    item->setText(0, QString::fromStdString(s->name));
 
     QFont rootFont = item->font(0);
     rootFont.setBold(true);
@@ -759,7 +1054,7 @@ void MainWindow::showInputViewer(Scenario *s)
         InputViewer *viewer = new InputViewer(s);
         viewer->refresh();
 
-        QString title = QString::fromStdString(s->title);
+        QString title = QString::fromStdString(s->name);
         centralTabWidget->addTab(viewer, title);
         centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
 
@@ -811,121 +1106,6 @@ void MainWindow::exportFluxFile(Scenario *s)
     }
 }
 
-void MainWindow::contextMenuRequested(QPoint const& pos)
-{
-    QPoint globalPos = projectTree->viewport()->mapToGlobal(pos);
-    QMenu contextMenu;
-
-    QTreeWidgetItem *item = projectTree->itemAt(pos);
-    QAction *selectedItem;
-
-    // Scenario Context Menu
-    // TODO: Import Sources
-    if (item && treeWidgetToScenario.count(item) > 0)
-    {
-        Scenario *s = treeWidgetToScenario[item];
-        contextMenu.addAction(scenarioCloneAct);
-        contextMenu.addAction(scenarioRenameAct);
-        contextMenu.addAction(scenarioRemoveAct);
-        contextMenu.addSeparator();
-        contextMenu.addAction(scenarioAddSourceGroupAct);
-        contextMenu.addAction(scenarioImportValidationAct);
-        contextMenu.addAction(scenarioFluxFileAct);
-        contextMenu.addSeparator();
-        contextMenu.addAction(scenarioPropertiesAct);
-        contextMenu.addSeparator();
-        contextMenu.addAction(editReceptorsAct);
-        contextMenu.addSeparator();
-        contextMenu.addAction(scenarioInputFileAct);
-
-        selectedItem = contextMenu.exec(globalPos);
-        if (selectedItem && selectedItem == scenarioCloneAct) {
-            cloneScenario(s);
-        }
-        else if (selectedItem && selectedItem == scenarioRenameAct) {
-            projectTree->editItem(item);
-        }
-        else if (selectedItem && selectedItem == scenarioRemoveAct) {
-            removeScenario(s);
-        }
-        else if (selectedItem && selectedItem == scenarioAddSourceGroupAct) {
-            newSourceGroup(s);
-        }
-        else if (selectedItem && selectedItem == scenarioImportValidationAct) {
-            importValidationData(s);
-        }
-        else if (selectedItem && selectedItem == scenarioPropertiesAct) {
-            showScenarioProperties(s);
-        }
-        else if (selectedItem && selectedItem == editReceptorsAct) {
-            showReceptorEditor(s);
-        }
-        else if (selectedItem && selectedItem == scenarioInputFileAct) {
-            showInputViewer(s);
-        }
-        else if (selectedItem && selectedItem == scenarioFluxFileAct) {
-            exportFluxFile(s);
-        }
-        return;
-    }
-
-    // Source Group Context Menu
-    if (item && treeWidgetToSourceGroup.count(item) > 0)
-    {
-        SourceGroup *sg = treeWidgetToSourceGroup[item];
-        contextMenu.addAction(sourceGroupCloneAct);
-        contextMenu.addAction(sourceGroupRenameAct);
-        contextMenu.addAction(sourceGroupRemoveAct);
-        contextMenu.addSeparator();
-        contextMenu.addAction(sourceGroupPropertiesAct);
-        contextMenu.addSeparator();
-        contextMenu.addAction(sourceTableAct);
-
-        selectedItem = contextMenu.exec(globalPos);
-        if (selectedItem && selectedItem == sourceGroupCloneAct) {
-            cloneSourceGroup(sg);
-        }
-        else if (selectedItem && selectedItem == sourceGroupRenameAct) {
-            projectTree->editItem(item);
-        }
-        else if (selectedItem && selectedItem == sourceGroupRemoveAct) {
-            removeSourceGroup(sg);
-        }
-        else if (selectedItem && selectedItem == sourceGroupPropertiesAct) {
-            showSourceGroupProperties(sg);
-        }
-        else if (selectedItem && selectedItem == sourceTableAct) {
-            showSourceTable(sg);
-        }
-        return;
-    }
-}
-
-void MainWindow::handleItemChanged(QTreeWidgetItem *item, int)
-{
-    // Handle rename, making sure name is valid.
-    QString text = item->text(0); // new text
-
-    // Remove any non-alphanumeric characters and truncate to max length (100)
-    text.remove(QRegExp("[^A-Za-z0-9_]+"));
-    text.truncate(100);
-    item->setText(0, text);
-
-    if (treeWidgetToScenario.count(item) > 0) {
-        Scenario *s = treeWidgetToScenario[item];
-        s->title = text.toStdString();
-        emit scenarioUpdated(s);
-        return;
-    }
-
-    if (treeWidgetToSourceGroup.count(item) > 0) {
-        SourceGroup *sg = treeWidgetToSourceGroup[item];
-        sg->grpid = text.toStdString();
-        emit sourceGroupUpdated(sg);
-        return;
-    }
-}
-
 void MainWindow::deleteTab(int index)
 {
     // Remove tab from containers, and schedule the widget for deletion.
@@ -955,46 +1135,14 @@ void MainWindow::deleteTab(int index)
     }
 }
 
-
-void MainWindow::onScenarioUpdated(Scenario *s)
-{
-    projectModified = true;
-    if (scenarioToInputViewer.count(s) > 0) {
-        InputViewer *viewer = scenarioToInputViewer[s];
-        int viewerIndex = centralTabWidget->indexOf(viewer);
-        if (viewerIndex >= 0) {
-            viewer->refresh();
-            QString viewerTitle = QString::fromStdString(s->title);
-            centralTabWidget->setTabText(viewerIndex, viewerTitle);
-        }
-    }
-    for (const auto &item : sourceTableToSourceGroup) {
-        SourceTable *table = item.first;
-        SourceGroup *sg = item.second;
-        if (sourceGroupToScenario[sg] = s) {
-            table->refresh();
-        }
-    }
-}
-
-void MainWindow::onSourceGroupUpdated(SourceGroup *sg)
-{
-    projectModified = true;
-    if (sourceGroupToSourceTable.count(sg) > 0) {
-        SourceTable *table = sourceGroupToSourceTable[sg];
-        int tableIndex = centralTabWidget->indexOf(table);
-        if (tableIndex >= 0) {
-            table->refresh();
-            QString tableTitle = QString::fromStdString(sg->grpid);
-            centralTabWidget->setTabText(tableIndex, tableTitle);
-        }
-    }
-}
-
 void MainWindow::validate()
 {
+    lwMessages->clear();
     dwMessages->raise();
-    // TODO: call validation routines
+
+    for (Scenario &s : scenarios) {
+        auto res = Validation::ValidateScenario(s);
+    }
 }
 
 void MainWindow::runModel()
@@ -1014,16 +1162,24 @@ void MainWindow::runModel()
         settings.setValue("DefaultDirectory", projectDir);
     }
 
-    RunModelDialog dialog(this);
-    dialog.setWorkingDirectory(projectDir);
-    dialog.setTaskbarButton(taskbarButton);
+    RunModelDialog *dialog = new RunModelDialog(this);
+    dialog->setWorkingDirectory(projectDir); // TODO: use project class
 
     for (Scenario &s : scenarios) {
-        dialog.addScenario(&s);
+        dialog->addScenario(&s);
     }
 
+#ifdef Q_OS_WIN
+    if (taskbarProgress) {
+        connect(dialog, &RunModelDialog::progressValueChanged,
+                taskbarProgress, &QWinTaskbarProgress::setValue);
+        connect(dialog, &RunModelDialog::progressVisibilityChanged,
+                taskbarProgress, &QWinTaskbarProgress::setVisible);
+    }
+#endif
+
     dwOutput->raise();
-    dialog.exec();
+    dialog->exec();
 }
 
 void MainWindow::analyzeOutput()
@@ -1063,7 +1219,7 @@ void MainWindow::about()
 #else
     aboutText += "</h4>";
 #endif
-    aboutText += "<p>&copy; 2004-2019 DowDuPont Inc. All rights reserved.</p>";
+    aboutText += "<p>&copy; 2004-2020 Dow Inc. All rights reserved.</p>";
 
     // Compiler Info
     aboutText += QString("Built with MSVC %1").arg(_MSC_VER) +
@@ -1089,7 +1245,25 @@ void MainWindow::about()
 
 void MainWindow::showEvent(QShowEvent *event)
 {
-    taskbarButton->setWindow(this->windowHandle());
+    //setCommandEnabled(IDC_PROPERTIES, false);
+    //setCommandEnabled(IDC_INPUTFILE, false);
+    //setCommandEnabled(IDC_SOURCETABLE, false);
+    //setCommandEnabled(IDC_RECEPTOREDITOR, false);
+    //setCommandEnabled(IDC_WINDROSE, false);
+
+    //setCommandChecked(IDC_SHOWPROJECTBROWSER, true);
+    //setCommandChecked(IDC_SHOWVALIDATION, true);
+    //setCommandChecked(IDC_SHOWMODELOUTPUT, true);
+
+    //setTabGroupContextAvailability(IDC_TABGROUP_SOURCETOOLS, ContextAvailability::Available);
+
+#ifdef Q_OS_WIN
+    taskbarButton = new QWinTaskbarButton(this);
+    taskbarButton->setWindow(windowHandle());
+    taskbarProgress = taskbarButton->progress();
+#endif
+
+    QMainWindow::showEvent(event);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -1110,21 +1284,25 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
 
     event->accept();
+    QMainWindow::closeEvent(event);
 }
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 {
     event->acceptProposedAction();
+    QMainWindow::dragEnterEvent(event);
 }
 
 void MainWindow::dragMoveEvent(QDragMoveEvent *event)
 {
     event->acceptProposedAction();
+    QMainWindow::dragMoveEvent(event);
 }
 
 void MainWindow::dragLeaveEvent(QDragLeaveEvent *event)
 {
     event->accept();
+    QMainWindow::dragLeaveEvent(event);
 }
 
 void MainWindow::dropEvent(QDropEvent *event)
@@ -1138,4 +1316,5 @@ void MainWindow::dropEvent(QDropEvent *event)
     }
 
     event->acceptProposedAction();
+    QMainWindow::dropEvent(event);
 }

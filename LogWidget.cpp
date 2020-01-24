@@ -1,4 +1,20 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #include "LogWidget.h"
+#include "AppStyle.h"
 
 #include <QApplication>
 #include <QHeaderView>
@@ -8,29 +24,6 @@
 #include <QDebug>
 
 #include <boost/log/utility/value_ref.hpp>
-
-//-----------------------------------------------------------------------------
-// FilterButton
-//-----------------------------------------------------------------------------
-
-// Workaround for QTBUG-2036
-class FilterButton : public QToolButton
-{
-public:
-    FilterButton(QWidget *parent = nullptr) : QToolButton(parent)
-    {
-    }
-
-protected:
-    virtual void paintEvent(QPaintEvent *) override
-    {
-        QStylePainter p(this);
-        QStyleOptionToolButton opt;
-        initStyleOption(&opt);
-        opt.features &= (~QStyleOptionToolButton::HasMenu);
-        p.drawComplexControl(QStyle::CC_ToolButton, opt);
-    }
-};
 
 //-----------------------------------------------------------------------------
 // LogFilterProxyModel
@@ -105,11 +98,12 @@ bool LogFilterProxyModel::filterAcceptsRow(int row, const QModelIndex &parent) c
 LogWidget::LogWidget(QWidget *parent) : QWidget(parent)
 {
     // Toolbar Items
-    static const QIcon clearIcon = QIcon(":/images/CleanData_24x.png");
-    static const QIcon errorsIcon = QIcon(":/images/StatusAnnotations_Critical_24xLG_color.png");
-    static const QIcon warningsIcon = QIcon(":/images/StatusAnnotations_Warning_24xLG_color.png");
-    static const QIcon messagesIcon = QIcon(":/images/StatusAnnotations_Information_24xLG_color.png");
-    static const QIcon filterIcon = QIcon(":/images/FilterDropdown_24x.png");
+
+    const QIcon clearIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionCleanData));
+    const QIcon errorsIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusCritical));
+    const QIcon warningsIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusWarning));
+    const QIcon messagesIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusInformation));
+    const QIcon filterIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_FilterDropdownButton));
 
     clearAct = new QAction(clearIcon, tr("Clear"), this);
     showErrorsAct = new QAction(errorsIcon, tr("0 Errors"), this);
@@ -120,10 +114,11 @@ LogWidget::LogWidget(QWidget *parent) : QWidget(parent)
     showMessagesAct->setCheckable(true);
     filterMenu = new QMenu;
 
-    FilterButton *filterButton = new FilterButton;
+    filterButton = new QToolButton;
     filterButton->setToolTip(tr("Filter"));
     filterButton->setIcon(filterIcon);
     filterButton->setMenu(filterMenu);
+    filterButton->setArrowType(Qt::NoArrow);
     filterButton->setPopupMode(QToolButton::InstantPopup);
 
     // Toolbar
@@ -251,12 +246,12 @@ void LogWidget::setColumn(int column, const QString& label, const QString& attri
 void LogWidget::appendRow(const QString& text, const QHash<QString, QVariant>& attrs, boost::log::trivial::severity_level severity)
 {
     static const QHash<boost::log::trivial::severity_level, QIcon> icons = {
-        {boost::log::trivial::trace,   QIcon(":/images/StatusAnnotations_Information_16xLG.png")},
-        {boost::log::trivial::debug,   QIcon(":/images/StatusAnnotations_Information_16xLG.png")},
-        {boost::log::trivial::info,    QIcon(":/images/StatusAnnotations_Information_16xLG_color.png")},
-        {boost::log::trivial::warning, QIcon(":/images/StatusAnnotations_Warning_16xLG_color.png")},
-        {boost::log::trivial::error,   QIcon(":/images/StatusAnnotations_Invalid_16xLG_color.png")},
-        {boost::log::trivial::fatal,   QIcon(":/images/StatusAnnotations_Critical_16xLG_color.png")}
+        {boost::log::trivial::trace,   this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusDebug))},
+        {boost::log::trivial::debug,   this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusDebug))},
+        {boost::log::trivial::info,    this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusInformation))},
+        {boost::log::trivial::warning, this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusWarning))},
+        {boost::log::trivial::error,   this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusInvalid))},
+        {boost::log::trivial::fatal,   this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusCritical))}
     };
 
     QList<QStandardItem *> items;

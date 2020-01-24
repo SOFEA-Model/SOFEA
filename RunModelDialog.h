@@ -1,3 +1,18 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #ifndef RUNMODELDIALOG_H
 #define RUNMODELDIALOG_H
 
@@ -8,8 +23,6 @@
 #include <QProcess>
 #include <QStandardItemModel>
 #include <QTimer>
-#include <QWinTaskbarButton>
-#include <QWinTaskbarProgress>
 
 #include <boost/ptr_container/ptr_vector.hpp>
 
@@ -26,11 +39,15 @@ QT_END_NAMESPACE
 class RunModelDialog : public QDialog
 {
     Q_OBJECT
+
 public:
     explicit RunModelDialog(QWidget *parent = nullptr);
     void setWorkingDirectory(const QString& path);
-    void setTaskbarButton(QWinTaskbarButton *button);
     void addScenario(Scenario *);
+
+signals:
+    void progressValueChanged(int value);
+    void progressVisibilityChanged(bool visible);
 
 public slots:
     void runSelected();
@@ -83,8 +100,6 @@ private:
     QStandardItemModel *runModel;
     StandardTableView *runTable;
     QDialogButtonBox *buttonBox;
-    QWinTaskbarButton *taskbarButton = nullptr;
-    QWinTaskbarProgress *taskbarProgress = nullptr;
 };
 
 #endif // RUNMODELDIALOG_H

@@ -1,3 +1,18 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 //#define BOOST_MATH_ASSERT_UNDEFINED_POLICY false
 //#define BOOST_MATH_OVERFLOW_ERROR_POLICY errno_on_error
 
@@ -151,7 +166,7 @@ namespace Detail
 
 void GenericDistribution::pdf(QVector<double> const& x, QVector<double> &y) const
 {
-    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Distribution");
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Distribution")
 
     y.reserve(x.size());
     try {

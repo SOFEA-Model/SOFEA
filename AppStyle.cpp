@@ -1,12 +1,34 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #include "AppStyle.h"
 
 #include <QApplication>
-#include <QIcon>
-#include <QFontMetrics>
+#include <QColor>
 #include <QDockWidget>
+#include <QFontMetrics>
+#include <QGroupBox>
+#include <QPainter>
+#include <QRect>
+#include <QStyle>
 #include <QStyleFactory>
 #include <QStyleOption>
-#include <QStyleOptionDockWidget>
+#include <QToolBox>
+#include <QToolButton>
+#include <QTreeView>
+#include <QWidget>
 
 AppStyle::AppStyle()
     : QProxyStyle(QStyleFactory::create("fusion"))
@@ -18,131 +40,418 @@ int AppStyle::pixelMetric(PixelMetric which,
     switch (which) {
     case PM_DockWidgetTitleMargin:
         return 6;
+    case PM_ToolBarIconSize:
+        return QProxyStyle::pixelMetric(PM_SmallIconSize, option, widget);
     default:
         return QProxyStyle::pixelMetric(which, option, widget);
     }
 }
 
-//static const QIcon appIcon            = QIcon(":/images/Corteva_64x.png");
-//static const QIcon syncIcon           = QIcon(":/images/SyncArrow_32x.png");
-//static const QIcon floatIcon          = QIcon(":/images/Restore_NoHalo_24x.png");
-//static const QIcon closeIcon          = QIcon(":/images/Close_NoHalo_24x.png");
-//static const QIcon functionIcon       = QIcon(":/images/Effects_32x.png"));
-//static const QIcon sortAscendingIcon  = QIcon(":/images/SortAscending_16x.png");
-//static const QIcon sortDescendingIcon = QIcon(":/images/SortDescending_16x.png");
-//static const QIcon clearFilterIcon    = QIcon(":/images/DeleteFilter_16x.png");
-//static const QIcon editFilterIcon     = QIcon(":/images/EditFilter_16x.png");
-//static const QIcon fluxProfileIcon    = QIcon(":/images/KagiChart_32x.png");
-//static const QIcon addIcon            = QIcon(":/images/Add_grey_16x.png");
-//static const QIcon removeIcon         = QIcon(":/images/Remove_grey_16x.png");
-//static const QIcon clearIcon          = QIcon(":/images/CleanData_24x.png");
-//static const QIcon errorsIcon         = QIcon(":/images/StatusAnnotations_Critical_24xLG_color.png");
-//static const QIcon warningsIcon       = QIcon(":/images/StatusAnnotations_Warning_24xLG_color.png");
-//static const QIcon messagesIcon       = QIcon(":/images/StatusAnnotations_Information_24xLG_color.png");
-//static const QIcon filterIcon         = QIcon(":/images/FilterDropdown_24x.png");
-//static const QIcon debugIcon          = QIcon(":/images/StatusAnnotations_Information_16xLG.png");
-//static const QIcon infoIcon           = QIcon(":/images/StatusAnnotations_Information_16xLG_color.png");
-//static const QIcon warningIcon        = QIcon(":/images/StatusAnnotations_Warning_16xLG_color.png");
-//static const QIcon errorIcon          = QIcon(":/images/StatusAnnotations_Invalid_16xLG_color.png");
-//static const QIcon fatalIcon          = QIcon(":/images/StatusAnnotations_Critical_16xLG_color.png");
-//static const QIcon editReceptorsIcon  = QIcon(":/images/EditReceptors_32x.png");
-//static const QIcon newIcon            = QIcon(":/images/NewFile_40x.png");
-//static const QIcon openIcon           = QIcon(":/images/OpenFolder_40x.png");
-//static const QIcon saveIcon           = QIcon(":/images/Save_40x.png");
-//static const QIcon saveAsIcon         = QIcon(":/images/SaveAs_32x.png");
-//static const QIcon validateIcon       = QIcon(":/images/Checkmark_40x.png");
-//static const QIcon runIcon            = QIcon(":/images/Run_40x.png");
-//static const QIcon analyzeIcon        = QIcon(":/images/Measure_40x.png");
-//static const QIcon helpIcon           = QIcon(":/images/MSHelpTableOfContent_32x.png");
-//static const QIcon cloneIcon          = QIcon(":/images/CopyItem_16x.png");
-//static const QIcon renameIcon         = QIcon(":/images/Rename_16x.png");
-//static const QIcon addGroupIcon       = QIcon(":/images/AddBuildQueue_16x.png");
-//static const QIcon importIcon         = QIcon(":/images/ImportFile_16x.png");
-//static const QIcon receptorsIcon      = QIcon(":/images/EditReceptors_16x.png");
-//static const QIcon tableIcon          = QIcon(":/images/Table_16x.png");
-//static const QIcon textFileIcon       = QIcon(":/images/TextFile_16x.png");
-//static const QIcon exportFileIcon     = QIcon(":/images/ExportFile_16x.png");
-//static const QIcon sourceGroupIcon    = QIcon(":/images/BuildQueue_32x.png");
-//static const QIcon settingsIcon       = QIcon(":/images/Settings_32x.png");
-//static const QIcon runWindowIcon      = QIcon(":/images/ApplicationRunning_32x.png");
-//static const QIcon areaSourceIcon     = QIcon(":/images/Rectangle_16x.png");
-//static const QIcon circSourceIcon     = QIcon(":/images/Circle_16x.png");
-//static const QIcon polySourceIcon     = QIcon(":/images/Polygon_16x.png");
-//static const QIcon importIcon         = QIcon(":/images/Import_grey_16x.png");
-//static const QIcon editIcon           = QIcon(":/images/Edit_grey_16x.png");
-//static const QIcon colorIcon          = QIcon(":/images/ColorPalette_16x.png");
-//static const QIcon resampleIcon       = QIcon(":/images/Refresh_16x.png");
-
-
-QIcon AppStyle::standardIcon(QStyle::StandardPixmap icon,
-    const QStyleOption *option, const QWidget *widget) const
+inline QIcon smallIconResource(const QString& baseName, const QString& suffix = "")
 {
-    // Set custom float and close button icons.
-    static const QIcon floatIcon = QIcon(":/images/Restore_NoHalo_24x.png");
-    static const QIcon closeIcon = QIcon(":/images/Close_NoHalo_24x.png");
+    QIcon icon;
+    icon.addFile(QString(":/res/%1_16x%2.png").arg(baseName).arg(suffix), QSize(16, 16));
+    icon.addFile(QString(":/res/%1_20x%2.png").arg(baseName).arg(suffix), QSize(20, 20));
+    icon.addFile(QString(":/res/%1_24x%2.png").arg(baseName).arg(suffix), QSize(24, 24));
+    icon.addFile(QString(":/res/%1_32x%2.png").arg(baseName).arg(suffix), QSize(32, 32));
+    return icon;
+}
 
-    switch (icon) {
-    case QStyle::SP_TitleBarNormalButton:
+inline QIcon largeIconResource(const QString& baseName, const QString& suffix = "")
+{
+    QIcon icon;
+    icon.addFile(QString(":/res/%1_16x%2.png").arg(baseName).arg(suffix), QSize(16, 16));
+    icon.addFile(QString(":/res/%1_20x%2.png").arg(baseName).arg(suffix), QSize(20, 20));
+    icon.addFile(QString(":/res/%1_24x%2.png").arg(baseName).arg(suffix), QSize(24, 24));
+    icon.addFile(QString(":/res/%1_32x%2.png").arg(baseName).arg(suffix), QSize(32, 32));
+    icon.addFile(QString(":/res/%1_36x%2.png").arg(baseName).arg(suffix), QSize(36, 36));
+    icon.addFile(QString(":/res/%1_40x%2.png").arg(baseName).arg(suffix), QSize(40, 40));
+    icon.addFile(QString(":/res/%1_48x%2.png").arg(baseName).arg(suffix), QSize(48, 48));
+    icon.addFile(QString(":/res/%1_64x%2.png").arg(baseName).arg(suffix), QSize(64, 64));
+    return icon;
+}
+
+QIcon AppStyle::standardIcon(QStyle::StandardPixmap sp,
+    const QStyleOption *option, const QWidget *widget) const
+{   
+    // QDockWidget Icons
+    static const QIcon floatIcon             = smallIconResource("Undock_NoHalo");
+    static const QIcon closeIcon             = smallIconResource("Close_NoHalo");
+    // Toolbar Icons
+    static const QIcon newFileIcon           = largeIconResource("NewFile");
+    static const QIcon newFolderIcon         = largeIconResource("NewSolutionFolder");
+    static const QIcon openFileIcon          = largeIconResource("OpenFile");
+    static const QIcon openFolderIcon        = largeIconResource("OpenFolder");
+    static const QIcon saveIcon              = largeIconResource("Save");
+    static const QIcon saveAsIcon            = largeIconResource("SaveAs");
+    static const QIcon checkmarkIcon         = largeIconResource("Checkmark");
+    static const QIcon runIcon               = largeIconResource("Run");
+    static const QIcon runSettingsIcon       = largeIconResource("RunTestDialog");
+    static const QIcon measureIcon           = largeIconResource("Measure");
+    // Status Icons
+    static const QIcon statusHelpIcon        = largeIconResource("StatusHelp");
+    static const QIcon statusOkIcon          = smallIconResource("StatusOK");
+    static const QIcon statusInfoTipIcon     = smallIconResource("StatusInfoTip");
+    static const QIcon statusRequiredIcon    = smallIconResource("StatusRequired");
+    static const QIcon statusInformationIcon = smallIconResource("StatusInformation");
+    static const QIcon statusAlertIcon       = smallIconResource("StatusAlert");
+    static const QIcon statusWarningIcon     = smallIconResource("StatusWarning");
+    static const QIcon statusInvalidIcon     = smallIconResource("StatusInvalid");
+    static const QIcon statusCriticalIcon    = smallIconResource("StatusCriticalError");
+    // Header View Icons
+    static const QIcon sortAscendingIcon     = smallIconResource("SortAscending");
+    static const QIcon sortDescendingIcon    = smallIconResource("SortDescending");
+    static const QIcon editFilterIcon        = smallIconResource("EditFilter");
+    static const QIcon deleteFilterIcon      = smallIconResource("DeleteFilter");
+    // Button Icons
+    static const QIcon calculateIcon         = smallIconResource("Calculator");
+    static const QIcon filterDropdownIcon    = smallIconResource("FilterDropdown");
+    static const QIcon functionIcon          = smallIconResource("Effects");
+    static const QIcon syncArrowIcon         = smallIconResource("SyncArrow");
+    static const QIcon windRoseIcon          = smallIconResource("WindRose");
+    // Action Icons
+    static const QIcon addIcon               = smallIconResource("Add", "MD");
+    static const QIcon removeIcon            = smallIconResource("Remove", "MD");
+    static const QIcon editIcon              = smallIconResource("Edit");
+    static const QIcon cloneIcon             = smallIconResource("CopyItem");
+    static const QIcon renameIcon            = smallIconResource("Rename");
+    static const QIcon cleanDataIcon         = smallIconResource("CleanData");
+    static const QIcon importIcon            = smallIconResource("Import");
+    static const QIcon importFileIcon        = smallIconResource("ImportFile");
+    static const QIcon exportIcon            = smallIconResource("Export");
+    static const QIcon exportDataIcon        = smallIconResource("ExportData");
+    static const QIcon exportFileIcon        = smallIconResource("ExportFile");
+    static const QIcon exportToExcelIcon     = smallIconResource("ExportToExcel");
+    static const QIcon generateFileIcon      = smallIconResource("GenerateFile");
+    static const QIcon generateTableIcon     = smallIconResource("GenerateTable");
+    static const QIcon tableIcon             = smallIconResource("Table");
+    static const QIcon tableFunctionIcon     = smallIconResource("TableFunction");
+    static const QIcon textFileIcon          = smallIconResource("TextFile");
+    static const QIcon showDataPreviewIcon   = smallIconResource("ShowDataPreview");
+    static const QIcon refreshIcon           = smallIconResource("Refresh");
+    static const QIcon settingsIcon          = smallIconResource("Settings");
+    static const QIcon editorZoneIcon        = smallIconResource("EditorZone");
+    static const QIcon addAreaIcon           = smallIconResource("AddArea");
+    static const QIcon addCircularIcon       = smallIconResource("AddCircular");
+    static const QIcon addPolygonIcon        = smallIconResource("AddPolygon");
+    static const QIcon addBuildQueueIcon     = smallIconResource("AddBuildQueue");
+    static const QIcon stepChartIcon         = smallIconResource("KagiChart");
+    static const QIcon colorPaletteIcon      = smallIconResource("ColorPalette");
+
+    int index = static_cast<int>(sp);
+    switch (index) {
+    case QStyle::SP_TitleBarNormalButton: // DockWidget Float Button
         return floatIcon;
-    case QStyle::SP_TitleBarCloseButton:
+    case QStyle::SP_TitleBarCloseButton: // DockWidget Close Button
         return closeIcon;
-    //case QStyle::SP_DialogCloseButton: // Tab Close Button
-    //    return closeIcon;
+    case QStyle::SP_DialogCloseButton: // Tab Close Button
+        return closeIcon;
+    case AppStyle::CP_NewFile:
+        return newFileIcon;
+    case AppStyle::CP_NewFolder:
+        return newFolderIcon;
+    case AppStyle::CP_OpenFile:
+        return openFileIcon;
+    case AppStyle::CP_OpenFolder:
+        return openFolderIcon;
+    case AppStyle::CP_Save:
+        return saveIcon;
+    case AppStyle::CP_SaveAs:
+        return saveAsIcon;
+    case AppStyle::CP_Checkmark:
+        return checkmarkIcon;
+    case AppStyle::CP_Run:
+        return runIcon;
+    case AppStyle::CP_RunSettings:
+        return runSettingsIcon;
+    case AppStyle::CP_Measure:
+        return measureIcon;
+    case AppStyle::CP_StatusHelp:
+        return statusHelpIcon;
+    case AppStyle::CP_StatusOK:
+        return statusOkIcon;
+    case AppStyle::CP_StatusInfoTip:
+        return statusInfoTipIcon;
+    case AppStyle::CP_StatusRequired:
+        return statusRequiredIcon;
+    case AppStyle::CP_StatusDebug:
+        return statusInformationIcon;
+    case AppStyle::CP_StatusInformation:
+        return statusInformationIcon;
+    case AppStyle::CP_StatusAlert:
+        return statusAlertIcon;
+    case AppStyle::CP_StatusWarning:
+        return statusWarningIcon;
+    case AppStyle::CP_StatusInvalid:
+        return statusInvalidIcon;
+    case AppStyle::CP_StatusCritical:
+        return statusCriticalIcon;
+    case AppStyle::CP_HeaderSortAscending:
+        return sortAscendingIcon;
+    case AppStyle::CP_HeaderSortDescending:
+        return sortDescendingIcon;
+    case AppStyle::CP_HeaderEditFilter:
+        return editFilterIcon;
+    case AppStyle::CP_HeaderDeleteFilter:
+        return deleteFilterIcon;
+    case AppStyle::CP_CalculateButton:
+        return calculateIcon;
+    case AppStyle::CP_FilterDropdownButton:
+        return filterDropdownIcon;
+    case AppStyle::CP_LineEditFunctionIcon:
+        return functionIcon;
+    case AppStyle::CP_SyncArrow:
+        return syncArrowIcon;
+    case AppStyle::CP_WindRose:
+        return windRoseIcon;
+    case AppStyle::CP_ActionAdd:
+        return addIcon;
+    case AppStyle::CP_ActionRemove:
+        return removeIcon;
+    case AppStyle::CP_ActionEdit:
+        return editIcon;
+    case AppStyle::CP_ActionClone:
+        return cloneIcon;
+    case AppStyle::CP_ActionRename:
+        return renameIcon;
+    case AppStyle::CP_ActionCleanData:
+        return cleanDataIcon;
+    case AppStyle::CP_ActionImport:
+        return importIcon;
+    case AppStyle::CP_ActionImportFile:
+        return importFileIcon;
+    case AppStyle::CP_ActionExport:
+        return exportIcon;
+    case AppStyle::CP_ActionExportData:
+        return exportDataIcon;
+    case AppStyle::CP_ActionExportFile:
+        return exportFileIcon;
+    case AppStyle::CP_ActionExportToExcel:
+        return exportToExcelIcon;
+    case AppStyle::CP_ActionGenerateFile:
+        return generateFileIcon;
+    case AppStyle::CP_ActionGenerateTable:
+        return generateTableIcon;
+    case AppStyle::CP_ActionTable:
+        return tableIcon;
+    case AppStyle::CP_ActionTableFunction:
+        return tableFunctionIcon;
+    case AppStyle::CP_ActionTextFile:
+        return textFileIcon;
+    case AppStyle::CP_ActionShowDataPreview:
+        return showDataPreviewIcon;
+    case AppStyle::CP_ActionRefresh:
+        return refreshIcon;
+    case AppStyle::CP_ActionSettings:
+        return settingsIcon;
+    case AppStyle::CP_ActionEditorZone:
+        return editorZoneIcon;
+    case AppStyle::CP_ActionAddArea:
+        return addAreaIcon;
+    case AppStyle::CP_ActionAddCircular:
+        return addCircularIcon;
+    case AppStyle::CP_ActionAddPolygon:
+        return addPolygonIcon;
+    case AppStyle::CP_ActionAddBuildQueue:
+        return addBuildQueueIcon;
+    case AppStyle::CP_ActionStepChart:
+        return stepChartIcon;
+    case AppStyle::CP_ActionColorPalette:
+        return colorPaletteIcon;
     default:
-        return QProxyStyle::standardIcon(icon, option, widget);
+        return QProxyStyle::standardIcon(sp, option, widget);
     }
+}
+
+QPalette AppStyle::standardPalette() const
+{
+    // Dark Palette
+    //QPalette p = QProxyStyle::standardPalette();
+    //p.setColor(QPalette::Window, QColor(53,53,53));
+    //p.setColor(QPalette::WindowText, Qt::white);
+    //p.setColor(QPalette::Base, QColor(42,42,42));
+    //p.setColor(QPalette::AlternateBase, QColor(66,66,66));
+    //p.setColor(QPalette::ToolTipBase, Qt::white);
+    //p.setColor(QPalette::ToolTipText, QColor(53,53,53));
+    //p.setColor(QPalette::Text, Qt::white);
+    //p.setColor(QPalette::Light, QColor(71,71,71));
+    //p.setColor(QPalette::Midlight, QColor(62,62,62));
+    //p.setColor(QPalette::Dark, QColor(35,35,35));
+    //p.setColor(QPalette::Mid, QColor(44,44,44));
+    //p.setColor(QPalette::Shadow, QColor(20,20,20));
+    //p.setColor(QPalette::Button, QColor(53,53,53));
+    //p.setColor(QPalette::ButtonText, Qt::white);
+    //p.setColor(QPalette::BrightText, Qt::red);
+    //p.setColor(QPalette::Link, QColor(42,130,218));
+    //p.setColor(QPalette::Highlight, QColor(42,130,218));
+    //p.setColor(QPalette::HighlightedText, Qt::white);
+    //p.setColor(QPalette::Disabled, QPalette::WindowText, QColor(127,127,127));
+    //p.setColor(QPalette::Disabled, QPalette::Text, QColor(127,127,127));
+    //p.setColor(QPalette::Disabled, QPalette::ButtonText, QColor(127,127,127));
+    //p.setColor(QPalette::Disabled, QPalette::Highlight, QColor(80,80,80));
+    //p.setColor(QPalette::Disabled, QPalette::HighlightedText, QColor(127,127,127));
+    //return p;
+
+    //QPalette p = QProxyStyle::standardPalette();
+    //p.setColor(QPalette::Window, QColor(245, 246, 247));
+    //p.setColor(QPalette::Button, QColor(245, 246, 247));
+    //return p;
+
+    return QProxyStyle::standardPalette();
+}
+
+void AppStyle::drawComplexControl(QStyle::ComplexControl control,
+    const QStyleOptionComplex *option, QPainter *painter, const QWidget *widget) const
+{
+    switch (control)
+    {
+    case CC_ToolButton:
+        // Workaround for QTBUG-2036: https://bugreports.qt.io/browse/QTBUG-2036
+        const QStyleOptionToolButton *tbOption;
+        const QToolButton *tb;
+        if ((tbOption = qstyleoption_cast<const QStyleOptionToolButton *>(option)) &&
+           (tb = qobject_cast<const QToolButton *>(widget)) &&
+           tb->arrowType() == Qt::NoArrow)
+        {
+            QStyleOptionToolButton customOption = *tbOption;
+            customOption.features &= (~QStyleOptionToolButton::HasMenu);
+            QProxyStyle::drawComplexControl(control, &customOption, painter, widget);
+            return;
+        }
+        break;
+    default:
+        break;
+    }
+
+    QProxyStyle::drawComplexControl(control, option, painter, widget);
 }
 
 void AppStyle::drawControl(QStyle::ControlElement element,
     const QStyleOption *option, QPainter *painter, const QWidget *widget) const
 {
-    const QStyleOptionDockWidget *dwOption;
-    const QDockWidget *dw;
-
-    if (element == CE_DockWidgetTitle &&
-       (dwOption = qstyleoption_cast<const QStyleOptionDockWidget *>(option)) &&
-       (dw = qobject_cast<const QDockWidget *>(widget)) &&
-       !dw->titleBarWidget())
+    switch (element)
     {
-        // Calculate the title bar height.
-        int iconSize = dw->style()->pixelMetric(PM_SmallIconSize, nullptr, dw);
-        int buttonMargin = dw->style()->pixelMetric(PM_DockWidgetTitleBarButtonMargin, nullptr, dw);
-        int buttonHeight = iconSize + 2+buttonMargin;
-        QFontMetrics titleFontMetrics = dw->fontMetrics();
-        int titleMargin = dw->style()->pixelMetric(PM_DockWidgetTitleMargin, nullptr, dw);
-        int titleHeight = qMax(buttonHeight + 2, titleFontMetrics.height() + 2*titleMargin);
+    case CE_DockWidgetTitle:
+        // Customize the QDockWidget title bar.
+        const QStyleOptionDockWidget *dwOption;
+        const QDockWidget *dw;
+        if ((dwOption = qstyleoption_cast<const QStyleOptionDockWidget *>(option)) &&
+           (dw = qobject_cast<const QDockWidget *>(widget)) &&
+           !dw->titleBarWidget())
+        {
+            // Calculate the title bar height.
+            int iconSize = dw->style()->pixelMetric(PM_SmallIconSize, nullptr, dw);
+            int buttonMargin = dw->style()->pixelMetric(PM_DockWidgetTitleBarButtonMargin, nullptr, dw);
+            int titleMargin = dw->style()->pixelMetric(PM_DockWidgetTitleMargin, nullptr, dw);
+            QFontMetrics titleFontMetrics = dw->fontMetrics();
+            int buttonHeight = iconSize + 2 + buttonMargin;
+            int titleHeight = qMax(buttonHeight + 2, titleFontMetrics.height() + 2 * titleMargin);
 
-        // Draw a background rectangle for the title bar.
-        QColor bgColor = dwOption->palette.window().color().darker(104);
-        QRect bgRect = dwOption->rect;
-        bgRect.setHeight(titleHeight);
-        painter->fillRect(bgRect, bgColor);
+            // Draw a background rectangle for the title bar.
+            QColor fillColor = dwOption->palette.window().color().darker(106);
+            QRect titleRect = dwOption->rect;
+            titleRect.setHeight(titleHeight);
+            painter->fillRect(titleRect, fillColor);
 
-        // Add some left padding to the title text.
-        QStyleOptionDockWidget customOption = *dwOption;
-        customOption.rect.setLeft(5);
+            // Add some left padding to the title text.
+            QStyleOptionDockWidget customOption = *dwOption;
+            customOption.rect.setLeft(titleMargin);
 
-        QProxyStyle::drawControl(element, &customOption, painter, widget);
-        return;
+            QProxyStyle::drawControl(element, &customOption, painter, widget);
+            return;
+        }
+        break;
+    case CE_ToolBoxTab:
+        // Draw the QToolBox title bar using a QTabBar frame.
+        const QStyleOptionToolBox *tbxOption;
+        if ((tbxOption = qstyleoption_cast<const QStyleOptionToolBox *>(option)))
+        {
+            QStyleOptionTab tabOption;
+            tabOption.rect = tbxOption->rect;
+            tabOption.state = tbxOption->state;
+            tabOption.palette = tbxOption->palette;
+            tabOption.fontMetrics = tbxOption->fontMetrics;
+            tabOption.text = tbxOption->text;
+            tabOption.cornerWidgets = QStyleOptionTab::NoCornerWidgets;
+            tabOption.position = QStyleOptionTab::OnlyOneTab;
+            tabOption.selectedPosition = QStyleOptionTab::NotAdjacent;
+            tabOption.shape = QTabBar::RoundedNorth;
+            tabOption.features = QStyleOptionTab::None;
+
+            QProxyStyle::drawControl(CE_TabBarTabShape, &tabOption, painter, widget);
+            QProxyStyle::drawControl(CE_TabBarTabLabel, &tabOption, painter, widget);
+            return;
+        }
+        break;
+    case CE_ItemViewItem:
+        // Check whether to draw selections using active state.
+        if (this->styleHint(SH_ItemView_ChangeHighlightOnFocus, option, widget) == 0) {
+            const QStyleOptionViewItem *itemOption;
+            if ((itemOption = qstyleoption_cast<const QStyleOptionViewItem *>(option)) &&
+                (itemOption->state & QStyle::State_Selected))
+            {
+                QStyleOptionViewItem customOption = *itemOption;
+                customOption.state |= QStyle::State_Active | QStyle::State_HasFocus;
+                QProxyStyle::drawControl(element, &customOption, painter, widget);
+                return;
+            }
+        }
+        break;
+    default:
+        break;
     }
 
     QProxyStyle::drawControl(element, option, painter, widget);
 }
 
+
 void AppStyle::drawPrimitive(QStyle::PrimitiveElement element,
     const QStyleOption *option, QPainter *painter, const QWidget *widget) const
 {
+    switch (element)
+    {
+    case PE_PanelItemViewRow:
+        // Check whether to draw selections using active state.
+        if (this->styleHint(SH_ItemView_ChangeHighlightOnFocus, option, widget) == 0) {
+            const QStyleOptionViewItem *itemOption;
+            if ((itemOption = qstyleoption_cast<const QStyleOptionViewItem *>(option)) &&
+                (itemOption->state & QStyle::State_Selected))
+            {
+                QStyleOptionViewItem customOption = *itemOption;
+                customOption.state |= QStyle::State_Active | QStyle::State_HasFocus;
+                QProxyStyle::drawPrimitive(element, &customOption, painter, widget);
+                return;
+            }
+        }
+        break;
+    default:
+        break;
+    }
+
     QProxyStyle::drawPrimitive(element, option, painter, widget);
 }
 
 int AppStyle::styleHint(StyleHint hint, const QStyleOption *option,
     const QWidget *widget, QStyleHintReturn *returnData) const
 {
-    return QProxyStyle::styleHint(hint, option, widget, returnData);
+    switch (hint)
+    {
+    case SH_Widget_Animation_Duration:
+        // Disable animations.
+        return 0;
+    case SH_ItemView_ChangeHighlightOnFocus:
+        // Keep QTreeView items highlighted when losing focus.
+        if (const QTreeView *treeView = qobject_cast<const QTreeView *>(widget))
+            return 0;
+        else
+            return 1;
+    default:
+        return QProxyStyle::styleHint(hint, option, widget, returnData);
+    }
 }
 
-QRect AppStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *option,
-    QStyle::SubControl sc, const QWidget *widget) const
-{
-    return QProxyStyle::subControlRect(cc, option, sc, widget);
-}
+//QRect AppStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *option,
+//    QStyle::SubControl sc, const QWidget *widget) const
+//{
+//    return QProxyStyle::subControlRect(cc, option, sc, widget);
+//}

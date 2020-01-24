@@ -1,3 +1,18 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
@@ -6,6 +21,8 @@
 #include "AnalysisWindow.h"
 #include "InputViewer.h"
 #include "LogWidget.h"
+#include "ProjectModel.h"
+#include "ProjectTreeView.h"
 #include "ScenarioProperties.h"
 #include "SourceGroupProperties.h"
 #include "SourceTable.h"
@@ -25,7 +42,10 @@ class QTextEdit;
 class QToolBar;
 class QTreeWidget;
 class QTreeWidgetItem;
+#ifdef Q_OS_WIN
 class QWinTaskbarButton;
+class QWinTaskbarProgress;
+#endif
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
@@ -33,28 +53,35 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
+    MainWindow();
 
 signals:
     void scenarioUpdated(Scenario *);
     void sourceGroupUpdated(SourceGroup *);
+    void selectAllClicked();
+    void selectNoneClicked();
+    void selectInverseClicked();
 
 private slots:
+    //void onCommandActivated(int commandId);
+    //void onCommandToggled(int commandId, bool checked);
+    //void onCurrentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
+    void onItemChanged(QTreeWidgetItem *item, int);
+    void contextMenuRequested(QPoint const& pos);
+    void onScenarioUpdated(Scenario *s);
+    void onSourceGroupUpdated(SourceGroup *s);
+
     void newScenario();
     void openProject();
     void saveProject();
     void closeProject();
     void exitApplication();
+    void deleteTab(int index);
     void validate();
     void runModel();
     void analyzeOutput();
     void showHelp();
     void about();
-    void contextMenuRequested(QPoint const& pos);
-    void handleItemChanged(QTreeWidgetItem *item, int);
-    void deleteTab(int index);
-    void onScenarioUpdated(Scenario *s);
-    void onSourceGroupUpdated(SourceGroup *s);
 
 private:
     void createActions();
@@ -92,7 +119,6 @@ protected:
     void dropEvent(QDropEvent *event) override;
 
 private:
-    QWinTaskbarButton *taskbarButton;
     QTabWidget *centralTabWidget;
     QMenu *fileMenu;
     QMenu *viewMenu;
@@ -102,10 +128,17 @@ private:
     QDockWidget *dwProjectTree;
     QDockWidget *dwMessages;
     QDockWidget *dwOutput;
+    ProjectTreeView *projectTreeView;
+    ProjectModel *projectModel;
     QTreeWidget *projectTree;
     LogWidget *lwMessages;
     LogWidget *lwOutput;
     AnalysisWindow *analysisWindow = nullptr;
+
+#ifdef Q_OS_WIN
+    QWinTaskbarButton *taskbarButton = nullptr;
+    QWinTaskbarProgress *taskbarProgress = nullptr;
+#endif
 
     // Scenario/SourceGroup Containers
     // TODO: implement ProjectModel.

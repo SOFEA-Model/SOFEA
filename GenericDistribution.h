@@ -1,3 +1,18 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #pragma once
 
 #ifdef _MSC_VER
@@ -249,10 +264,12 @@ namespace Detail
     >::type;
     */
 
-    // FIXME
+    // FIXME:
     // To workaround issue with boost::variant serialization in cereal, increase
     // MPL type limit (BOOST_MPL_LIMIT_LIST_SIZE) and define variant as usual.
     // https://github.com/USCiLab/cereal/issues/490
+
+    // FIXME: Use ID instead of .which() in serialization.
 
     using Variant = boost::variant<
         UniformReal,
@@ -324,14 +341,41 @@ using Constant                = Detail::Constant;
 
 } // namespace Distribution
 
-
 class GenericDistribution : public Distribution::Detail::Variant
 {
     using Base = Distribution::Detail::Variant;
 
 public:
     using Base::Base;
+
+    enum DistributionID {
+        ID_Constant = 0,
+        ID_UniformInt,
+        ID_UniformReal,
+        ID_Binomial,
+        ID_Geometric,
+        ID_NegativeBinomial,
+        ID_Poisson,
+        ID_Exponential,
+        ID_Gamma,
+        ID_Weibull,
+        ID_ExtremeValue,
+        ID_Beta,
+        ID_Laplace,
+        ID_Normal,
+        ID_Lognormal,
+        ID_ChiSquared,
+        ID_NCChiSquared,
+        ID_Cauchy,
+        ID_FisherF,
+        ID_StudentT,
+        ID_Discrete,
+        ID_PiecewiseConstant,
+        ID_PiecewiseLinear,
+        ID_Triangle
+    };
     
+    // Generate n samples. QVector used for Qwt support.
     template <typename Engine>
     QVector<double> sample(const Engine& rng, std::size_t const n) const
     {
@@ -348,4 +392,80 @@ public:
     }
     
     void pdf(const QVector<double>& x, QVector<double> &y) const;
+};
+
+struct GenericDistributionIDVisitor : public boost::static_visitor<GenericDistribution::DistributionID>
+{
+    GenericDistribution::DistributionID operator()(const Distribution::UniformReal&) {
+        return GenericDistribution::ID_UniformReal;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::UniformInt&) {
+        return GenericDistribution::ID_UniformInt;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::Binomial&) {
+        return GenericDistribution::ID_Binomial;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::Geometric&) {
+        return GenericDistribution::ID_Geometric;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::NegativeBinomial&) {
+        return GenericDistribution::ID_NegativeBinomial;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::Poisson&) {
+        return GenericDistribution::ID_Poisson;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::Exponential&) {
+        return GenericDistribution::ID_Exponential;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::Gamma&) {
+        return GenericDistribution::ID_Gamma;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::Weibull&) {
+        return GenericDistribution::ID_Weibull;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::ExtremeValue&) {
+        return GenericDistribution::ID_ExtremeValue;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::Beta&) {
+        return GenericDistribution::ID_Beta;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::Laplace&) {
+        return GenericDistribution::ID_Laplace;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::Normal&) {
+        return GenericDistribution::ID_Normal;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::Lognormal&) {
+        return GenericDistribution::ID_Lognormal;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::ChiSquared&) {
+        return GenericDistribution::ID_ChiSquared;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::NCChiSquared&) {
+        return GenericDistribution::ID_NCChiSquared;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::Cauchy&) {
+        return GenericDistribution::ID_Cauchy;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::FisherF&) {
+        return GenericDistribution::ID_FisherF;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::StudentT&) {
+        return GenericDistribution::ID_StudentT;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::Discrete&) {
+        return GenericDistribution::ID_Discrete;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::PiecewiseConstant&) {
+        return GenericDistribution::ID_PiecewiseConstant;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::PiecewiseLinear&) {
+        return GenericDistribution::ID_PiecewiseLinear;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::Triangle&) {
+        return GenericDistribution::ID_Triangle;
+    }
+    GenericDistribution::DistributionID operator()(const Distribution::Constant&) {
+        return GenericDistribution::ID_Constant;
+    }
 };

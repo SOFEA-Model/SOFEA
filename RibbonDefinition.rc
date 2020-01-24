@@ -1,0 +1,576 @@
+// ******************************************************************************
+// * This is an automatically generated file containing the ribbon resource for *
+// * your application.                                                          *
+// ******************************************************************************
+
+#include ".\RibbonDefinition.h"
+
+STRINGTABLE 
+BEGIN
+    IDC_NEWFILE_LabelTitle_RESID L"New Project" /* LabelTitle IDC_NEWFILE_LabelTitle_RESID: (null) */
+END
+
+IDC_NEWFILE_SmallImages_96__RESID    BITMAP    "res\\NewFile_16x.bmp" /* SmallImages IDC_NEWFILE_SmallImages_96__RESID: (null) */
+IDC_NEWFILE_SmallImages_120__RESID    BITMAP    "res\\NewFile_20x.bmp" /* SmallImages IDC_NEWFILE_SmallImages_120__RESID: (null) */
+IDC_NEWFILE_SmallImages_144__RESID    BITMAP    "res\\NewFile_24x.bmp" /* SmallImages IDC_NEWFILE_SmallImages_144__RESID: (null) */
+IDC_NEWFILE_SmallImages_192__RESID    BITMAP    "res\\NewFile_32x.bmp" /* SmallImages IDC_NEWFILE_SmallImages_192__RESID: (null) */
+IDC_NEWFILE_LargeImages_96__RESID    BITMAP    "res\\NewFile_32x.bmp" /* LargeImages IDC_NEWFILE_LargeImages_96__RESID: (null) */
+IDC_NEWFILE_LargeImages_120__RESID    BITMAP    "res\\NewFile_40x.bmp" /* LargeImages IDC_NEWFILE_LargeImages_120__RESID: (null) */
+IDC_NEWFILE_LargeImages_144__RESID    BITMAP    "res\\NewFile_48x.bmp" /* LargeImages IDC_NEWFILE_LargeImages_144__RESID: (null) */
+IDC_NEWFILE_LargeImages_192__RESID    BITMAP    "res\\NewFile_64x.bmp" /* LargeImages IDC_NEWFILE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_OPEN_LabelTitle_RESID L"Open Project" /* LabelTitle IDC_OPEN_LabelTitle_RESID: (null) */
+END
+
+IDC_OPEN_SmallImages_96__RESID    BITMAP    "res\\Open_16x.bmp" /* SmallImages IDC_OPEN_SmallImages_96__RESID: (null) */
+IDC_OPEN_SmallImages_120__RESID    BITMAP    "res\\Open_20x.bmp" /* SmallImages IDC_OPEN_SmallImages_120__RESID: (null) */
+IDC_OPEN_SmallImages_144__RESID    BITMAP    "res\\Open_24x.bmp" /* SmallImages IDC_OPEN_SmallImages_144__RESID: (null) */
+IDC_OPEN_SmallImages_192__RESID    BITMAP    "res\\Open_32x.bmp" /* SmallImages IDC_OPEN_SmallImages_192__RESID: (null) */
+IDC_OPEN_LargeImages_96__RESID    BITMAP    "res\\Open_32x.bmp" /* LargeImages IDC_OPEN_LargeImages_96__RESID: (null) */
+IDC_OPEN_LargeImages_120__RESID    BITMAP    "res\\Open_40x.bmp" /* LargeImages IDC_OPEN_LargeImages_120__RESID: (null) */
+IDC_OPEN_LargeImages_144__RESID    BITMAP    "res\\Open_48x.bmp" /* LargeImages IDC_OPEN_LargeImages_144__RESID: (null) */
+IDC_OPEN_LargeImages_192__RESID    BITMAP    "res\\Open_64x.bmp" /* LargeImages IDC_OPEN_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_OPENPROJECT_LabelTitle_RESID L"Open Project" /* LabelTitle IDC_OPENPROJECT_LabelTitle_RESID: (null) */
+END
+
+STRINGTABLE 
+BEGIN
+    IDC_OPENPROJECT_LabelDescription_RESID L"Open a project file from the local system or network share." /* LabelDescription IDC_OPENPROJECT_LabelDescription_RESID: (null) */
+END
+
+IDC_OPENPROJECT_SmallImages_96__RESID    BITMAP    "res\\OpenFile_16x.bmp" /* SmallImages IDC_OPENPROJECT_SmallImages_96__RESID: (null) */
+IDC_OPENPROJECT_SmallImages_120__RESID    BITMAP    "res\\OpenFile_20x.bmp" /* SmallImages IDC_OPENPROJECT_SmallImages_120__RESID: (null) */
+IDC_OPENPROJECT_SmallImages_144__RESID    BITMAP    "res\\OpenFile_24x.bmp" /* SmallImages IDC_OPENPROJECT_SmallImages_144__RESID: (null) */
+IDC_OPENPROJECT_SmallImages_192__RESID    BITMAP    "res\\OpenFile_32x.bmp" /* SmallImages IDC_OPENPROJECT_SmallImages_192__RESID: (null) */
+IDC_OPENPROJECT_LargeImages_96__RESID    BITMAP    "res\\OpenFile_32x.bmp" /* LargeImages IDC_OPENPROJECT_LargeImages_96__RESID: (null) */
+IDC_OPENPROJECT_LargeImages_120__RESID    BITMAP    "res\\OpenFile_40x.bmp" /* LargeImages IDC_OPENPROJECT_LargeImages_120__RESID: (null) */
+IDC_OPENPROJECT_LargeImages_144__RESID    BITMAP    "res\\OpenFile_48x.bmp" /* LargeImages IDC_OPENPROJECT_LargeImages_144__RESID: (null) */
+IDC_OPENPROJECT_LargeImages_192__RESID    BITMAP    "res\\OpenFile_64x.bmp" /* LargeImages IDC_OPENPROJECT_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_IMPORT_LabelTitle_RESID L"Import" /* LabelTitle IDC_IMPORT_LabelTitle_RESID: (null) */
+END
+
+IDC_IMPORT_SmallImages_96__RESID    BITMAP    "res\\Import_16x.bmp" /* SmallImages IDC_IMPORT_SmallImages_96__RESID: (null) */
+IDC_IMPORT_SmallImages_120__RESID    BITMAP    "res\\Import_20x.bmp" /* SmallImages IDC_IMPORT_SmallImages_120__RESID: (null) */
+IDC_IMPORT_SmallImages_144__RESID    BITMAP    "res\\Import_24x.bmp" /* SmallImages IDC_IMPORT_SmallImages_144__RESID: (null) */
+IDC_IMPORT_SmallImages_192__RESID    BITMAP    "res\\Import_32x.bmp" /* SmallImages IDC_IMPORT_SmallImages_192__RESID: (null) */
+IDC_IMPORT_LargeImages_96__RESID    BITMAP    "res\\Import_32x.bmp" /* LargeImages IDC_IMPORT_LargeImages_96__RESID: (null) */
+IDC_IMPORT_LargeImages_120__RESID    BITMAP    "res\\Import_40x.bmp" /* LargeImages IDC_IMPORT_LargeImages_120__RESID: (null) */
+IDC_IMPORT_LargeImages_144__RESID    BITMAP    "res\\Import_48x.bmp" /* LargeImages IDC_IMPORT_LargeImages_144__RESID: (null) */
+IDC_IMPORT_LargeImages_192__RESID    BITMAP    "res\\Import_64x.bmp" /* LargeImages IDC_IMPORT_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_IMPORTFILE_LabelTitle_RESID L"Import File" /* LabelTitle IDC_IMPORTFILE_LabelTitle_RESID: (null) */
+END
+
+IDC_IMPORTFILE_SmallImages_96__RESID    BITMAP    "res\\ImportFile_16x.bmp" /* SmallImages IDC_IMPORTFILE_SmallImages_96__RESID: (null) */
+IDC_IMPORTFILE_SmallImages_120__RESID    BITMAP    "res\\ImportFile_20x.bmp" /* SmallImages IDC_IMPORTFILE_SmallImages_120__RESID: (null) */
+IDC_IMPORTFILE_SmallImages_144__RESID    BITMAP    "res\\ImportFile_24x.bmp" /* SmallImages IDC_IMPORTFILE_SmallImages_144__RESID: (null) */
+IDC_IMPORTFILE_SmallImages_192__RESID    BITMAP    "res\\ImportFile_32x.bmp" /* SmallImages IDC_IMPORTFILE_SmallImages_192__RESID: (null) */
+IDC_IMPORTFILE_LargeImages_96__RESID    BITMAP    "res\\ImportFile_32x.bmp" /* LargeImages IDC_IMPORTFILE_LargeImages_96__RESID: (null) */
+IDC_IMPORTFILE_LargeImages_120__RESID    BITMAP    "res\\ImportFile_40x.bmp" /* LargeImages IDC_IMPORTFILE_LargeImages_120__RESID: (null) */
+IDC_IMPORTFILE_LargeImages_144__RESID    BITMAP    "res\\ImportFile_48x.bmp" /* LargeImages IDC_IMPORTFILE_LargeImages_144__RESID: (null) */
+IDC_IMPORTFILE_LargeImages_192__RESID    BITMAP    "res\\ImportFile_64x.bmp" /* LargeImages IDC_IMPORTFILE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_EXPORT_LabelTitle_RESID L"Export" /* LabelTitle IDC_EXPORT_LabelTitle_RESID: (null) */
+END
+
+IDC_EXPORT_SmallImages_96__RESID    BITMAP    "res\\Export_16x.bmp" /* SmallImages IDC_EXPORT_SmallImages_96__RESID: (null) */
+IDC_EXPORT_SmallImages_120__RESID    BITMAP    "res\\Export_20x.bmp" /* SmallImages IDC_EXPORT_SmallImages_120__RESID: (null) */
+IDC_EXPORT_SmallImages_144__RESID    BITMAP    "res\\Export_24x.bmp" /* SmallImages IDC_EXPORT_SmallImages_144__RESID: (null) */
+IDC_EXPORT_SmallImages_192__RESID    BITMAP    "res\\Export_32x.bmp" /* SmallImages IDC_EXPORT_SmallImages_192__RESID: (null) */
+IDC_EXPORT_LargeImages_96__RESID    BITMAP    "res\\Export_32x.bmp" /* LargeImages IDC_EXPORT_LargeImages_96__RESID: (null) */
+IDC_EXPORT_LargeImages_120__RESID    BITMAP    "res\\Export_40x.bmp" /* LargeImages IDC_EXPORT_LargeImages_120__RESID: (null) */
+IDC_EXPORT_LargeImages_144__RESID    BITMAP    "res\\Export_48x.bmp" /* LargeImages IDC_EXPORT_LargeImages_144__RESID: (null) */
+IDC_EXPORT_LargeImages_192__RESID    BITMAP    "res\\Export_64x.bmp" /* LargeImages IDC_EXPORT_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_EXPORTDATA_LabelTitle_RESID L"Export Data" /* LabelTitle IDC_EXPORTDATA_LabelTitle_RESID: (null) */
+END
+
+IDC_EXPORTDATA_SmallImages_96__RESID    BITMAP    "res\\ExportData_16x.bmp" /* SmallImages IDC_EXPORTDATA_SmallImages_96__RESID: (null) */
+IDC_EXPORTDATA_SmallImages_120__RESID    BITMAP    "res\\ExportData_20x.bmp" /* SmallImages IDC_EXPORTDATA_SmallImages_120__RESID: (null) */
+IDC_EXPORTDATA_SmallImages_144__RESID    BITMAP    "res\\ExportData_24x.bmp" /* SmallImages IDC_EXPORTDATA_SmallImages_144__RESID: (null) */
+IDC_EXPORTDATA_SmallImages_192__RESID    BITMAP    "res\\ExportData_32x.bmp" /* SmallImages IDC_EXPORTDATA_SmallImages_192__RESID: (null) */
+IDC_EXPORTDATA_LargeImages_96__RESID    BITMAP    "res\\ExportData_32x.bmp" /* LargeImages IDC_EXPORTDATA_LargeImages_96__RESID: (null) */
+IDC_EXPORTDATA_LargeImages_120__RESID    BITMAP    "res\\ExportData_40x.bmp" /* LargeImages IDC_EXPORTDATA_LargeImages_120__RESID: (null) */
+IDC_EXPORTDATA_LargeImages_144__RESID    BITMAP    "res\\ExportData_48x.bmp" /* LargeImages IDC_EXPORTDATA_LargeImages_144__RESID: (null) */
+IDC_EXPORTDATA_LargeImages_192__RESID    BITMAP    "res\\ExportData_64x.bmp" /* LargeImages IDC_EXPORTDATA_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_EXPORTFILE_LabelTitle_RESID L"Export File" /* LabelTitle IDC_EXPORTFILE_LabelTitle_RESID: (null) */
+END
+
+IDC_EXPORTFILE_SmallImages_96__RESID    BITMAP    "res\\ExportFile_16x.bmp" /* SmallImages IDC_EXPORTFILE_SmallImages_96__RESID: (null) */
+IDC_EXPORTFILE_SmallImages_120__RESID    BITMAP    "res\\ExportFile_20x.bmp" /* SmallImages IDC_EXPORTFILE_SmallImages_120__RESID: (null) */
+IDC_EXPORTFILE_SmallImages_144__RESID    BITMAP    "res\\ExportFile_24x.bmp" /* SmallImages IDC_EXPORTFILE_SmallImages_144__RESID: (null) */
+IDC_EXPORTFILE_SmallImages_192__RESID    BITMAP    "res\\ExportFile_32x.bmp" /* SmallImages IDC_EXPORTFILE_SmallImages_192__RESID: (null) */
+IDC_EXPORTFILE_LargeImages_96__RESID    BITMAP    "res\\ExportFile_32x.bmp" /* LargeImages IDC_EXPORTFILE_LargeImages_96__RESID: (null) */
+IDC_EXPORTFILE_LargeImages_120__RESID    BITMAP    "res\\ExportFile_40x.bmp" /* LargeImages IDC_EXPORTFILE_LargeImages_120__RESID: (null) */
+IDC_EXPORTFILE_LargeImages_144__RESID    BITMAP    "res\\ExportFile_48x.bmp" /* LargeImages IDC_EXPORTFILE_LargeImages_144__RESID: (null) */
+IDC_EXPORTFILE_LargeImages_192__RESID    BITMAP    "res\\ExportFile_64x.bmp" /* LargeImages IDC_EXPORTFILE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_EXPORTTOEXCEL_LabelTitle_RESID L"Export to Excel" /* LabelTitle IDC_EXPORTTOEXCEL_LabelTitle_RESID: (null) */
+END
+
+IDC_EXPORTTOEXCEL_SmallImages_96__RESID    BITMAP    "res\\ExportToExcel_16x.bmp" /* SmallImages IDC_EXPORTTOEXCEL_SmallImages_96__RESID: (null) */
+IDC_EXPORTTOEXCEL_SmallImages_120__RESID    BITMAP    "res\\ExportToExcel_20x.bmp" /* SmallImages IDC_EXPORTTOEXCEL_SmallImages_120__RESID: (null) */
+IDC_EXPORTTOEXCEL_SmallImages_144__RESID    BITMAP    "res\\ExportToExcel_24x.bmp" /* SmallImages IDC_EXPORTTOEXCEL_SmallImages_144__RESID: (null) */
+IDC_EXPORTTOEXCEL_SmallImages_192__RESID    BITMAP    "res\\ExportToExcel_32x.bmp" /* SmallImages IDC_EXPORTTOEXCEL_SmallImages_192__RESID: (null) */
+IDC_EXPORTTOEXCEL_LargeImages_96__RESID    BITMAP    "res\\ExportToExcel_32x.bmp" /* LargeImages IDC_EXPORTTOEXCEL_LargeImages_96__RESID: (null) */
+IDC_EXPORTTOEXCEL_LargeImages_120__RESID    BITMAP    "res\\ExportToExcel_40x.bmp" /* LargeImages IDC_EXPORTTOEXCEL_LargeImages_120__RESID: (null) */
+IDC_EXPORTTOEXCEL_LargeImages_144__RESID    BITMAP    "res\\ExportToExcel_48x.bmp" /* LargeImages IDC_EXPORTTOEXCEL_LargeImages_144__RESID: (null) */
+IDC_EXPORTTOEXCEL_LargeImages_192__RESID    BITMAP    "res\\ExportToExcel_64x.bmp" /* LargeImages IDC_EXPORTTOEXCEL_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_SAVE_LabelTitle_RESID L"Save Project" /* LabelTitle IDC_SAVE_LabelTitle_RESID: (null) */
+END
+
+IDC_SAVE_SmallImages_96__RESID    BITMAP    "res\\Save_16x.bmp" /* SmallImages IDC_SAVE_SmallImages_96__RESID: (null) */
+IDC_SAVE_SmallImages_120__RESID    BITMAP    "res\\Save_20x.bmp" /* SmallImages IDC_SAVE_SmallImages_120__RESID: (null) */
+IDC_SAVE_SmallImages_144__RESID    BITMAP    "res\\Save_24x.bmp" /* SmallImages IDC_SAVE_SmallImages_144__RESID: (null) */
+IDC_SAVE_SmallImages_192__RESID    BITMAP    "res\\Save_32x.bmp" /* SmallImages IDC_SAVE_SmallImages_192__RESID: (null) */
+IDC_SAVE_LargeImages_96__RESID    BITMAP    "res\\Save_32x.bmp" /* LargeImages IDC_SAVE_LargeImages_96__RESID: (null) */
+IDC_SAVE_LargeImages_120__RESID    BITMAP    "res\\Save_40x.bmp" /* LargeImages IDC_SAVE_LargeImages_120__RESID: (null) */
+IDC_SAVE_LargeImages_144__RESID    BITMAP    "res\\Save_48x.bmp" /* LargeImages IDC_SAVE_LargeImages_144__RESID: (null) */
+IDC_SAVE_LargeImages_192__RESID    BITMAP    "res\\Save_64x.bmp" /* LargeImages IDC_SAVE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_SAVEAS_LabelTitle_RESID L"Save Project As" /* LabelTitle IDC_SAVEAS_LabelTitle_RESID: (null) */
+END
+
+IDC_SAVEAS_SmallImages_96__RESID    BITMAP    "res\\SaveAs_16x.bmp" /* SmallImages IDC_SAVEAS_SmallImages_96__RESID: (null) */
+IDC_SAVEAS_SmallImages_120__RESID    BITMAP    "res\\SaveAs_20x.bmp" /* SmallImages IDC_SAVEAS_SmallImages_120__RESID: (null) */
+IDC_SAVEAS_SmallImages_144__RESID    BITMAP    "res\\SaveAs_24x.bmp" /* SmallImages IDC_SAVEAS_SmallImages_144__RESID: (null) */
+IDC_SAVEAS_SmallImages_192__RESID    BITMAP    "res\\SaveAs_32x.bmp" /* SmallImages IDC_SAVEAS_SmallImages_192__RESID: (null) */
+IDC_SAVEAS_LargeImages_96__RESID    BITMAP    "res\\SaveAs_32x.bmp" /* LargeImages IDC_SAVEAS_LargeImages_96__RESID: (null) */
+IDC_SAVEAS_LargeImages_120__RESID    BITMAP    "res\\SaveAs_40x.bmp" /* LargeImages IDC_SAVEAS_LargeImages_120__RESID: (null) */
+IDC_SAVEAS_LargeImages_144__RESID    BITMAP    "res\\SaveAs_48x.bmp" /* LargeImages IDC_SAVEAS_LargeImages_144__RESID: (null) */
+IDC_SAVEAS_LargeImages_192__RESID    BITMAP    "res\\SaveAs_64x.bmp" /* LargeImages IDC_SAVEAS_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_TAB_HOME_LabelTitle_RESID L"Home" /* LabelTitle IDC_TAB_HOME_LabelTitle_RESID: (null) */
+END
+
+STRINGTABLE 
+BEGIN
+    IDC_GROUP_EDIT_LabelTitle_RESID L"Edit" /* LabelTitle IDC_GROUP_EDIT_LabelTitle_RESID: (null) */
+END
+
+STRINGTABLE 
+BEGIN
+    IDC_NEW_LabelTitle_RESID L"New" /* LabelTitle IDC_NEW_LabelTitle_RESID: (null) */
+END
+
+IDC_NEW_SmallImages_96__RESID    BITMAP    "res\\Create_16x.bmp" /* SmallImages IDC_NEW_SmallImages_96__RESID: (null) */
+IDC_NEW_SmallImages_120__RESID    BITMAP    "res\\Create_20x.bmp" /* SmallImages IDC_NEW_SmallImages_120__RESID: (null) */
+IDC_NEW_SmallImages_144__RESID    BITMAP    "res\\Create_24x.bmp" /* SmallImages IDC_NEW_SmallImages_144__RESID: (null) */
+IDC_NEW_SmallImages_192__RESID    BITMAP    "res\\Create_32x.bmp" /* SmallImages IDC_NEW_SmallImages_192__RESID: (null) */
+IDC_NEW_LargeImages_96__RESID    BITMAP    "res\\Create_32x.bmp" /* LargeImages IDC_NEW_LargeImages_96__RESID: (null) */
+IDC_NEW_LargeImages_120__RESID    BITMAP    "res\\Create_40x.bmp" /* LargeImages IDC_NEW_LargeImages_120__RESID: (null) */
+IDC_NEW_LargeImages_144__RESID    BITMAP    "res\\Create_48x.bmp" /* LargeImages IDC_NEW_LargeImages_144__RESID: (null) */
+IDC_NEW_LargeImages_192__RESID    BITMAP    "res\\Create_64x.bmp" /* LargeImages IDC_NEW_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_PROPERTIES_LabelTitle_RESID L"Properties" /* LabelTitle IDC_PROPERTIES_LabelTitle_RESID: (null) */
+END
+
+IDC_PROPERTIES_SmallImages_96__RESID    BITMAP    "res\\Settings_16x.bmp" /* SmallImages IDC_PROPERTIES_SmallImages_96__RESID: (null) */
+IDC_PROPERTIES_SmallImages_120__RESID    BITMAP    "res\\Settings_20x.bmp" /* SmallImages IDC_PROPERTIES_SmallImages_120__RESID: (null) */
+IDC_PROPERTIES_SmallImages_144__RESID    BITMAP    "res\\Settings_24x.bmp" /* SmallImages IDC_PROPERTIES_SmallImages_144__RESID: (null) */
+IDC_PROPERTIES_SmallImages_192__RESID    BITMAP    "res\\Settings_32x.bmp" /* SmallImages IDC_PROPERTIES_SmallImages_192__RESID: (null) */
+IDC_PROPERTIES_LargeImages_96__RESID    BITMAP    "res\\Settings_32x.bmp" /* LargeImages IDC_PROPERTIES_LargeImages_96__RESID: (null) */
+IDC_PROPERTIES_LargeImages_120__RESID    BITMAP    "res\\Settings_40x.bmp" /* LargeImages IDC_PROPERTIES_LargeImages_120__RESID: (null) */
+IDC_PROPERTIES_LargeImages_144__RESID    BITMAP    "res\\Settings_48x.bmp" /* LargeImages IDC_PROPERTIES_LargeImages_144__RESID: (null) */
+IDC_PROPERTIES_LargeImages_192__RESID    BITMAP    "res\\Settings_64x.bmp" /* LargeImages IDC_PROPERTIES_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_CLONE_LabelTitle_RESID L"Clone" /* LabelTitle IDC_CLONE_LabelTitle_RESID: (null) */
+END
+
+IDC_CLONE_SmallImages_96__RESID    BITMAP    "res\\CopyItem_16x.bmp" /* SmallImages IDC_CLONE_SmallImages_96__RESID: (null) */
+IDC_CLONE_SmallImages_120__RESID    BITMAP    "res\\CopyItem_20x.bmp" /* SmallImages IDC_CLONE_SmallImages_120__RESID: (null) */
+IDC_CLONE_SmallImages_144__RESID    BITMAP    "res\\CopyItem_24x.bmp" /* SmallImages IDC_CLONE_SmallImages_144__RESID: (null) */
+IDC_CLONE_SmallImages_192__RESID    BITMAP    "res\\CopyItem_32x.bmp" /* SmallImages IDC_CLONE_SmallImages_192__RESID: (null) */
+IDC_CLONE_LargeImages_96__RESID    BITMAP    "res\\CopyItem_32x.bmp" /* LargeImages IDC_CLONE_LargeImages_96__RESID: (null) */
+IDC_CLONE_LargeImages_120__RESID    BITMAP    "res\\CopyItem_40x.bmp" /* LargeImages IDC_CLONE_LargeImages_120__RESID: (null) */
+IDC_CLONE_LargeImages_144__RESID    BITMAP    "res\\CopyItem_48x.bmp" /* LargeImages IDC_CLONE_LargeImages_144__RESID: (null) */
+IDC_CLONE_LargeImages_192__RESID    BITMAP    "res\\CopyItem_64x.bmp" /* LargeImages IDC_CLONE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_RENAME_LabelTitle_RESID L"Rename" /* LabelTitle IDC_RENAME_LabelTitle_RESID: (null) */
+END
+
+IDC_RENAME_SmallImages_96__RESID    BITMAP    "res\\Rename_16x.bmp" /* SmallImages IDC_RENAME_SmallImages_96__RESID: (null) */
+IDC_RENAME_SmallImages_120__RESID    BITMAP    "res\\Rename_20x.bmp" /* SmallImages IDC_RENAME_SmallImages_120__RESID: (null) */
+IDC_RENAME_SmallImages_144__RESID    BITMAP    "res\\Rename_24x.bmp" /* SmallImages IDC_RENAME_SmallImages_144__RESID: (null) */
+IDC_RENAME_SmallImages_192__RESID    BITMAP    "res\\Rename_32x.bmp" /* SmallImages IDC_RENAME_SmallImages_192__RESID: (null) */
+IDC_RENAME_LargeImages_96__RESID    BITMAP    "res\\Rename_32x.bmp" /* LargeImages IDC_RENAME_LargeImages_96__RESID: (null) */
+IDC_RENAME_LargeImages_120__RESID    BITMAP    "res\\Rename_40x.bmp" /* LargeImages IDC_RENAME_LargeImages_120__RESID: (null) */
+IDC_RENAME_LargeImages_144__RESID    BITMAP    "res\\Rename_48x.bmp" /* LargeImages IDC_RENAME_LargeImages_144__RESID: (null) */
+IDC_RENAME_LargeImages_192__RESID    BITMAP    "res\\Rename_64x.bmp" /* LargeImages IDC_RENAME_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_REMOVE_LabelTitle_RESID L"Remove" /* LabelTitle IDC_REMOVE_LabelTitle_RESID: (null) */
+END
+
+IDC_REMOVE_SmallImages_96__RESID    BITMAP    "res\\Remove_16x.bmp" /* SmallImages IDC_REMOVE_SmallImages_96__RESID: (null) */
+IDC_REMOVE_SmallImages_120__RESID    BITMAP    "res\\Remove_20x.bmp" /* SmallImages IDC_REMOVE_SmallImages_120__RESID: (null) */
+IDC_REMOVE_SmallImages_144__RESID    BITMAP    "res\\Remove_24x.bmp" /* SmallImages IDC_REMOVE_SmallImages_144__RESID: (null) */
+IDC_REMOVE_SmallImages_192__RESID    BITMAP    "res\\Remove_32x.bmp" /* SmallImages IDC_REMOVE_SmallImages_192__RESID: (null) */
+IDC_REMOVE_LargeImages_96__RESID    BITMAP    "res\\Remove_32x.bmp" /* LargeImages IDC_REMOVE_LargeImages_96__RESID: (null) */
+IDC_REMOVE_LargeImages_120__RESID    BITMAP    "res\\Remove_40x.bmp" /* LargeImages IDC_REMOVE_LargeImages_120__RESID: (null) */
+IDC_REMOVE_LargeImages_144__RESID    BITMAP    "res\\Remove_48x.bmp" /* LargeImages IDC_REMOVE_LargeImages_144__RESID: (null) */
+IDC_REMOVE_LargeImages_192__RESID    BITMAP    "res\\Remove_64x.bmp" /* LargeImages IDC_REMOVE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_GROUP_VIEWS_LabelTitle_RESID L"Views" /* LabelTitle IDC_GROUP_VIEWS_LabelTitle_RESID: (null) */
+END
+
+STRINGTABLE 
+BEGIN
+    IDC_INPUTFILE_LabelTitle_RESID L"Input File" /* LabelTitle IDC_INPUTFILE_LabelTitle_RESID: (null) */
+END
+
+IDC_INPUTFILE_SmallImages_96__RESID    BITMAP    "res\\ScriptPreview_16x.bmp" /* SmallImages IDC_INPUTFILE_SmallImages_96__RESID: (null) */
+IDC_INPUTFILE_SmallImages_120__RESID    BITMAP    "res\\ScriptPreview_20x.bmp" /* SmallImages IDC_INPUTFILE_SmallImages_120__RESID: (null) */
+IDC_INPUTFILE_SmallImages_144__RESID    BITMAP    "res\\ScriptPreview_24x.bmp" /* SmallImages IDC_INPUTFILE_SmallImages_144__RESID: (null) */
+IDC_INPUTFILE_SmallImages_192__RESID    BITMAP    "res\\ScriptPreview_32x.bmp" /* SmallImages IDC_INPUTFILE_SmallImages_192__RESID: (null) */
+IDC_INPUTFILE_LargeImages_96__RESID    BITMAP    "res\\ScriptPreview_32x.bmp" /* LargeImages IDC_INPUTFILE_LargeImages_96__RESID: (null) */
+IDC_INPUTFILE_LargeImages_120__RESID    BITMAP    "res\\ScriptPreview_40x.bmp" /* LargeImages IDC_INPUTFILE_LargeImages_120__RESID: (null) */
+IDC_INPUTFILE_LargeImages_144__RESID    BITMAP    "res\\ScriptPreview_48x.bmp" /* LargeImages IDC_INPUTFILE_LargeImages_144__RESID: (null) */
+IDC_INPUTFILE_LargeImages_192__RESID    BITMAP    "res\\ScriptPreview_64x.bmp" /* LargeImages IDC_INPUTFILE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_SOURCETABLE_LabelTitle_RESID L"Source Table" /* LabelTitle IDC_SOURCETABLE_LabelTitle_RESID: (null) */
+END
+
+IDC_SOURCETABLE_SmallImages_96__RESID    BITMAP    "res\\Table_16x.bmp" /* SmallImages IDC_SOURCETABLE_SmallImages_96__RESID: (null) */
+IDC_SOURCETABLE_SmallImages_120__RESID    BITMAP    "res\\Table_20x.bmp" /* SmallImages IDC_SOURCETABLE_SmallImages_120__RESID: (null) */
+IDC_SOURCETABLE_SmallImages_144__RESID    BITMAP    "res\\Table_24x.bmp" /* SmallImages IDC_SOURCETABLE_SmallImages_144__RESID: (null) */
+IDC_SOURCETABLE_SmallImages_192__RESID    BITMAP    "res\\Table_32x.bmp" /* SmallImages IDC_SOURCETABLE_SmallImages_192__RESID: (null) */
+IDC_SOURCETABLE_LargeImages_96__RESID    BITMAP    "res\\Table_32x.bmp" /* LargeImages IDC_SOURCETABLE_LargeImages_96__RESID: (null) */
+IDC_SOURCETABLE_LargeImages_120__RESID    BITMAP    "res\\Table_40x.bmp" /* LargeImages IDC_SOURCETABLE_LargeImages_120__RESID: (null) */
+IDC_SOURCETABLE_LargeImages_144__RESID    BITMAP    "res\\Table_48x.bmp" /* LargeImages IDC_SOURCETABLE_LargeImages_144__RESID: (null) */
+IDC_SOURCETABLE_LargeImages_192__RESID    BITMAP    "res\\Table_64x.bmp" /* LargeImages IDC_SOURCETABLE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_RECEPTOREDITOR_LabelTitle_RESID L"Receptor Editor" /* LabelTitle IDC_RECEPTOREDITOR_LabelTitle_RESID: (null) */
+END
+
+IDC_RECEPTOREDITOR_SmallImages_96__RESID    BITMAP    "res\\EditorZone_16x.bmp" /* SmallImages IDC_RECEPTOREDITOR_SmallImages_96__RESID: (null) */
+IDC_RECEPTOREDITOR_SmallImages_120__RESID    BITMAP    "res\\EditorZone_20x.bmp" /* SmallImages IDC_RECEPTOREDITOR_SmallImages_120__RESID: (null) */
+IDC_RECEPTOREDITOR_SmallImages_144__RESID    BITMAP    "res\\EditorZone_24x.bmp" /* SmallImages IDC_RECEPTOREDITOR_SmallImages_144__RESID: (null) */
+IDC_RECEPTOREDITOR_SmallImages_192__RESID    BITMAP    "res\\EditorZone_32x.bmp" /* SmallImages IDC_RECEPTOREDITOR_SmallImages_192__RESID: (null) */
+IDC_RECEPTOREDITOR_LargeImages_96__RESID    BITMAP    "res\\EditorZone_32x.bmp" /* LargeImages IDC_RECEPTOREDITOR_LargeImages_96__RESID: (null) */
+IDC_RECEPTOREDITOR_LargeImages_120__RESID    BITMAP    "res\\EditorZone_40x.bmp" /* LargeImages IDC_RECEPTOREDITOR_LargeImages_120__RESID: (null) */
+IDC_RECEPTOREDITOR_LargeImages_144__RESID    BITMAP    "res\\EditorZone_48x.bmp" /* LargeImages IDC_RECEPTOREDITOR_LargeImages_144__RESID: (null) */
+IDC_RECEPTOREDITOR_LargeImages_192__RESID    BITMAP    "res\\EditorZone_64x.bmp" /* LargeImages IDC_RECEPTOREDITOR_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_WINDROSE_LabelTitle_RESID L"Wind Rose" /* LabelTitle IDC_WINDROSE_LabelTitle_RESID: (null) */
+END
+
+IDC_WINDROSE_LargeImages_96__RESID    BITMAP    "res\\WindRose_32x.bmp" /* LargeImages IDC_WINDROSE_LargeImages_96__RESID: (null) */
+IDC_WINDROSE_LargeImages_120__RESID    BITMAP    "res\\WindRose_40x.bmp" /* LargeImages IDC_WINDROSE_LargeImages_120__RESID: (null) */
+IDC_WINDROSE_LargeImages_144__RESID    BITMAP    "res\\WindRose_48x.bmp" /* LargeImages IDC_WINDROSE_LargeImages_144__RESID: (null) */
+IDC_WINDROSE_LargeImages_192__RESID    BITMAP    "res\\WindRose_64x.bmp" /* LargeImages IDC_WINDROSE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_GROUP_SHOW_LabelTitle_RESID L"Show" /* LabelTitle IDC_GROUP_SHOW_LabelTitle_RESID: (null) */
+END
+
+STRINGTABLE 
+BEGIN
+    IDC_SHOWPROJECTBROWSER_LabelTitle_RESID L"Project Browser" /* LabelTitle IDC_SHOWPROJECTBROWSER_LabelTitle_RESID: (null) */
+END
+
+STRINGTABLE 
+BEGIN
+    IDC_SHOWVALIDATION_LabelTitle_RESID L"Validation" /* LabelTitle IDC_SHOWVALIDATION_LabelTitle_RESID: (null) */
+END
+
+STRINGTABLE 
+BEGIN
+    IDC_SHOWMODELOUTPUT_LabelTitle_RESID L"Model Output" /* LabelTitle IDC_SHOWMODELOUTPUT_LabelTitle_RESID: (null) */
+END
+
+STRINGTABLE 
+BEGIN
+    IDC_GROUP_MODEL_LabelTitle_RESID L"Model" /* LabelTitle IDC_GROUP_MODEL_LabelTitle_RESID: (null) */
+END
+
+STRINGTABLE 
+BEGIN
+    IDC_VALIDATE_LabelTitle_RESID L"Validate" /* LabelTitle IDC_VALIDATE_LabelTitle_RESID: (null) */
+END
+
+IDC_VALIDATE_SmallImages_96__RESID    BITMAP    "res\\Checkmark_16x.bmp" /* SmallImages IDC_VALIDATE_SmallImages_96__RESID: (null) */
+IDC_VALIDATE_SmallImages_120__RESID    BITMAP    "res\\Checkmark_20x.bmp" /* SmallImages IDC_VALIDATE_SmallImages_120__RESID: (null) */
+IDC_VALIDATE_SmallImages_144__RESID    BITMAP    "res\\Checkmark_24x.bmp" /* SmallImages IDC_VALIDATE_SmallImages_144__RESID: (null) */
+IDC_VALIDATE_SmallImages_192__RESID    BITMAP    "res\\Checkmark_32x.bmp" /* SmallImages IDC_VALIDATE_SmallImages_192__RESID: (null) */
+IDC_VALIDATE_LargeImages_96__RESID    BITMAP    "res\\Checkmark_32x.bmp" /* LargeImages IDC_VALIDATE_LargeImages_96__RESID: (null) */
+IDC_VALIDATE_LargeImages_120__RESID    BITMAP    "res\\Checkmark_40x.bmp" /* LargeImages IDC_VALIDATE_LargeImages_120__RESID: (null) */
+IDC_VALIDATE_LargeImages_144__RESID    BITMAP    "res\\Checkmark_48x.bmp" /* LargeImages IDC_VALIDATE_LargeImages_144__RESID: (null) */
+IDC_VALIDATE_LargeImages_192__RESID    BITMAP    "res\\Checkmark_64x.bmp" /* LargeImages IDC_VALIDATE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_RUN_LabelTitle_RESID L"Run" /* LabelTitle IDC_RUN_LabelTitle_RESID: (null) */
+END
+
+IDC_RUN_SmallImages_96__RESID    BITMAP    "res\\Run_16x.bmp" /* SmallImages IDC_RUN_SmallImages_96__RESID: (null) */
+IDC_RUN_SmallImages_120__RESID    BITMAP    "res\\Run_20x.bmp" /* SmallImages IDC_RUN_SmallImages_120__RESID: (null) */
+IDC_RUN_SmallImages_144__RESID    BITMAP    "res\\Run_24x.bmp" /* SmallImages IDC_RUN_SmallImages_144__RESID: (null) */
+IDC_RUN_SmallImages_192__RESID    BITMAP    "res\\Run_32x.bmp" /* SmallImages IDC_RUN_SmallImages_192__RESID: (null) */
+IDC_RUN_LargeImages_96__RESID    BITMAP    "res\\Run_32x.bmp" /* LargeImages IDC_RUN_LargeImages_96__RESID: (null) */
+IDC_RUN_LargeImages_120__RESID    BITMAP    "res\\Run_40x.bmp" /* LargeImages IDC_RUN_LargeImages_120__RESID: (null) */
+IDC_RUN_LargeImages_144__RESID    BITMAP    "res\\Run_48x.bmp" /* LargeImages IDC_RUN_LargeImages_144__RESID: (null) */
+IDC_RUN_LargeImages_192__RESID    BITMAP    "res\\Run_64x.bmp" /* LargeImages IDC_RUN_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_ANALYZE_LabelTitle_RESID L"Analyze" /* LabelTitle IDC_ANALYZE_LabelTitle_RESID: (null) */
+END
+
+IDC_ANALYZE_SmallImages_96__RESID    BITMAP    "res\\Measure_16x.bmp" /* SmallImages IDC_ANALYZE_SmallImages_96__RESID: (null) */
+IDC_ANALYZE_SmallImages_120__RESID    BITMAP    "res\\Measure_20x.bmp" /* SmallImages IDC_ANALYZE_SmallImages_120__RESID: (null) */
+IDC_ANALYZE_SmallImages_144__RESID    BITMAP    "res\\Measure_24x.bmp" /* SmallImages IDC_ANALYZE_SmallImages_144__RESID: (null) */
+IDC_ANALYZE_SmallImages_192__RESID    BITMAP    "res\\Measure_32x.bmp" /* SmallImages IDC_ANALYZE_SmallImages_192__RESID: (null) */
+IDC_ANALYZE_LargeImages_96__RESID    BITMAP    "res\\Measure_32x.bmp" /* LargeImages IDC_ANALYZE_LargeImages_96__RESID: (null) */
+IDC_ANALYZE_LargeImages_120__RESID    BITMAP    "res\\Measure_40x.bmp" /* LargeImages IDC_ANALYZE_LargeImages_120__RESID: (null) */
+IDC_ANALYZE_LargeImages_144__RESID    BITMAP    "res\\Measure_48x.bmp" /* LargeImages IDC_ANALYZE_LargeImages_144__RESID: (null) */
+IDC_ANALYZE_LargeImages_192__RESID    BITMAP    "res\\Measure_64x.bmp" /* LargeImages IDC_ANALYZE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_GENERATEFILE_LabelTitle_RESID L"Generate File" /* LabelTitle IDC_GENERATEFILE_LabelTitle_RESID: (null) */
+END
+
+IDC_GENERATEFILE_SmallImages_96__RESID    BITMAP    "res\\GenerateFile_16x.bmp" /* SmallImages IDC_GENERATEFILE_SmallImages_96__RESID: (null) */
+IDC_GENERATEFILE_SmallImages_120__RESID    BITMAP    "res\\GenerateFile_20x.bmp" /* SmallImages IDC_GENERATEFILE_SmallImages_120__RESID: (null) */
+IDC_GENERATEFILE_SmallImages_144__RESID    BITMAP    "res\\GenerateFile_24x.bmp" /* SmallImages IDC_GENERATEFILE_SmallImages_144__RESID: (null) */
+IDC_GENERATEFILE_SmallImages_192__RESID    BITMAP    "res\\GenerateFile_32x.bmp" /* SmallImages IDC_GENERATEFILE_SmallImages_192__RESID: (null) */
+IDC_GENERATEFILE_LargeImages_96__RESID    BITMAP    "res\\GenerateFile_32x.bmp" /* LargeImages IDC_GENERATEFILE_LargeImages_96__RESID: (null) */
+IDC_GENERATEFILE_LargeImages_120__RESID    BITMAP    "res\\GenerateFile_40x.bmp" /* LargeImages IDC_GENERATEFILE_LargeImages_120__RESID: (null) */
+IDC_GENERATEFILE_LargeImages_144__RESID    BITMAP    "res\\GenerateFile_48x.bmp" /* LargeImages IDC_GENERATEFILE_LargeImages_144__RESID: (null) */
+IDC_GENERATEFILE_LargeImages_192__RESID    BITMAP    "res\\GenerateFile_64x.bmp" /* LargeImages IDC_GENERATEFILE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_GENERATETABLE_LabelTitle_RESID L"Generate Table" /* LabelTitle IDC_GENERATETABLE_LabelTitle_RESID: (null) */
+END
+
+IDC_GENERATETABLE_SmallImages_96__RESID    BITMAP    "res\\GenerateTable_16x.bmp" /* SmallImages IDC_GENERATETABLE_SmallImages_96__RESID: (null) */
+IDC_GENERATETABLE_SmallImages_120__RESID    BITMAP    "res\\GenerateTable_20x.bmp" /* SmallImages IDC_GENERATETABLE_SmallImages_120__RESID: (null) */
+IDC_GENERATETABLE_SmallImages_144__RESID    BITMAP    "res\\GenerateTable_24x.bmp" /* SmallImages IDC_GENERATETABLE_SmallImages_144__RESID: (null) */
+IDC_GENERATETABLE_SmallImages_192__RESID    BITMAP    "res\\GenerateTable_32x.bmp" /* SmallImages IDC_GENERATETABLE_SmallImages_192__RESID: (null) */
+IDC_GENERATETABLE_LargeImages_96__RESID    BITMAP    "res\\GenerateTable_32x.bmp" /* LargeImages IDC_GENERATETABLE_LargeImages_96__RESID: (null) */
+IDC_GENERATETABLE_LargeImages_120__RESID    BITMAP    "res\\GenerateTable_40x.bmp" /* LargeImages IDC_GENERATETABLE_LargeImages_120__RESID: (null) */
+IDC_GENERATETABLE_LargeImages_144__RESID    BITMAP    "res\\GenerateTable_48x.bmp" /* LargeImages IDC_GENERATETABLE_LargeImages_144__RESID: (null) */
+IDC_GENERATETABLE_LargeImages_192__RESID    BITMAP    "res\\GenerateTable_64x.bmp" /* LargeImages IDC_GENERATETABLE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_ADDRECEPTORNODES_LabelTitle_RESID L"Discrete" /* LabelTitle IDC_ADDRECEPTORNODES_LabelTitle_RESID: (null) */
+END
+
+IDC_ADDRECEPTORNODES_SmallImages_96__RESID    BITMAP    "res\\ReceptorNodes_16x.bmp" /* SmallImages IDC_ADDRECEPTORNODES_SmallImages_96__RESID: (null) */
+IDC_ADDRECEPTORNODES_SmallImages_120__RESID    BITMAP    "res\\ReceptorNodes_20x.bmp" /* SmallImages IDC_ADDRECEPTORNODES_SmallImages_120__RESID: (null) */
+IDC_ADDRECEPTORNODES_SmallImages_144__RESID    BITMAP    "res\\ReceptorNodes_24x.bmp" /* SmallImages IDC_ADDRECEPTORNODES_SmallImages_144__RESID: (null) */
+IDC_ADDRECEPTORNODES_SmallImages_192__RESID    BITMAP    "res\\ReceptorNodes_32x.bmp" /* SmallImages IDC_ADDRECEPTORNODES_SmallImages_192__RESID: (null) */
+IDC_ADDRECEPTORNODES_LargeImages_96__RESID    BITMAP    "res\\ReceptorNodes_32x.bmp" /* LargeImages IDC_ADDRECEPTORNODES_LargeImages_96__RESID: (null) */
+IDC_ADDRECEPTORNODES_LargeImages_120__RESID    BITMAP    "res\\ReceptorNodes_40x.bmp" /* LargeImages IDC_ADDRECEPTORNODES_LargeImages_120__RESID: (null) */
+IDC_ADDRECEPTORNODES_LargeImages_144__RESID    BITMAP    "res\\ReceptorNodes_48x.bmp" /* LargeImages IDC_ADDRECEPTORNODES_LargeImages_144__RESID: (null) */
+IDC_ADDRECEPTORNODES_LargeImages_192__RESID    BITMAP    "res\\ReceptorNodes_64x.bmp" /* LargeImages IDC_ADDRECEPTORNODES_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_ADDRECEPTORRING_LabelTitle_RESID L"Ring" /* LabelTitle IDC_ADDRECEPTORRING_LabelTitle_RESID: (null) */
+END
+
+IDC_ADDRECEPTORRING_SmallImages_96__RESID    BITMAP    "res\\ReceptorRing_16x.bmp" /* SmallImages IDC_ADDRECEPTORRING_SmallImages_96__RESID: (null) */
+IDC_ADDRECEPTORRING_SmallImages_120__RESID    BITMAP    "res\\ReceptorRing_20x.bmp" /* SmallImages IDC_ADDRECEPTORRING_SmallImages_120__RESID: (null) */
+IDC_ADDRECEPTORRING_SmallImages_144__RESID    BITMAP    "res\\ReceptorRing_24x.bmp" /* SmallImages IDC_ADDRECEPTORRING_SmallImages_144__RESID: (null) */
+IDC_ADDRECEPTORRING_SmallImages_192__RESID    BITMAP    "res\\ReceptorRing_32x.bmp" /* SmallImages IDC_ADDRECEPTORRING_SmallImages_192__RESID: (null) */
+IDC_ADDRECEPTORRING_LargeImages_96__RESID    BITMAP    "res\\ReceptorRing_32x.bmp" /* LargeImages IDC_ADDRECEPTORRING_LargeImages_96__RESID: (null) */
+IDC_ADDRECEPTORRING_LargeImages_120__RESID    BITMAP    "res\\ReceptorRing_40x.bmp" /* LargeImages IDC_ADDRECEPTORRING_LargeImages_120__RESID: (null) */
+IDC_ADDRECEPTORRING_LargeImages_144__RESID    BITMAP    "res\\ReceptorRing_48x.bmp" /* LargeImages IDC_ADDRECEPTORRING_LargeImages_144__RESID: (null) */
+IDC_ADDRECEPTORRING_LargeImages_192__RESID    BITMAP    "res\\ReceptorRing_64x.bmp" /* LargeImages IDC_ADDRECEPTORRING_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_ADDRECEPTORGRID_LabelTitle_RESID L"Grid" /* LabelTitle IDC_ADDRECEPTORGRID_LabelTitle_RESID: (null) */
+END
+
+IDC_ADDRECEPTORGRID_SmallImages_96__RESID    BITMAP    "res\\ReceptorGrid_16x.bmp" /* SmallImages IDC_ADDRECEPTORGRID_SmallImages_96__RESID: (null) */
+IDC_ADDRECEPTORGRID_SmallImages_120__RESID    BITMAP    "res\\ReceptorGrid_20x.bmp" /* SmallImages IDC_ADDRECEPTORGRID_SmallImages_120__RESID: (null) */
+IDC_ADDRECEPTORGRID_SmallImages_144__RESID    BITMAP    "res\\ReceptorGrid_24x.bmp" /* SmallImages IDC_ADDRECEPTORGRID_SmallImages_144__RESID: (null) */
+IDC_ADDRECEPTORGRID_SmallImages_192__RESID    BITMAP    "res\\ReceptorGrid_32x.bmp" /* SmallImages IDC_ADDRECEPTORGRID_SmallImages_192__RESID: (null) */
+IDC_ADDRECEPTORGRID_LargeImages_96__RESID    BITMAP    "res\\ReceptorGrid_32x.bmp" /* LargeImages IDC_ADDRECEPTORGRID_LargeImages_96__RESID: (null) */
+IDC_ADDRECEPTORGRID_LargeImages_120__RESID    BITMAP    "res\\ReceptorGrid_40x.bmp" /* LargeImages IDC_ADDRECEPTORGRID_LargeImages_120__RESID: (null) */
+IDC_ADDRECEPTORGRID_LargeImages_144__RESID    BITMAP    "res\\ReceptorGrid_48x.bmp" /* LargeImages IDC_ADDRECEPTORGRID_LargeImages_144__RESID: (null) */
+IDC_ADDRECEPTORGRID_LargeImages_192__RESID    BITMAP    "res\\ReceptorGrid_64x.bmp" /* LargeImages IDC_ADDRECEPTORGRID_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_TABGROUP_SOURCETOOLS_LabelTitle_RESID L"Source Tools" /* LabelTitle IDC_TABGROUP_SOURCETOOLS_LabelTitle_RESID: (null) */
+END
+
+STRINGTABLE 
+BEGIN
+    IDC_TAB_SOURCETOOLS_LabelTitle_RESID L"Manage" /* LabelTitle IDC_TAB_SOURCETOOLS_LabelTitle_RESID: (null) */
+END
+
+STRINGTABLE 
+BEGIN
+    IDC_GROUP_SOURCETOOLS_LabelTitle_RESID L"Sources" /* LabelTitle IDC_GROUP_SOURCETOOLS_LabelTitle_RESID: (null) */
+END
+
+STRINGTABLE 
+BEGIN
+    IDC_ADDSOURCE_LabelTitle_RESID L"Add Source" /* LabelTitle IDC_ADDSOURCE_LabelTitle_RESID: (null) */
+END
+
+IDC_ADDSOURCE_SmallImages_96__RESID    BITMAP    "res\\Add_color_16x.bmp" /* SmallImages IDC_ADDSOURCE_SmallImages_96__RESID: (null) */
+IDC_ADDSOURCE_SmallImages_120__RESID    BITMAP    "res\\Add_color_20x.bmp" /* SmallImages IDC_ADDSOURCE_SmallImages_120__RESID: (null) */
+IDC_ADDSOURCE_SmallImages_144__RESID    BITMAP    "res\\Add_color_24x.bmp" /* SmallImages IDC_ADDSOURCE_SmallImages_144__RESID: (null) */
+IDC_ADDSOURCE_SmallImages_192__RESID    BITMAP    "res\\Add_color_32x.bmp" /* SmallImages IDC_ADDSOURCE_SmallImages_192__RESID: (null) */
+IDC_ADDSOURCE_LargeImages_96__RESID    BITMAP    "res\\Add_color_32x.bmp" /* LargeImages IDC_ADDSOURCE_LargeImages_96__RESID: (null) */
+IDC_ADDSOURCE_LargeImages_120__RESID    BITMAP    "res\\Add_color_40x.bmp" /* LargeImages IDC_ADDSOURCE_LargeImages_120__RESID: (null) */
+IDC_ADDSOURCE_LargeImages_144__RESID    BITMAP    "res\\Add_color_48x.bmp" /* LargeImages IDC_ADDSOURCE_LargeImages_144__RESID: (null) */
+IDC_ADDSOURCE_LargeImages_192__RESID    BITMAP    "res\\Add_color_64x.bmp" /* LargeImages IDC_ADDSOURCE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_ADDAREASOURCE_LabelTitle_RESID L"Area" /* LabelTitle IDC_ADDAREASOURCE_LabelTitle_RESID: (null) */
+END
+
+IDC_ADDAREASOURCE_SmallImages_96__RESID    BITMAP    "res\\Area_16x.bmp" /* SmallImages IDC_ADDAREASOURCE_SmallImages_96__RESID: (null) */
+IDC_ADDAREASOURCE_SmallImages_120__RESID    BITMAP    "res\\Area_20x.bmp" /* SmallImages IDC_ADDAREASOURCE_SmallImages_120__RESID: (null) */
+IDC_ADDAREASOURCE_SmallImages_144__RESID    BITMAP    "res\\Area_24x.bmp" /* SmallImages IDC_ADDAREASOURCE_SmallImages_144__RESID: (null) */
+IDC_ADDAREASOURCE_SmallImages_192__RESID    BITMAP    "res\\Area_32x.bmp" /* SmallImages IDC_ADDAREASOURCE_SmallImages_192__RESID: (null) */
+IDC_ADDAREASOURCE_LargeImages_96__RESID    BITMAP    "res\\Area_32x.bmp" /* LargeImages IDC_ADDAREASOURCE_LargeImages_96__RESID: (null) */
+IDC_ADDAREASOURCE_LargeImages_120__RESID    BITMAP    "res\\Area_40x.bmp" /* LargeImages IDC_ADDAREASOURCE_LargeImages_120__RESID: (null) */
+IDC_ADDAREASOURCE_LargeImages_144__RESID    BITMAP    "res\\Area_48x.bmp" /* LargeImages IDC_ADDAREASOURCE_LargeImages_144__RESID: (null) */
+IDC_ADDAREASOURCE_LargeImages_192__RESID    BITMAP    "res\\Area_64x.bmp" /* LargeImages IDC_ADDAREASOURCE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_ADDCIRCULARSOURCE_LabelTitle_RESID L"Circular" /* LabelTitle IDC_ADDCIRCULARSOURCE_LabelTitle_RESID: (null) */
+END
+
+IDC_ADDCIRCULARSOURCE_SmallImages_96__RESID    BITMAP    "res\\Circular_16x.bmp" /* SmallImages IDC_ADDCIRCULARSOURCE_SmallImages_96__RESID: (null) */
+IDC_ADDCIRCULARSOURCE_SmallImages_120__RESID    BITMAP    "res\\Circular_20x.bmp" /* SmallImages IDC_ADDCIRCULARSOURCE_SmallImages_120__RESID: (null) */
+IDC_ADDCIRCULARSOURCE_SmallImages_144__RESID    BITMAP    "res\\Circular_24x.bmp" /* SmallImages IDC_ADDCIRCULARSOURCE_SmallImages_144__RESID: (null) */
+IDC_ADDCIRCULARSOURCE_SmallImages_192__RESID    BITMAP    "res\\Circular_32x.bmp" /* SmallImages IDC_ADDCIRCULARSOURCE_SmallImages_192__RESID: (null) */
+IDC_ADDCIRCULARSOURCE_LargeImages_96__RESID    BITMAP    "res\\Circular_32x.bmp" /* LargeImages IDC_ADDCIRCULARSOURCE_LargeImages_96__RESID: (null) */
+IDC_ADDCIRCULARSOURCE_LargeImages_120__RESID    BITMAP    "res\\Circular_40x.bmp" /* LargeImages IDC_ADDCIRCULARSOURCE_LargeImages_120__RESID: (null) */
+IDC_ADDCIRCULARSOURCE_LargeImages_144__RESID    BITMAP    "res\\Circular_48x.bmp" /* LargeImages IDC_ADDCIRCULARSOURCE_LargeImages_144__RESID: (null) */
+IDC_ADDCIRCULARSOURCE_LargeImages_192__RESID    BITMAP    "res\\Circular_64x.bmp" /* LargeImages IDC_ADDCIRCULARSOURCE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_ADDPOLYGONSOURCE_LabelTitle_RESID L"Polygon" /* LabelTitle IDC_ADDPOLYGONSOURCE_LabelTitle_RESID: (null) */
+END
+
+IDC_ADDPOLYGONSOURCE_SmallImages_96__RESID    BITMAP    "res\\Polygon_16x.bmp" /* SmallImages IDC_ADDPOLYGONSOURCE_SmallImages_96__RESID: (null) */
+IDC_ADDPOLYGONSOURCE_SmallImages_120__RESID    BITMAP    "res\\Polygon_20x.bmp" /* SmallImages IDC_ADDPOLYGONSOURCE_SmallImages_120__RESID: (null) */
+IDC_ADDPOLYGONSOURCE_SmallImages_144__RESID    BITMAP    "res\\Polygon_24x.bmp" /* SmallImages IDC_ADDPOLYGONSOURCE_SmallImages_144__RESID: (null) */
+IDC_ADDPOLYGONSOURCE_SmallImages_192__RESID    BITMAP    "res\\Polygon_32x.bmp" /* SmallImages IDC_ADDPOLYGONSOURCE_SmallImages_192__RESID: (null) */
+IDC_ADDPOLYGONSOURCE_LargeImages_96__RESID    BITMAP    "res\\Polygon_32x.bmp" /* LargeImages IDC_ADDPOLYGONSOURCE_LargeImages_96__RESID: (null) */
+IDC_ADDPOLYGONSOURCE_LargeImages_120__RESID    BITMAP    "res\\Polygon_40x.bmp" /* LargeImages IDC_ADDPOLYGONSOURCE_LargeImages_120__RESID: (null) */
+IDC_ADDPOLYGONSOURCE_LargeImages_144__RESID    BITMAP    "res\\Polygon_48x.bmp" /* LargeImages IDC_ADDPOLYGONSOURCE_LargeImages_144__RESID: (null) */
+IDC_ADDPOLYGONSOURCE_LargeImages_192__RESID    BITMAP    "res\\Polygon_64x.bmp" /* LargeImages IDC_ADDPOLYGONSOURCE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_RESAMPLE_LabelTitle_RESID L"Resample" /* LabelTitle IDC_RESAMPLE_LabelTitle_RESID: (null) */
+END
+
+IDC_RESAMPLE_SmallImages_96__RESID    BITMAP    "res\\TableFunction_16x.bmp" /* SmallImages IDC_RESAMPLE_SmallImages_96__RESID: (null) */
+IDC_RESAMPLE_SmallImages_120__RESID    BITMAP    "res\\TableFunction_20x.bmp" /* SmallImages IDC_RESAMPLE_SmallImages_120__RESID: (null) */
+IDC_RESAMPLE_SmallImages_144__RESID    BITMAP    "res\\TableFunction_24x.bmp" /* SmallImages IDC_RESAMPLE_SmallImages_144__RESID: (null) */
+IDC_RESAMPLE_SmallImages_192__RESID    BITMAP    "res\\TableFunction_32x.bmp" /* SmallImages IDC_RESAMPLE_SmallImages_192__RESID: (null) */
+IDC_RESAMPLE_LargeImages_96__RESID    BITMAP    "res\\TableFunction_32x.bmp" /* LargeImages IDC_RESAMPLE_LargeImages_96__RESID: (null) */
+IDC_RESAMPLE_LargeImages_120__RESID    BITMAP    "res\\TableFunction_40x.bmp" /* LargeImages IDC_RESAMPLE_LargeImages_120__RESID: (null) */
+IDC_RESAMPLE_LargeImages_144__RESID    BITMAP    "res\\TableFunction_48x.bmp" /* LargeImages IDC_RESAMPLE_LargeImages_144__RESID: (null) */
+IDC_RESAMPLE_LargeImages_192__RESID    BITMAP    "res\\TableFunction_64x.bmp" /* LargeImages IDC_RESAMPLE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_EDITGEOMETRY_LabelTitle_RESID L"Edit Geometry" /* LabelTitle IDC_EDITGEOMETRY_LabelTitle_RESID: (null) */
+END
+
+IDC_EDITGEOMETRY_SmallImages_96__RESID    BITMAP    "res\\Edit_16x.bmp" /* SmallImages IDC_EDITGEOMETRY_SmallImages_96__RESID: (null) */
+IDC_EDITGEOMETRY_SmallImages_120__RESID    BITMAP    "res\\Edit_20x.bmp" /* SmallImages IDC_EDITGEOMETRY_SmallImages_120__RESID: (null) */
+IDC_EDITGEOMETRY_SmallImages_144__RESID    BITMAP    "res\\Edit_24x.bmp" /* SmallImages IDC_EDITGEOMETRY_SmallImages_144__RESID: (null) */
+IDC_EDITGEOMETRY_SmallImages_192__RESID    BITMAP    "res\\Edit_32x.bmp" /* SmallImages IDC_EDITGEOMETRY_SmallImages_192__RESID: (null) */
+IDC_EDITGEOMETRY_LargeImages_96__RESID    BITMAP    "res\\Edit_32x.bmp" /* LargeImages IDC_EDITGEOMETRY_LargeImages_96__RESID: (null) */
+IDC_EDITGEOMETRY_LargeImages_120__RESID    BITMAP    "res\\Edit_40x.bmp" /* LargeImages IDC_EDITGEOMETRY_LargeImages_120__RESID: (null) */
+IDC_EDITGEOMETRY_LargeImages_144__RESID    BITMAP    "res\\Edit_48x.bmp" /* LargeImages IDC_EDITGEOMETRY_LargeImages_144__RESID: (null) */
+IDC_EDITGEOMETRY_LargeImages_192__RESID    BITMAP    "res\\Edit_64x.bmp" /* LargeImages IDC_EDITGEOMETRY_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_PLOTFLUXPROFILE_LabelTitle_RESID L"Plot Flux Profile" /* LabelTitle IDC_PLOTFLUXPROFILE_LabelTitle_RESID: (null) */
+END
+
+IDC_PLOTFLUXPROFILE_SmallImages_96__RESID    BITMAP    "res\\KagiChart_16x.bmp" /* SmallImages IDC_PLOTFLUXPROFILE_SmallImages_96__RESID: (null) */
+IDC_PLOTFLUXPROFILE_SmallImages_120__RESID    BITMAP    "res\\KagiChart_20x.bmp" /* SmallImages IDC_PLOTFLUXPROFILE_SmallImages_120__RESID: (null) */
+IDC_PLOTFLUXPROFILE_SmallImages_144__RESID    BITMAP    "res\\KagiChart_24x.bmp" /* SmallImages IDC_PLOTFLUXPROFILE_SmallImages_144__RESID: (null) */
+IDC_PLOTFLUXPROFILE_SmallImages_192__RESID    BITMAP    "res\\KagiChart_32x.bmp" /* SmallImages IDC_PLOTFLUXPROFILE_SmallImages_192__RESID: (null) */
+IDC_PLOTFLUXPROFILE_LargeImages_96__RESID    BITMAP    "res\\KagiChart_32x.bmp" /* LargeImages IDC_PLOTFLUXPROFILE_LargeImages_96__RESID: (null) */
+IDC_PLOTFLUXPROFILE_LargeImages_120__RESID    BITMAP    "res\\KagiChart_40x.bmp" /* LargeImages IDC_PLOTFLUXPROFILE_LargeImages_120__RESID: (null) */
+IDC_PLOTFLUXPROFILE_LargeImages_144__RESID    BITMAP    "res\\KagiChart_48x.bmp" /* LargeImages IDC_PLOTFLUXPROFILE_LargeImages_144__RESID: (null) */
+IDC_PLOTFLUXPROFILE_LargeImages_192__RESID    BITMAP    "res\\KagiChart_64x.bmp" /* LargeImages IDC_PLOTFLUXPROFILE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_COLORDIALOG_LabelTitle_RESID L"Color" /* LabelTitle IDC_COLORDIALOG_LabelTitle_RESID: (null) */
+END
+
+IDC_COLORDIALOG_SmallImages_96__RESID    BITMAP    "res\\ColorPalette_16x.bmp" /* SmallImages IDC_COLORDIALOG_SmallImages_96__RESID: (null) */
+IDC_COLORDIALOG_SmallImages_120__RESID    BITMAP    "res\\ColorPalette_20x.bmp" /* SmallImages IDC_COLORDIALOG_SmallImages_120__RESID: (null) */
+IDC_COLORDIALOG_SmallImages_144__RESID    BITMAP    "res\\ColorPalette_24x.bmp" /* SmallImages IDC_COLORDIALOG_SmallImages_144__RESID: (null) */
+IDC_COLORDIALOG_SmallImages_192__RESID    BITMAP    "res\\ColorPalette_32x.bmp" /* SmallImages IDC_COLORDIALOG_SmallImages_192__RESID: (null) */
+IDC_COLORDIALOG_LargeImages_96__RESID    BITMAP    "res\\ColorPalette_32x.bmp" /* LargeImages IDC_COLORDIALOG_LargeImages_96__RESID: (null) */
+IDC_COLORDIALOG_LargeImages_120__RESID    BITMAP    "res\\ColorPalette_40x.bmp" /* LargeImages IDC_COLORDIALOG_LargeImages_120__RESID: (null) */
+IDC_COLORDIALOG_LargeImages_144__RESID    BITMAP    "res\\ColorPalette_48x.bmp" /* LargeImages IDC_COLORDIALOG_LargeImages_144__RESID: (null) */
+IDC_COLORDIALOG_LargeImages_192__RESID    BITMAP    "res\\ColorPalette_64x.bmp" /* LargeImages IDC_COLORDIALOG_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_GROUP_SELECT_LabelTitle_RESID L"Select" /* LabelTitle IDC_GROUP_SELECT_LabelTitle_RESID: (null) */
+END
+
+STRINGTABLE 
+BEGIN
+    IDC_SELECTALL_LabelTitle_RESID L"Select All" /* LabelTitle IDC_SELECTALL_LabelTitle_RESID: (null) */
+END
+
+IDC_SELECTALL_SmallImages_96__RESID    BITMAP    "res\\SelectAllItems_16x.bmp" /* SmallImages IDC_SELECTALL_SmallImages_96__RESID: (null) */
+IDC_SELECTALL_SmallImages_120__RESID    BITMAP    "res\\SelectAllItems_20x.bmp" /* SmallImages IDC_SELECTALL_SmallImages_120__RESID: (null) */
+IDC_SELECTALL_SmallImages_144__RESID    BITMAP    "res\\SelectAllItems_24x.bmp" /* SmallImages IDC_SELECTALL_SmallImages_144__RESID: (null) */
+IDC_SELECTALL_SmallImages_192__RESID    BITMAP    "res\\SelectAllItems_32x.bmp" /* SmallImages IDC_SELECTALL_SmallImages_192__RESID: (null) */
+IDC_SELECTALL_LargeImages_96__RESID    BITMAP    "res\\SelectAllItems_32x.bmp" /* LargeImages IDC_SELECTALL_LargeImages_96__RESID: (null) */
+IDC_SELECTALL_LargeImages_120__RESID    BITMAP    "res\\SelectAllItems_40x.bmp" /* LargeImages IDC_SELECTALL_LargeImages_120__RESID: (null) */
+IDC_SELECTALL_LargeImages_144__RESID    BITMAP    "res\\SelectAllItems_48x.bmp" /* LargeImages IDC_SELECTALL_LargeImages_144__RESID: (null) */
+IDC_SELECTALL_LargeImages_192__RESID    BITMAP    "res\\SelectAllItems_64x.bmp" /* LargeImages IDC_SELECTALL_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_SELECTNONE_LabelTitle_RESID L"Select None" /* LabelTitle IDC_SELECTNONE_LabelTitle_RESID: (null) */
+END
+
+IDC_SELECTNONE_SmallImages_96__RESID    BITMAP    "res\\SelectNoItems_16x.bmp" /* SmallImages IDC_SELECTNONE_SmallImages_96__RESID: (null) */
+IDC_SELECTNONE_SmallImages_120__RESID    BITMAP    "res\\SelectNoItems_20x.bmp" /* SmallImages IDC_SELECTNONE_SmallImages_120__RESID: (null) */
+IDC_SELECTNONE_SmallImages_144__RESID    BITMAP    "res\\SelectNoItems_24x.bmp" /* SmallImages IDC_SELECTNONE_SmallImages_144__RESID: (null) */
+IDC_SELECTNONE_SmallImages_192__RESID    BITMAP    "res\\SelectNoItems_32x.bmp" /* SmallImages IDC_SELECTNONE_SmallImages_192__RESID: (null) */
+IDC_SELECTNONE_LargeImages_96__RESID    BITMAP    "res\\SelectNoItems_32x.bmp" /* LargeImages IDC_SELECTNONE_LargeImages_96__RESID: (null) */
+IDC_SELECTNONE_LargeImages_120__RESID    BITMAP    "res\\SelectNoItems_40x.bmp" /* LargeImages IDC_SELECTNONE_LargeImages_120__RESID: (null) */
+IDC_SELECTNONE_LargeImages_144__RESID    BITMAP    "res\\SelectNoItems_48x.bmp" /* LargeImages IDC_SELECTNONE_LargeImages_144__RESID: (null) */
+IDC_SELECTNONE_LargeImages_192__RESID    BITMAP    "res\\SelectNoItems_64x.bmp" /* LargeImages IDC_SELECTNONE_LargeImages_192__RESID: (null) */
+STRINGTABLE 
+BEGIN
+    IDC_SELECTINVERSE_LabelTitle_RESID L"Invert Selection" /* LabelTitle IDC_SELECTINVERSE_LabelTitle_RESID: (null) */
+END
+
+IDC_SELECTINVERSE_SmallImages_96__RESID    BITMAP    "res\\SelectInverseItems_16x.bmp" /* SmallImages IDC_SELECTINVERSE_SmallImages_96__RESID: (null) */
+IDC_SELECTINVERSE_SmallImages_120__RESID    BITMAP    "res\\SelectInverseItems_20x.bmp" /* SmallImages IDC_SELECTINVERSE_SmallImages_120__RESID: (null) */
+IDC_SELECTINVERSE_SmallImages_144__RESID    BITMAP    "res\\SelectInverseItems_24x.bmp" /* SmallImages IDC_SELECTINVERSE_SmallImages_144__RESID: (null) */
+IDC_SELECTINVERSE_SmallImages_192__RESID    BITMAP    "res\\SelectInverseItems_32x.bmp" /* SmallImages IDC_SELECTINVERSE_SmallImages_192__RESID: (null) */
+IDC_SELECTINVERSE_LargeImages_96__RESID    BITMAP    "res\\SelectInverseItems_32x.bmp" /* LargeImages IDC_SELECTINVERSE_LargeImages_96__RESID: (null) */
+IDC_SELECTINVERSE_LargeImages_120__RESID    BITMAP    "res\\SelectInverseItems_40x.bmp" /* LargeImages IDC_SELECTINVERSE_LargeImages_120__RESID: (null) */
+IDC_SELECTINVERSE_LargeImages_144__RESID    BITMAP    "res\\SelectInverseItems_48x.bmp" /* LargeImages IDC_SELECTINVERSE_LargeImages_144__RESID: (null) */
+IDC_SELECTINVERSE_LargeImages_192__RESID    BITMAP    "res\\SelectInverseItems_64x.bmp" /* LargeImages IDC_SELECTINVERSE_LargeImages_192__RESID: (null) */
+APPLICATION_RIBBON    UIFILE    "D:\\Dev\\SOFEA4\\build\\release\\RibbonDefinition.bml"

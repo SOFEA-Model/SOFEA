@@ -1,33 +1,162 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #include "FilterHeaderView.h"
+#include "AppStyle.h"
 
 #include <QApplication>
 #include <QEvent>
 #include <QIcon>
+#include <QLineEdit>
+#include <QListView>
 #include <QMenu>
+#include <QMouseEvent>
+#include <QPainter>
 #include <QPixmap>
-#include <QStyle>
+#include <QScreen>
+#include <QSortFilterProxyModel>
+#include <QStandardItemModel>
+#include <QStyleOptionMenuItem>
+#include <QVBoxLayout>
+#include <QWidgetAction>
 
 #include <QDebug>
+
+//-----------------------------------------------------------------------------
+// FilterEditorProxyModel
+//-----------------------------------------------------------------------------
+
+FilterEditorProxyModel::FilterEditorProxyModel(QObject *parent)
+    : QSortFilterProxyModel(parent)
+{}
+
+QVariant FilterEditorProxyModel::data(const QModelIndex &index, int role) const
+{
+    if (!index.isValid())
+        return QVariant();
+
+    if (role == Qt::CheckStateRole && index.column() == filterKeyColumn()) {
+        QString displayText = sourceModel()->data(mapToSource(index), Qt::DisplayRole).toString();
+        if (checkStateMap.contains(displayText))
+            return QVariant(checkStateMap.value(displayText));
+        else
+            return QVariant(Qt::Checked);
+    }
+
+    return QSortFilterProxyModel::data(index, role);
+}
+
+bool FilterEditorProxyModel::setData(const QModelIndex &index, const QVariant &value, int role)
+{
+    if (!index.isValid() && role != Qt::CheckStateRole)
+        return false;
+
+    if (value.canConvert(QVariant::Int)) {
+        QString displayText = sourceModel()->data(mapToSource(index), Qt::DisplayRole).toString();
+        Qt::CheckState state = qvariant_cast<Qt::CheckState>(value);
+        checkStateMap[displayText] = state;
+        return true;
+    }
+
+    return false;
+}
+
+Qt::ItemFlags FilterEditorProxyModel::flags(const QModelIndex& index) const
+{
+    if (!index.isValid())
+        return QSortFilterProxyModel::flags(index);
+
+    return Qt::ItemIsUserCheckable | Qt::ItemIsSelectable | Qt::ItemIsEnabled;
+}
+
+void FilterEditorProxyModel::setFilterWildcard(const QString& pattern)
+{
+    checkStateMap.clear();
+    QSortFilterProxyModel::setFilterWildcard(pattern);
+}
+
+bool FilterEditorProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
+{
+    // Accept rows with unique DisplayText.
+    QModelIndex index = sourceModel()->index(sourceRow, filterKeyColumn(), sourceParent);
+    QString displayText = sourceModel()->data(index, Qt::DisplayRole).toString();
+    if (!checkStateMap.contains(displayText)) {
+        checkStateMap[displayText] = Qt::Checked;
+        return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
+    }
+    return false;
+}
+
+//-----------------------------------------------------------------------------
+// FilterEditor
+//-----------------------------------------------------------------------------
+
+FilterEditor::FilterEditor(QWidget *parent)
+    : QWidget(parent)
+{
+    searchBox = new QLineEdit;
+    searchBox->setPlaceholderText(tr("Search"));
+    searchBox->setClearButtonEnabled(true);
+
+    QStandardItemModel *model = new QStandardItemModel(this);
+
+    proxyModel = new FilterEditorProxyModel(this);
+    proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
+    proxyModel->setSourceModel(model);
+    //proxyModel->setFilterKeyColumn(0);
+    proxyModel->sort(0, Qt::AscendingOrder);
+
+    listView = new QListView;
+    listView->setFixedHeight(200);
+    listView->setModel(proxyModel);
+
+    connect(searchBox, &QLineEdit::textEdited, proxyModel,
+            &FilterEditorProxyModel::setFilterWildcard);
+
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    const int scaleFactor = static_cast<int>(this->logicalDpiX() / 96.0);
+    const int xOffset = 21 * scaleFactor + 16; // Check CE_MenuItem in QFusionStyle
+    mainLayout->setContentsMargins(xOffset, 6, 6, 6);
+    mainLayout->addWidget(searchBox);
+    mainLayout->addWidget(listView);
+    setLayout(mainLayout);
+}
+
+//-----------------------------------------------------------------------------
+// FilterHeaderView
+//-----------------------------------------------------------------------------
 
 FilterHeaderView::FilterHeaderView(Qt::Orientation orientation, QWidget *parent)
     : QHeaderView(orientation, parent)
 {
-    static const QIcon sortAscendingIcon = QIcon(":/images/SortAscending_16x.png");
-    static const QIcon sortDescendingIcon = QIcon(":/images/SortDescending_16x.png");
-    static const QIcon clearFilterIcon = QIcon(":/images/DeleteFilter_16x.png");
-    static const QIcon editFilterIcon = QIcon(":/images/EditFilter_16x.png");
+    const QIcon sortAscendingIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_HeaderSortAscending));
+    const QIcon sortDescendingIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_HeaderSortDescending));
+    //const QIcon deleteFilterIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_HeaderDeleteFilter));
+    //const QIcon editFilterIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_HeaderEditFilter));
 
     sortAscendingAct = new QAction(sortAscendingIcon, tr("Sort A to Z"), this);
     sortDescendingAct = new QAction(sortDescendingIcon, tr("Sort Z to A"), this);
-    clearFilterAct = new QAction(clearFilterIcon, tr("Clear Filter"), this);
-    editFilterAct = new QAction(editFilterIcon, tr("Edit Filter..."), this);
+    //clearFilterAct = new QAction(deleteFilterIcon, tr("Clear Filter"), this);
+    //editFilterAct = new QAction(editFilterIcon, tr("Edit Filter..."), this);
 
-    clearFilterAct->setDisabled(true);
-    editFilterAct->setDisabled(true);
+    //clearFilterAct->setDisabled(true);
+    //editFilterAct->setDisabled(true);
 
-    //filterTree = new QTreeView;
+    //filterEditor = new FilterEditor;
     //filterAction = new QWidgetAction(nullptr);
-    //filterAction->setDefaultWidget(filterTree);
+    //filterAction->setDefaultWidget(filterEditor);
 }
 
 void FilterHeaderView::setAutoFilterEnabled(bool enabled)
@@ -61,9 +190,10 @@ void FilterHeaderView::showAutoFilter(int section)
     QMenu filterMenu;
     filterMenu.addAction(sortAscendingAct);
     filterMenu.addAction(sortDescendingAct);
-    filterMenu.addSeparator();
-    filterMenu.addAction(clearFilterAct);
-    filterMenu.addAction(editFilterAct);
+    //filterMenu.addSeparator();
+    //filterMenu.addAction(clearFilterAct);
+    //filterMenu.addAction(editFilterAct);
+    //filterMenu.addSeparator();
     //filterMenu.addAction(filterAction);
 
     // Align with the right edge of the column.
@@ -89,6 +219,8 @@ void FilterHeaderView::showAutoFilter(int section)
 
 void FilterHeaderView::leaveEvent(QEvent *e)
 {
+    Q_UNUSED(e)
+
     if (autoFilter && orientation() == Qt::Horizontal) {
         int prevSection = hoverSection;
         hoverSection = -1;
@@ -114,7 +246,7 @@ void FilterHeaderView::mouseMoveEvent(QMouseEvent *e)
 
 void FilterHeaderView::mousePressEvent(QMouseEvent *e)
 {
-    if (autoFilter && orientation() == Qt::Horizontal || e->button() == Qt::LeftButton) {
+    if (autoFilter && (orientation() == Qt::Horizontal || e->button() == Qt::LeftButton)) {
         int pos = e->x();
         int section = logicalIndexAt(pos);
         if (isPointOnIcon(section, e->pos())) {
@@ -127,7 +259,7 @@ void FilterHeaderView::mousePressEvent(QMouseEvent *e)
 
 void FilterHeaderView::mouseReleaseEvent(QMouseEvent *e)
 {
-    if (autoFilter && orientation() == Qt::Horizontal || e->button() == Qt::LeftButton) {
+    if (autoFilter && (orientation() == Qt::Horizontal || e->button() == Qt::LeftButton)) {
         int pos = e->x();
         int section = logicalIndexAt(pos);
         if (isPointOnIcon(section, e->pos())) {

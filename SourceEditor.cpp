@@ -1,47 +1,170 @@
-#include <QtWidgets>
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+#include <QAbstractItemModel>
+#include <QBoxLayout>
+#include <QDataWidgetMapper>
+#include <QGridLayout>
+#include <QLabel>
+#include <QLineEdit>
+#include <QSpinBox>
+#include <QDoubleSpinBox>
+#include <QPolygonF>
+#include <QPushButton>
+#include <QStackedLayout>
 
 #include "SourceEditor.h"
+#include "SourceModel.h"
+
+#include <ctk/ctkCollapsibleGroupBox.h>
 
 SourceEditor::SourceEditor(QWidget *parent) : QWidget(parent)
 {
+    statusLabel = new QLabel;
+    statusLabel->setText("No sources selected.");
+    statusLabel->setAlignment(Qt::AlignHCenter | Qt::AlignBaseline);
+
+    areaPolyEditorDelegate = new VertexEditorDelegate(this);
+
     areaEditor = new AreaSourceEditor;
     areaCircEditor = new AreaCircSourceEditor;
-    areaPolyEditor = new AreaPolySourceEditor;
+    areaPolyEditor = qobject_cast<VertexEditor *>(
+        areaPolyEditorDelegate->createEditor(nullptr, QStyleOptionViewItem(), QModelIndex()));
+
+    mapper = new QDataWidgetMapper(this);
+    mapper->setOrientation(Qt::Horizontal);
+    mapper->setSubmitPolicy(QDataWidgetMapper::ManualSubmit);
 
     stack = new QStackedLayout;
-    stack->setContentsMargins(0,0,0,0);
+    stack->setContentsMargins(0, 0, 0, 0);
+    stack->addWidget(statusLabel);
     stack->addWidget(areaEditor);
     stack->addWidget(areaCircEditor);
     stack->addWidget(areaPolyEditor);
 
-    setLayout(stack);
+    btnUpdate = new QPushButton(tr("Update"));
+    btnUpdate->setAutoDefault(true);
+    btnUpdate->setDisabled(true);
+
+    QHBoxLayout *buttonBox = new QHBoxLayout;
+    buttonBox->setContentsMargins(0, 0, 0, 0);
+    buttonBox->addStretch(1);
+    buttonBox->addWidget(btnUpdate);
+
+    QVBoxLayout *controlsLayout = new QVBoxLayout;
+    controlsLayout->setContentsMargins(24, 16, 24, 16);
+    controlsLayout->addLayout(stack);
+    controlsLayout->addSpacing(5);
+    controlsLayout->addLayout(buttonBox);
+
+    ctkCollapsibleGroupBox *gbGeometry = new ctkCollapsibleGroupBox(tr("Geometry"));
+    gbGeometry->setLayout(controlsLayout);
+    gbGeometry->setFlat(true);
+
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    mainLayout->addWidget(gbGeometry);
+    mainLayout->addStretch(1);
+
+    stack->setCurrentIndex(0);
+
+    connect(btnUpdate, &QPushButton::pressed, mapper, &QDataWidgetMapper::submit);
+
+    setLayout(mainLayout);
 }
 
-void SourceEditor::setSource(Source *s)
+void SourceEditor::setModel(QAbstractItemModel *model)
 {
-    switch (s->getType()) {
-        case SourceType::AREA: {
-            AreaSource *sa = static_cast<AreaSource*>(s);
-            areaEditor->setSource(sa);
-            stack->setCurrentIndex(0);
-            break;
-        }
-        case SourceType::AREACIRC: {
-            AreaCircSource *sc = static_cast<AreaCircSource*>(s);
-            areaCircEditor->setSource(sc);
-            stack->setCurrentIndex(1);
-            break;
-        }
-        case SourceType::AREAPOLY: {
-            AreaPolySource *sp = static_cast<AreaPolySource*>(s);
-            areaPolyEditor->setSource(sp);
-            stack->setCurrentIndex(2);
-            break;
-        }
-        default: {
-            break;
-        }
+    if (model == nullptr)
+        return;
+
+    sourceModel = model;
+    mapper->setModel(model);
+}
+
+void SourceEditor::setCurrentModelIndex(const QModelIndex& index)
+{
+    if (!sourceModel) {
+        setStatusText("Invalid source data.");
+        return;
     }
+
+    if (!index.isValid() || index.model() == nullptr) {
+        setStatusText("Invalid source selected.");
+        return;
+    }
+
+    QVariant sourceTypeVar = index.model()->headerData(index.row(), Qt::Vertical, Qt::UserRole);
+    if (!sourceTypeVar.canConvert<SourceType>()) {
+        setStatusText("Invalid source type.");
+        return;
+    }
+
+    int prevStackIndex = stack->currentIndex();
+
+    SourceType sourceType = qvariant_cast<SourceType>(sourceTypeVar);
+    switch (sourceType) {
+    case SourceType::AREA:
+        if (prevStackIndex != 1) {
+            mapper->clearMapping();
+            mapper->addMapping(areaEditor->sbXCoord, SourceModel::Column::X);
+            mapper->addMapping(areaEditor->sbYCoord, SourceModel::Column::Y);
+            mapper->addMapping(areaEditor->sbXInit, SourceModel::Column::XInit);
+            mapper->addMapping(areaEditor->sbYInit, SourceModel::Column::YInit);
+            mapper->addMapping(areaEditor->sbAngle, SourceModel::Column::Angle);
+            mapper->toFirst();
+        }
+        stack->setCurrentIndex(1);
+        mapper->setCurrentIndex(index.row());
+        btnUpdate->setDisabled(false);
+        break;
+    case SourceType::AREACIRC:
+        if (prevStackIndex != 2) {
+            mapper->clearMapping();
+            mapper->addMapping(areaCircEditor->sbXCoord, SourceModel::Column::X);
+            mapper->addMapping(areaCircEditor->sbYCoord, SourceModel::Column::Y);
+            mapper->addMapping(areaCircEditor->sbRadius, SourceModel::Column::Radius);
+            mapper->addMapping(areaCircEditor->sbVertexCount, SourceModel::Column::VertexCount);
+            mapper->toFirst();
+        }
+        stack->setCurrentIndex(2);
+        mapper->setCurrentIndex(index.row());
+        btnUpdate->setDisabled(false);
+        break;
+    case SourceType::AREAPOLY:
+        if (prevStackIndex != 3) {
+            mapper->clearMapping();
+            mapper->addMapping(areaPolyEditor, 0);
+            mapper->setItemDelegate(areaPolyEditorDelegate);
+            mapper->toFirst();
+        }
+        stack->setCurrentIndex(3);
+        mapper->setCurrentIndex(index.row());
+        btnUpdate->setDisabled(false);
+        break;
+    default:
+        setStatusText("Unsupported source type.");
+        break;
+    }
+}
+
+void SourceEditor::setStatusText(const QString& text)
+{
+    statusLabel->setText(text);
+    btnUpdate->setDisabled(true);
+    mapper->clearMapping();
+    stack->setCurrentIndex(0);
 }
 
 /****************************************************************************
@@ -77,22 +200,6 @@ AreaSourceEditor::AreaSourceEditor(QWidget *parent) : QWidget(parent)
     sbAngle->setDecimals(1);
     sbAngle->setWrapping(true);
 
-    // Connections
-    connect(sbXCoord, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &AreaSourceEditor::onCoordinatesChanged);
-
-    connect(sbYCoord, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &AreaSourceEditor::onCoordinatesChanged);
-
-    connect(sbXInit, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &AreaSourceEditor::onCoordinatesChanged);
-
-    connect(sbYInit, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &AreaSourceEditor::onCoordinatesChanged);
-
-    connect(sbAngle, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &AreaSourceEditor::onCoordinatesChanged);
-
     // Layout
     QGridLayout *layout1 = new QGridLayout;
     layout1->setContentsMargins(0,0,0,0);
@@ -112,29 +219,6 @@ AreaSourceEditor::AreaSourceEditor(QWidget *parent) : QWidget(parent)
     mainLayout->addStretch(1);
 
     setLayout(mainLayout);
-}
-
-void AreaSourceEditor::setSource(AreaSource *s)
-{
-    sbXCoord->setValue(s->xs);
-    sbYCoord->setValue(s->ys);
-    sbXInit->setValue(s->xinit);
-    sbYInit->setValue(s->yinit);
-    sbAngle->setValue(s->angle);
-
-    sPtr = s;
-}
-
-void AreaSourceEditor::onCoordinatesChanged(double)
-{
-    if (sPtr == nullptr)
-        return;
-
-    sPtr->xs = sbXCoord->value();
-    sPtr->ys = sbYCoord->value();
-    sPtr->xinit = sbXInit->value();
-    sPtr->yinit = sbYInit->value();
-    sPtr->angle = sbAngle->value();
 }
 
 /****************************************************************************
@@ -160,20 +244,6 @@ AreaCircSourceEditor::AreaCircSourceEditor(QWidget *parent) : QWidget(parent)
 
     sbVertexCount = new QSpinBox;
     sbVertexCount->setRange(3, 100);
-    sbVertexCount->setButtonSymbols(QAbstractSpinBox::NoButtons);
-
-    // Connections
-    connect(sbXCoord, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &AreaCircSourceEditor::onCoordinatesChanged);
-
-    connect(sbYCoord, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &AreaCircSourceEditor::onCoordinatesChanged);
-
-    connect(sbRadius, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &AreaCircSourceEditor::onCoordinatesChanged);
-
-    connect(sbVertexCount, QOverload<int>::of(&QSpinBox::valueChanged),
-            this, &AreaCircSourceEditor::onCoordinatesChanged);
 
     // Layout
     QGridLayout *layout1 = new QGridLayout;
@@ -195,154 +265,3 @@ AreaCircSourceEditor::AreaCircSourceEditor(QWidget *parent) : QWidget(parent)
     setLayout(mainLayout);
 }
 
-void AreaCircSourceEditor::setSource(AreaCircSource *s)
-{
-    sbXCoord->setValue(s->xs);
-    sbYCoord->setValue(s->ys);
-    sbRadius->setValue(s->radius);
-    sbVertexCount->setValue(s->nverts);
-
-    sPtr = s;
-}
-
-void AreaCircSourceEditor::onCoordinatesChanged(double)
-{
-    if (sPtr == nullptr)
-        return;
-
-    sPtr->xs = sbXCoord->value();
-    sPtr->ys = sbYCoord->value();
-    sPtr->radius = sbRadius->value();
-    sPtr->nverts = sbVertexCount->value();
-}
-
-/****************************************************************************
-** AREAPOLY
-****************************************************************************/
-
-AreaPolySourceEditor::AreaPolySourceEditor(QWidget *parent) : QWidget(parent)
-{
-    sbVertexCount = new QSpinBox;
-    sbVertexCount->setRange(3, 3);
-    sbVertexCount->setValue(3);
-    sbVertexCount->setButtonSymbols(QAbstractSpinBox::NoButtons);
-
-    sbVertex = new QSpinBox;
-    sbVertex->setRange(1, 5);
-    sbVertex->setWrapping(true);
-    sbVertex->setValue(1);
-
-    sbXCoord = new QDoubleSpinBox();
-    sbXCoord->setRange(-10000000, 10000000);
-    sbXCoord->setDecimals(2);
-    sbXCoord->setButtonSymbols(QAbstractSpinBox::NoButtons);
-
-    sbYCoord = new QDoubleSpinBox();
-    sbYCoord->setRange(-10000000, 10000000);
-    sbYCoord->setDecimals(2);
-    sbYCoord->setButtonSymbols(QAbstractSpinBox::NoButtons);
-
-    // Connections
-    connect(sbVertexCount, QOverload<int>::of(&QSpinBox::valueChanged),
-            this, &AreaPolySourceEditor::onVertexCountChanged);
-
-    connect(sbVertex, QOverload<int>::of(&QSpinBox::valueChanged),
-            this, &AreaPolySourceEditor::onVertexChanged);
-
-    connect(sbXCoord, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &AreaPolySourceEditor::onCoordinatesChanged);
-
-    connect(sbYCoord, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &AreaPolySourceEditor::onCoordinatesChanged);
-
-    // Layout
-    QGridLayout *layout1 = new QGridLayout;
-    layout1->setContentsMargins(0,0,0,0);
-    layout1->setColumnMinimumWidth(0, 120);
-    layout1->addWidget(new QLabel(tr("Vertex count:")), 0, 0);
-    layout1->addWidget(sbVertexCount, 0, 1, 1, 2);
-    layout1->addWidget(new QLabel(tr("Selected vertex:")), 1, 0);
-    layout1->addWidget(sbVertex, 1, 1, 1, 2);
-    layout1->addWidget(new QLabel(tr("Coordinates:")), 2, 0);
-    layout1->addWidget(sbXCoord, 2, 1);
-    layout1->addWidget(sbYCoord, 2, 2);
-
-    QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->setContentsMargins(0,0,0,0);
-    mainLayout->addLayout(layout1);
-    mainLayout->addStretch(1);
-
-    setLayout(mainLayout);
-}
-
-void AreaPolySourceEditor::setSource(AreaPolySource *s)
-{
-    int vertexCount = s->geometry.size();
-
-    const QPointF firstVertex = s->geometry.first();
-
-    if (vertexCount > 25) {
-        // Imported source may have more than 25 vertices.
-        // Set the maximum vertex count to actual.
-        sbVertexCount->setMaximum(vertexCount);
-    }
-    else {
-        // Maximum 25 vertices for a user defined source.
-        sbVertexCount->setMaximum(25);
-    }
-
-    sbVertexCount->setValue(vertexCount);
-    sbVertex->setMaximum(vertexCount);
-    sbVertex->setValue(1);
-    sbXCoord->setValue(firstVertex.x());
-    sbYCoord->setValue(firstVertex.y());
-
-    sPtr = s;
-}
-
-void AreaPolySourceEditor::onVertexCountChanged(int i)
-{
-    if (sPtr == nullptr)
-        return;
-
-    sPtr->geometry.resize(i);
-
-    if (i < sbVertex->value()) {
-        // Vertex count has decreased. Set controls to last vertex.
-        const QPointF lastVertex = sPtr->geometry.at(i - 1);
-        sbVertex->setValue(i);
-        sbXCoord->setValue(lastVertex.x());
-        sbYCoord->setValue(lastVertex.y());
-    }
-
-    sbVertex->setMaximum(i);
-}
-
-void AreaPolySourceEditor::onVertexChanged(int i)
-{
-    if (!sPtr)
-        return;
-
-    const QPointF currentVertex = sPtr->geometry.at(i - 1);
-    sbXCoord->setValue(currentVertex.x());
-    sbYCoord->setValue(currentVertex.y());
-}
-
-void AreaPolySourceEditor::onCoordinatesChanged(double)
-{
-    if (!sPtr)
-        return;
-
-    int i = sbVertex->value() - 1;
-    double x = sbXCoord->value();
-    double y = sbYCoord->value();
-    QPointF p(x, y);
-    sPtr->geometry.replace(i, p);
-
-    // Last vertex must equal first vertex.
-    int lastIndex = sPtr->geometry.size() - 1;
-    if (i == lastIndex)
-        sPtr->geometry.replace(0, p);
-    if (i == 0)
-        sPtr->geometry.replace(lastIndex, p);
-}

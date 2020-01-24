@@ -1,3 +1,18 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #include "Analysis.h"
 
 #include <algorithm>
@@ -14,6 +29,9 @@
 
 // FIXME: use std::function callback
 #include <QProgressDialog>
+
+// TODO: replace Boost.Accumulators with MKL
+// https://software.intel.com/en-us/mkl-ssnotes-computing-quantiles-for-streaming-data
 
 #include <boost/algorithm/string.hpp>
 #include <boost/accumulators/accumulators.hpp>
@@ -112,7 +130,7 @@ analysis::analysis(const std::string& filepath)
         throw std::out_of_range("Receptor coordinates are not equal length.");
 
     metadata_.receptors.reserve(recid.size());
-    for (int i = 0; i < recid.size(); ++i) {
+    for (std::size_t i = 0; i < recid.size(); ++i) {
         metadata_.receptors.emplace_back(
             metadata_type::receptor{recid[i], x[i], y[i], zelev[i], zhill[i], zflag[i]}
         );
@@ -123,7 +141,7 @@ analysis::analysis(const std::string& filepath)
         const auto net = ds_.vars["net"].values<int>();
         const auto netid = ds_.vars["netid"].values<std::string>();
         if (net.size() == recid.size()) {
-            for (int i = 0; i < net.size(); ++i) {
+            for (std::size_t i = 0; i < net.size(); ++i) {
                 if (net[i] > 0)
                     metadata_.receptor_netid[recid[i]] = netid.at(net[i] - 1);
             }
@@ -134,7 +152,7 @@ analysis::analysis(const std::string& filepath)
         const auto arc = ds_.vars["arc"].values<int>();
         const auto arcid = ds_.vars["arcid"].values<std::string>();
         if (arc.size() == recid.size()) {
-            for (int i = 0; i < arc.size(); ++i) {
+            for (std::size_t i = 0; i < arc.size(); ++i) {
                 if (arc[i] > 0)
                     metadata_.receptor_arcid[recid[i]] = arcid.at(arc[i] - 1);
             }
@@ -180,9 +198,9 @@ void analysis::export_time_series(const options::general& opts, const std::strin
         ofs << "receptor_group,receptor,time,x,y,zelev,zhill,zflag," <<  opts.output_type << "\n";
 
     // Write CSV records.
-    for (int i = 0; i < nrecs; ++i)
+    for (std::size_t i = 0; i < nrecs; ++i)
     {
-        progress.setValue(i);
+        progress.setValue(static_cast<int>(i));
         if (progress.wasCanceled())
             throw std::exception("Export cancelled.");
 
@@ -271,9 +289,9 @@ void analysis::calc_receptor_stats(const options::general& opts, const options::
     progress.setMinimumDuration(1000);
 
     // Analyze the data array for each receptor.
-    for (int i = 0; i < nrecs; ++i)
+    for (std::size_t i = 0; i < nrecs; ++i)
     {
-        progress.setValue(i);
+        progress.setValue(static_cast<int>(i));
         if (progress.wasCanceled()) {
             throw std::exception("Analysis cancelled.");
         }
@@ -331,10 +349,10 @@ void analysis::calc_receptor_stats(const options::general& opts, const options::
             if (statopts.maxrm_windows.size() > 0) {
                 if (opts.averaging_period == 1) {
                     // Apply EPA averaging policy for 1 hour averaging period.
-                    int cmflag = clmsg.at(t * (opts.averaging_period / minave));
+                    int cmflag = clmsg.at(t * static_cast<std::size_t>(opts.averaging_period / minave));
                     double cm = (cmflag == 0) ? 0 : 1;
 
-                    for (int j = 0; j < rsaccs.size(); ++j) {
+                    for (std::size_t j = 0; j < rsaccs.size(); ++j) {
                         rsaccs[j].first(val);
                         rsaccs[j].second(cm);
 
@@ -356,7 +374,7 @@ void analysis::calc_receptor_stats(const options::general& opts, const options::
                 }
                 else {
                     // Calculate standard rolling mean. Averaging already applied.
-                    for (int j = 0; j < rmaccs.size(); ++j) {
+                    for (std::size_t j = 0; j < rmaccs.size(); ++j) {
                         rmaccs[j](val);
                         maxrmaccs[j](rolling_mean(rmaccs[j]));
                     }
@@ -372,11 +390,11 @@ void analysis::calc_receptor_stats(const options::general& opts, const options::
         if (statopts.calc_std)
             out.std[i] = sqrt(variance(varacc));
         if (statopts.percentiles.size() > 0) {
-            for (int j = 0; j < p2accs.size(); ++j)
+            for (std::size_t j = 0; j < p2accs.size(); ++j)
                 out.p2.at(j).at(i) = p_square_quantile(p2accs[j]);
         }
         if (statopts.maxrm_windows.size() > 0) {
-            for (int j = 0; j < maxrmaccs.size(); ++j)
+            for (std::size_t j = 0; j < maxrmaccs.size(); ++j)
                 out.rm.at(j).at(i) = max(maxrmaccs[j]);
         }
     }
@@ -409,14 +427,14 @@ void analysis::calc_histogram(const options::general& opts, const options::histo
     progress.setMinimumDuration(1000);
 
     // Analyze the data array.
-    for (int i = 0; i < nrecs; ++i)
+    for (std::size_t i = 0; i < nrecs; ++i)
     {
-        progress.setValue(i);
+        progress.setValue(static_cast<int>(i));
         if (progress.wasCanceled()) {
             throw std::exception("Analysis cancelled.");
         }
 
-        for (int t = 0; t < ntime; ++t) {
+        for (std::size_t t = 0; t < ntime; ++t) {
             double val = values.at(i * ntime + t);
             if (histopts.calc_cdf)
                 cdfacc(val);
@@ -456,6 +474,7 @@ void analysis::read_values(const options::general& opts, std::vector<double>& va
     minave = *std::min_element(ave.begin(), ave.end());
 
     // Read the data array.
+    // FIXME: optimize this - use chunking and/or parallel I/O.
     values = slice.values<double>();
 
     // Remove fill values. The resulting size should be:

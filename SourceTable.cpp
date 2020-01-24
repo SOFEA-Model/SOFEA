@@ -1,38 +1,36 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #include <QColorDialog>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QHeaderView>
-#include <QVBoxLayout>
 #include <QIcon>
 #include <QMenu>
+#include <QSplitter>
+#include <QVBoxLayout>
+
 #include <QDebug>
 
 #include <algorithm>
 
+#include "AppStyle.h"
 #include "SourceTable.h"
-#include "SourceEditor.h"
 #include "FluxProfilePlot.h"
 #include "Projection.h"
 #include "delegate/ComboBoxDelegate.h"
-
-class SourceEditorDialog : public QDialog
-{
-public:
-    SourceEditorDialog(Source *s, QWidget *parent = nullptr) : QDialog(parent)
-    {
-        setAttribute(Qt::WA_DeleteOnClose, true);
-        setWindowFlag(Qt::Tool);
-        setWindowTitle(QString::fromStdString(s->srcid));
-
-        SourceEditor *editor = new SourceEditor;
-        editor->setSource(s);
-        editor->setVisible(true);
-
-        QVBoxLayout *mainLayout = new QVBoxLayout;
-        mainLayout->addWidget(editor);
-        setLayout(mainLayout);
-    }
-};
 
 class SymbolHeaderView : public QHeaderView
 {
@@ -80,14 +78,13 @@ protected:
             QBrush brush = backgroundVar.value<QBrush>();
             pen.setCosmetic(true);
 
-            int side = qMin(rect.width(), rect.height());
-            int pm = style()->pixelMetric(QStyle::PM_SmallIconSize, nullptr, this);
-            const int x = rect.center().x() - pm / 2;
-            const int y = rect.center().y() - pm / 2;
+            int iconSize = style()->pixelMetric(QStyle::PM_SmallIconSize, nullptr, this);
+            const int x = rect.center().x() - iconSize / 2;
+            const int y = rect.center().y() - iconSize / 2;
 
             painter->save();
             painter->translate(x, y);
-            painter->scale(pm, pm);
+            painter->scale(iconSize, iconSize);
             painter->setRenderHint(QPainter::Antialiasing, true);
             painter->setPen(pen);
             painter->setBrush(brush);
@@ -114,8 +111,10 @@ protected:
 SourceTable::SourceTable(Scenario *s, SourceGroup *sg, QWidget *parent)
     : QWidget(parent), sPtr(s), sgPtr(sg)
 {
-    model = new SourceModel(s, sgPtr, this);
-    proxyModel = new QSortFilterProxyModel(this);
+    model = new SourceModel(s, sgPtr);
+    sourceEditor = new SourceEditor;
+    sourceEditor->setModel(model);
+    proxyModel = new QSortFilterProxyModel;
     proxyModel->setSourceModel(model);
 
     table = new StandardTableView;
@@ -146,6 +145,8 @@ SourceTable::SourceTable(Scenario *s, SourceGroup *sg, QWidget *parent)
     table->setDateTimeEditForColumn(SourceModel::Column::Start);
     table->setDoubleSpinBoxForColumn(SourceModel::Column::AppRate, 0, 10000000, 2, 1);
     table->setDoubleSpinBoxForColumn(SourceModel::Column::IncDepth, 0, 100, 2, 1);
+    table->setDoubleLineEditForColumn(SourceModel::Column::XInit, 0, 10000, 2, true);
+    table->setDoubleLineEditForColumn(SourceModel::Column::YInit, 0, 10000, 2, true);
 
     fpEditorModel = new FluxProfileModel(this);
     ComboBoxDelegate *fpEditorDelegate = new ComboBoxDelegate(fpEditorModel, 0);
@@ -154,20 +155,20 @@ SourceTable::SourceTable(Scenario *s, SourceGroup *sg, QWidget *parent)
     massLabel = new QLabel;
 
     // Context Menu Actions
-    static const QIcon icoArea = QIcon(":/images/Rectangle_16x.png");
-    static const QIcon icoAreaCirc = QIcon(":/images/Circle_16x.png");
-    static const QIcon icoAreaPoly = QIcon(":/images/Polygon_16x.png");
-    static const QIcon icoImport = QIcon(":/images/Import_grey_16x.png");
-    static const QIcon icoEdit = QIcon(":/images/Edit_grey_16x.png");
-    static const QIcon icoColor = QIcon(":/images/ColorPalette_16x.png");
-    static const QIcon icoFlux = QIcon(":/images/KagiChart_16x.png");
+    static const QIcon icoArea = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionAddArea));
+    static const QIcon icoAreaCirc = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionAddCircular));
+    static const QIcon icoAreaPoly = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionAddPolygon));
+    static const QIcon icoImport = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionImport));
+    static const QIcon icoEdit = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionEdit));
+    static const QIcon icoColor = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionColorPalette));
+    static const QIcon icoFlux = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionStepChart));
 
     actAddArea = new QAction(icoArea, "Area", this);
     actAddAreaCirc = new QAction(icoAreaCirc, "Circular", this);
     actAddAreaPoly = new QAction(icoAreaPoly, "Polygon", this);
     actImport = new QAction(icoImport, "Import...", this);
     actEdit = new QAction(icoEdit, tr("Edit Geometry..."), this);
-    actColor = new QAction(icoColor, tr("Edit Colors..."), this);
+    actColor = new QAction(icoColor, tr("Edit Color..."), this);
     actFlux = new QAction(icoFlux, tr("Plot Flux Profile..."), this);
     actRemove = new QAction(tr("Remove"), this);
     actResampleAppStart = new QAction(tr("Application Start"), this);
@@ -187,17 +188,28 @@ SourceTable::SourceTable(Scenario *s, SourceGroup *sg, QWidget *parent)
         QModelIndex index = proxyModel->mapToSource(proxyIndex);
         QModelIndexList selection;
         selection.push_back(index);
-        openColorEditor(selection);
+        openColorDialog(selection);
     });
 
-    connect(model, &SourceModel::dataChanged, this, &SourceTable::handleDataChanged);
-    connect(model, &SourceModel::rowsInserted, this, &SourceTable::handleRowsInserted);
-    connect(model, &SourceModel::rowsRemoved, this, &SourceTable::handleRowsRemoved);
+    connect(table->selectionModel(), &QItemSelectionModel::selectionChanged,
+            this, &SourceTable::onSelectionChanged);
+
+    connect(model, &SourceModel::dataChanged, this, &SourceTable::onDataChanged);
+    connect(model, &SourceModel::rowsInserted, this, &SourceTable::onRowsInserted);
+    connect(model, &SourceModel::rowsRemoved, this, &SourceTable::onRowsRemoved);
 
     // Layout
+    QSplitter *splitter = new QSplitter(Qt::Horizontal, this);
+    splitter->setContentsMargins(0, 0, 0, 0);
+    splitter->setHandleWidth(0);
+    splitter->addWidget(table);
+    splitter->addWidget(sourceEditor);
+    splitter->setStretchFactor(0, 1);
+    splitter->setStretchFactor(1, 0);
+
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->setContentsMargins(0, 0, 0, 5);
-    mainLayout->addWidget(table, 1);
+    mainLayout->addWidget(splitter, 1);
     mainLayout->addWidget(massLabel);
     setLayout(mainLayout);
 
@@ -249,8 +261,8 @@ void SourceTable::headerContextMenuRequested(const QPoint &pos)
 
 void SourceTable::contextMenuRequested(const QPoint &pos)
 {
-    static const QIcon icoAdd = QIcon(":/images/Add_grey_16x.png");
-    static const QIcon icoResample = QIcon(":/Refresh_16x.png");
+    static const QIcon icoAdd = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionAdd));
+    static const QIcon icoResample = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionRefresh));
 
     QMenu *contextMenu = new QMenu(this);
     QMenu *addSourceMenu = contextMenu->addMenu(icoAdd, "Add Source");
@@ -263,7 +275,6 @@ void SourceTable::contextMenuRequested(const QPoint &pos)
     resampleMenu->addAction(actResampleIncorpDepth);
     resampleMenu->addAction(actResampleFluxProfile);
     contextMenu->addAction(actImport);
-    contextMenu->addAction(actEdit);
     contextMenu->addAction(actColor);
     contextMenu->addAction(actFlux);
     contextMenu->addSeparator();
@@ -286,7 +297,6 @@ void SourceTable::contextMenuRequested(const QPoint &pos)
 
     resampleMenu->setEnabled(validSelection);
     actRemove->setEnabled(validSelection);
-    actEdit->setEnabled(validSelection && singleSelection);
     actColor->setEnabled(validSelection);
     actFlux->setEnabled(validSelection && singleSelection && validFlux);
 
@@ -336,17 +346,11 @@ void SourceTable::contextMenuRequested(const QPoint &pos)
         else if (selectedItem == actImport) {
             model->import();
         }
-        else if (selectedItem == actEdit) {
-            SourceEditorDialog *dialog = new SourceEditorDialog(currentSource, this);
-            dialog->exec();
-            currentSource->setGeometry();
-            emit dataChanged();
-        }
         else if (selectedItem == actColor) {
             for (QModelIndex& i : selectedRows) {
                 i = proxyModel->mapToSource(i);
             }
-            openColorEditor(selectedRows);
+            openColorDialog(selectedRows);
         }
         else if (selectedItem == actFlux) {
             plotFluxProfile(currentSource);
@@ -357,6 +361,25 @@ void SourceTable::contextMenuRequested(const QPoint &pos)
     }
 
     contextMenu->deleteLater();
+}
+
+void SourceTable::onSelectionChanged(const QItemSelection&, const QItemSelection&)
+{
+    QModelIndexList selectedRows = table->selectionModel()->selectedRows();
+
+    if (selectedRows.empty()) {
+        sourceEditor->setStatusText("No sources selected.");
+        return;
+    }
+    else if (selectedRows.size() != 1) {
+        sourceEditor->setStatusText("Multiple sources selected.");
+        return;
+    }
+
+    QModelIndex proxyIndex = selectedRows.front();
+    QModelIndex index = proxyModel->mapToSource(proxyIndex);
+    Source *currentSource = model->sourceFromIndex(index);
+    sourceEditor->setCurrentModelIndex(index);
 }
 
 QColor SourceTable::colorFromIndex(const QModelIndex &index) const
@@ -371,7 +394,7 @@ QColor SourceTable::colorFromIndex(const QModelIndex &index) const
     }
 }
 
-void SourceTable::openColorEditor(const QModelIndexList& selection)
+void SourceTable::openColorDialog(const QModelIndexList& selection)
 {
     if (model == nullptr)
         return;
@@ -447,19 +470,19 @@ void SourceTable::plotFluxProfile(const Source *s)
     plotDialog->exec();
 }
 
-void SourceTable::handleDataChanged(const QModelIndex &, const QModelIndex &, const QVector<int> &)
+void SourceTable::onDataChanged(const QModelIndex &, const QModelIndex &, const QVector<int> &)
 {
     massLabel->setText(QString(" Total applied mass with AF: %1 kg").arg(getTotalMass()));
     emit dataChanged();
 }
 
-void SourceTable::handleRowsInserted(const QModelIndex &, int, int)
+void SourceTable::onRowsInserted(const QModelIndex &, int, int)
 {
     massLabel->setText(QString(" Total applied mass with AF: %1 kg").arg(getTotalMass()));
     emit dataChanged();
 }
 
-void SourceTable::handleRowsRemoved(const QModelIndex &, int, int)
+void SourceTable::onRowsRemoved(const QModelIndex &, int, int)
 {
     massLabel->setText(QString(" Total applied mass with AF: %1 kg").arg(getTotalMass()));
     emit dataChanged();

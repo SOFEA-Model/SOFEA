@@ -1,5 +1,21 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #include <QtWidgets>
 
+#include "AppStyle.h"
 #include "ScenarioPages.h"
 #include "MetFileParser.h"
 #include "MetFileInfoDialog.h"
@@ -27,7 +43,6 @@ GeneralPage::GeneralPage(Scenario *s, QWidget *parent)
     periodEditor->setValidator(1, 24, 0);
     periodEditor->addValue(1);
     periodEditor->addValue(24);
-    periodEditor->resetLayout();
     periodEditor->setComboBoxItems(QStringList{"1","2","3","4","6","8","12","24"});
     periodEditor->setEditable(false);
 
@@ -170,7 +185,7 @@ MetDataPage::MetDataPage(Scenario *s, QWidget *parent)
     sbWindRotation->setSingleStep(0.1);
     sbWindRotation->setDecimals(1);
 
-    static const QIcon icoCalc = QIcon(":/images/Calculator_24x.png");
+    const QIcon icoCalc = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_CalculateButton));
     btnDeclinationCalc = new QToolButton;
     btnDeclinationCalc->setIcon(icoCalc);
     btnDeclinationCalc->setToolButtonStyle(Qt::ToolButtonIconOnly);

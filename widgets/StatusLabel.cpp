@@ -1,4 +1,20 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #include "StatusLabel.h"
+#include "AppStyle.h"
 
 #include <QFont>
 #include <QFontMetrics>
@@ -8,9 +24,9 @@
 #include <QPixmap>
 #include <QSize>
 #include <QWindow>
+#include <QtMath>
 
-#include <algorithm>
-#include <vector>
+#include <QDebug>
 
 StatusLabel::StatusLabel(QWidget *parent)
     : QWidget(parent)
@@ -22,40 +38,62 @@ StatusLabel::StatusLabel(QWidget *parent)
     m_textLabel = new QLabel;
     m_textLabel->setWordWrap(true);
 
-    // Align the icon with the text baseline.
     QFontMetrics fm = m_textLabel->fontMetrics();
-    m_iconLabel->setMinimumSize(fm.ascent(), fm.lineSpacing() + 1);
-    m_iconLabel->setContentsMargins(0, 0, 0, fm.descent());
+
+    // Align the icon with the first line of text. Pixmap size is same as ascent.
+    int offset = qFloor((fm.lineSpacing() - fm.ascent()) / 2.); // lineSpacing = leading + height
+    m_iconLabel->setMinimumSize(fm.ascent(), fm.lineSpacing());
+    m_iconLabel->setContentsMargins(0, 0, 0, offset);
 
     QHBoxLayout *mainLayout = new QHBoxLayout;
     mainLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->addSpacing(5);
     mainLayout->addWidget(m_iconLabel, 0, Qt::AlignLeft | Qt::AlignTop);
     mainLayout->addWidget(m_textLabel, 1, Qt::AlignTop);
     setLayout(mainLayout);
 }
 
-void StatusLabel::setSeverity(const int severity)
+void StatusLabel::setStatusType(StatusType type)
 {
-    // Severity corresponds to enum severity_level in boost::log::trivial.
-
-    static const std::vector<QIcon> icons = {
-        QIcon(":/images/StatusAnnotations_Information_16xLG.png"),       // 0, trace
-        QIcon(":/images/StatusAnnotations_Information_16xLG.png"),       // 1, debug
-        QIcon(":/images/StatusAnnotations_Information_16xLG_color.png"), // 2, info
-        QIcon(":/images/StatusAnnotations_Warning_16xLG_color.png"),     // 3, warning
-        QIcon(":/images/StatusAnnotations_Invalid_16xLG_color.png"),     // 4, error
-        QIcon(":/images/StatusAnnotations_Critical_16xLG_color.png")     // 5, fatal
-    };
-    
-    int index = std::clamp(severity, 0, 5);
-    const QIcon& icon = icons[index];
+    static QIcon icon;
+    switch (type) {
+    case StatusLabel::Help:
+        icon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusHelp));
+        break;
+    case StatusLabel::OK:
+        icon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusOK));
+        break;
+    case StatusLabel::InfoTip:
+        icon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusInfoTip));
+        break;
+    case StatusLabel::Required:
+        icon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusRequired));
+        break;
+    case StatusLabel::Debug:
+        icon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusDebug));
+        break;
+    case StatusLabel::Information:
+        icon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusInformation));
+        break;
+    case StatusLabel::Alert:
+        icon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusAlert));
+        break;
+    case StatusLabel::Warning:
+        icon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusWarning));
+        break;
+    case StatusLabel::Invalid:
+        icon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusInvalid));
+        break;
+    case StatusLabel::Critical:
+        icon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_StatusCritical));
+        break;
+    }
 
     QWindow *window = nullptr;
     if (const QWidget *nativeParent = nativeParentWidget())
         window = nativeParent->windowHandle();
 
-    const QPixmap pixmap = icon.pixmap(window, QSize{16, 16});
+    QFontMetrics fm = m_textLabel->fontMetrics();
+    const QPixmap pixmap = icon.pixmap(window, QSize{fm.ascent(), fm.ascent()});
     m_iconLabel->setPixmap(pixmap);
 }
 

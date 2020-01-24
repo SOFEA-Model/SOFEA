@@ -1,3 +1,18 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #include <sstream>
 #include <locale>
 #include <utility>
@@ -20,6 +35,7 @@
 #include <boost/icl/interval_map.hpp>
 
 #include "DateTimeDistributionDialog.h"
+#include "AppStyle.h"
 
 inline boost::posix_time::ptime asPosixTime(const QDateTime& dt)
 {
@@ -76,7 +92,7 @@ DateTimeDistributionDialog::DateTimeDistributionDialog(const DateTimeDistributio
 {
     setWindowTitle(tr("Define Distribution"));
     setWindowFlag(Qt::Tool);
-    setWindowIcon(QIcon(":/images/Effects_32x.png"));
+    setWindowIcon(this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_LineEditFunctionIcon)));
 
     dteLower = new QDateTimeEdit;
     dteLower->setDisplayFormat("yyyy-MM-dd HH:mm");
@@ -112,7 +128,7 @@ DateTimeDistributionDialog::DateTimeDistributionDialog(const DateTimeDistributio
     connect(btnClear, &QPushButton::clicked, this, &DateTimeDistributionDialog::onClearClicked);
 
     lblStatus = new StatusLabel;
-    lblStatus->setSeverity(2);
+    lblStatus->setStatusType(StatusLabel::Alert);
     lblStatus->setText("Probabilities have been normalized.");
     lblStatus->hide();
 

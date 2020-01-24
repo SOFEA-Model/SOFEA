@@ -1,3 +1,18 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #pragma once
 
 #include <map>
@@ -86,8 +101,8 @@ struct SourceGroup
     boost::ptr_vector<Source> sources;
 
     // Receptors
-    std::vector<ReceptorRing> rings; // depreciated, for serialization only
-    std::vector<ReceptorNode> nodes; // depreciated, for serialization only
-    std::vector<ReceptorGrid> grids; // depreciated, for serialization only
+    std::vector<ReceptorRing> rings; // *** Depreciated, For Serialization Only ***
+    std::vector<ReceptorNode> nodes; // *** Depreciated, For Serialization Only ***
+    std::vector<ReceptorGrid> grids; // *** Depreciated, For Serialization Only ***
 };
 

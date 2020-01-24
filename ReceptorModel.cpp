@@ -1,3 +1,18 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #include "ReceptorModel.h"
 #include "ReceptorVisitor.h"
 
@@ -68,7 +83,7 @@ void ReceptorModel::addReceptor(const QModelIndex& parent, const ReceptorNode& n
     int row = rowCount(parent);
     auto lower = group.nodes.lower_bound(node);
     if (lower != group.nodes.end())
-        row = std::distance(group.nodes.begin(), lower);
+        row = static_cast<int>(std::distance(group.nodes.begin(), lower));
 
     // Insert the new node.
     beginInsertRows(parent, row, row);
@@ -155,7 +170,7 @@ ReceptorGroup& ReceptorModel::groupFromIndex(const QModelIndex& index)
     int groupIndex = (index.internalId() == 0) ?
         index.row() : index.parent().row();
 
-    return localData.at(groupIndex);
+    return localData.at(static_cast<std::size_t>(groupIndex));
 }
 
 QModelIndex ReceptorModel::index(int row, int column, const QModelIndex& parent) const
@@ -188,7 +203,7 @@ int ReceptorModel::rowCount(const QModelIndex &parent) const
         return static_cast<int>(localData.size());
 
     if (parent.internalId() == 0) {
-        const ReceptorGroup& group = localData.at(parent.row());
+        const ReceptorGroup& group = localData.at(static_cast<std::size_t>(parent.row()));
         std::size_t n = boost::apply_visitor(ReceptorNodeCountVisitor(), group);
         return static_cast<int>(n);
     }
@@ -198,7 +213,9 @@ int ReceptorModel::rowCount(const QModelIndex &parent) const
 
 int ReceptorModel::columnCount(const QModelIndex &parent) const
 {
-    return 8;
+    Q_UNUSED(parent)
+
+    return 7;
 }
 
 bool ReceptorModel::hasChildren(const QModelIndex &index) const
@@ -221,12 +238,11 @@ QVariant ReceptorModel::data(const QModelIndex &index, int role) const
     {
         if (index.internalId() == 0) {
             if (index.column() != Column::Color &&
-                index.column() != Column::Group &&
-                index.column() != Column::Type) {
+                index.column() != Column::Group) {
                 return QVariant();
             }
 
-            int groupIndex = index.row();
+            auto groupIndex = static_cast<std::size_t>(index.row());
             auto& group = localData.at(groupIndex);
 
             switch (index.column()) {
@@ -234,8 +250,6 @@ QVariant ReceptorModel::data(const QModelIndex &index, int role) const
                 return boost::apply_visitor(ReceptorGroupColorVisitor(), group);
             case Column::Group:
                 return QString::fromStdString(boost::apply_visitor(ReceptorGroupNameVisitor(), group));
-            case Column::Type:
-                return boost::apply_visitor(ReceptorGroupTypeVisitor(), group);
             default: return QVariant();
             }
         }
@@ -248,7 +262,7 @@ QVariant ReceptorModel::data(const QModelIndex &index, int role) const
                 return QVariant();
             }
 
-            int groupIndex = index.parent().row();
+            auto groupIndex = static_cast<std::size_t>(index.parent().row());
             auto& group = localData.at(groupIndex);
             auto visitor = ReceptorGroupNodeVisitor(index.row());
             auto node = boost::apply_visitor(visitor, group);
@@ -268,7 +282,16 @@ QVariant ReceptorModel::data(const QModelIndex &index, int role) const
             }
         }
     }
-    else if (role == Qt::BackgroundColorRole)
+    else if (role == Qt::UserRole)
+    {
+        // Group type index is used to draw the appropriate icon with ReceptorColorDelegate.
+        if (index.internalId() == 0 && index.column() == Column::Color) {
+            auto groupIndex = static_cast<std::size_t>(index.row());
+            auto& group = localData.at(groupIndex);
+            return static_cast<int>(boost::apply_visitor(ReceptorGroupTypeVisitor(), group));
+        }
+    }
+    else if (role == Qt::BackgroundRole)
     {
         return (index.internalId() == 0) ?
             QApplication::palette().color(QPalette::Window) :
@@ -293,7 +316,8 @@ bool ReceptorModel::setData(const QModelIndex &index, const QVariant &value, int
             return false;
         }
 
-        auto& group = localData.at(index.row());
+        auto groupIndex = static_cast<std::size_t>(index.row());
+        auto& group = localData.at(groupIndex);
 
         if (index.internalId() == 0)
         {
@@ -322,12 +346,11 @@ QVariant ReceptorModel::headerData(int section, Qt::Orientation orientation, int
             switch (section) {
                 case 0:  return QString();
                 case 1:  return QString("Group");
-                case 2:  return QString("Type");
-                case 3:  return QString("X");
-                case 4:  return QString("Y");
-                case 5:  return QString("Z");
-                case 6:  return QString("ZHill");
-                case 7:  return QString("ZFlag");
+                case 2:  return QString("X");
+                case 3:  return QString("Y");
+                case 4:  return QString("Z");
+                case 5:  return QString("ZHill");
+                case 6:  return QString("ZFlag");
                 default: return QVariant();
             }
         }
@@ -349,7 +372,7 @@ Qt::ItemFlags ReceptorModel::flags(const QModelIndex &index) const
     if (localData.empty())
         return Qt::NoItemFlags;
 
-    if (index.internalId() != 0 && index.parent().row() >= localData.size())
+    if (index.internalId() != 0 && index.parent().row() >= static_cast<int>(localData.size()))
         return Qt::NoItemFlags;
 
     // Group name is editable.
@@ -380,7 +403,8 @@ bool ReceptorModel::removeRows(int row, int count, const QModelIndex& parent)
     }
     else {
         // Remove receptors.
-        auto& group = localData.at(parent.row());
+        auto groupIndex = static_cast<std::size_t>(parent.row());
+        auto& group = localData.at(groupIndex);
         boost::apply_visitor(RemoveReceptorGroupNodes(row, count), group);
     }
 

@@ -1,6 +1,22 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #include <QApplication>
 #include <QtWidgets>
 
+#include "AppStyle.h"
 #include "AnalysisWindow.h"
 
 /****************************************************************************
@@ -11,7 +27,7 @@ ReceptorAnalysisTool::ReceptorAnalysisTool(QWidget *parent)
     : QWidget(parent)
 {
     lblWarning = new StatusLabel;
-    lblWarning->setSeverity(2);
+    lblWarning->setStatusType(StatusLabel::Alert);
     lblWarning->setText("Summary statistics calculated on the 1-hour time series will include zero concentrations for calm and missing hours.");
 
     cbMean = new QCheckBox("Mean");
@@ -25,7 +41,6 @@ ReceptorAnalysisTool::ReceptorAnalysisTool(QWidget *parent)
     pctEditor->setValidator(0.001, 0.999, 3);
     std::vector<double> pctDefault{0.5, 0.95, 0.99};
     pctEditor->setValues(pctDefault);
-    pctEditor->resetLayout();
     pctEditor->setComboBoxItems(QStringList{"0.5","0.75","0.9","0.95","0.99","0.999"});
 
     windowEditor = new ListEditor;
@@ -212,8 +227,9 @@ OptionsPanel::OptionsPanel(QWidget *parent)
     leScaleFactor->setBasePalette();
     leScaleFactor->setText("1");
 
-    const QIcon syncIcon = QIcon(":/images/SyncArrow_32x.png");
-    const QPixmap syncPixmap = syncIcon.pixmap(QSize(16, 16));
+    const QIcon syncIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_SyncArrow));
+    int iconSize = this->style()->pixelMetric(QStyle::PM_SmallIconSize);
+    const QPixmap syncPixmap = syncIcon.pixmap(QSize{iconSize, iconSize});
     QLabel *syncLabel = new QLabel;
     syncLabel->setPixmap(syncPixmap);
 

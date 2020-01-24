@@ -1,3 +1,18 @@
+# Copyright 2020 Dow, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
 cmake_minimum_required(VERSION 3.15)
 
 project(sofea)
@@ -20,21 +35,26 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
-### Enable LTO (Experimental)
+# Enable LTO (Experimental)
 # /GL (Whole Program Optimization) in MSVC
 #set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 
-### Debugging
+# Debugging
 #set(VLD_INCLUDE_DIR "C:/Program Files (x86)/Visual Leak Detector/include/")
 #set(VLD_LIBRARY_DIR "C:/Program Files (x86)/Visual Leak Detector/lib/Win64")
 #set(VLD_LIBRARY "vld.lib")
 #include_directories(${VLD_INCLUDE_DIR})
 #link_directories(${VLD_LIBRARY_DIR})
 
+# Ribbon UICC
+set(SDKKEY "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Microsoft SDKs\\Windows\\v7.1")
+get_filename_component(SDKDIR "[${SDKKEY};InstallationFolder]" DIRECTORY)
+set(UICC "${SDKDIR}\\v7.1\\Bin\\uicc.exe")
+
 option(SOFEA_DEBUG "Enable verbose logging" OFF)
 
 #############################
-# Find External Libraries
+# External Libraries
 #############################
 
 set(Boost_DEBUG OFF)
@@ -43,14 +63,15 @@ set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 set(Boost_ALL_DYN_LINK OFF)
 
-### Dependencies:
-### hdf5: zlib
-### netcdf: hdf5
-### curl: zlib
-### proj: sqlite3
-### udunits2: expat
+#find_package(OpenMP)
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
-### Vcpkg
+# Dependencies:
+# hdf5: zlib
+# netcdf: hdf5
+# curl: zlib
+# proj: sqlite3
+# udunits2: expat
 
 find_package(Boost REQUIRED COMPONENTS THREAD LOG DATE_TIME)
 find_package(Qt5Core CONFIG REQUIRED)
@@ -68,12 +89,12 @@ find_package(cereal CONFIG REQUIRED)
 
 ### Custom Builds
 
-#set(GEOS_DIR "E:/Lib/geos-3.8.0dev-vc141-md-x64-shared/lib/cmake/GEOS")
-#set(GDAL_DIR "E:/Lib/gdal-dev-vc141-md-x64-shared")
-#set(EXPAT_DIR "E:/Lib/expat-2.2.8-vc141-md-x64-static/lib/cmake/expat-2.2.8")
-#set(PROJ4_DIR "E:/Lib/proj-6.2.0-vc141-md-x64-shared/lib/cmake/proj4")
+#set(GEOS_DIR "../external/geos-3.8.0dev/lib/cmake/GEOS")
+#set(EXPAT_DIR "../external/expat-2.2.8/lib/cmake/expat-2.2.8")
+#set(PROJ4_DIR "../external/proj-6.2.0/lib/cmake/proj4")
+#set(GDAL_DIR "../external/gdal-dev")
 
-set(NETCDF_DIR "E:/Lib/netcdf-c-4.7.1-vc141-md-x64-shared/lib/cmake/netCDF")
+set(NETCDF_DIR "../external/netcdf-c-4.7.1/lib/cmake/netCDF")
 find_package(NETCDF CONFIG REQUIRED)
 
 set(QWT_INCLUDE_DIR "../external/qwt-6.1.4/include")
@@ -83,6 +104,10 @@ set(QWT_LIBRARIES "qwt")
 set(QWTPOLAR_INCLUDE_DIR "../external/qwtpolar-1.1.1/include")
 set(QWTPOLAR_LIBRARY_DIR "../external/qwtpolar-1.1.1/lib")
 set(QWTPOLAR_LIBRARIES "qwtpolar")
+
+set(QTPROPERTYBROWSER_INCLUDE_DIR "../external/qtpropertybrowser/src")
+set(QTPROPERTYBROWSER_LIBRARY_DIR "../external/qtpropertybrowser/lib")
+set(QTPROPERTYBROWSER_LIBRARIES "QtPropertyBrowser")
 
 set(SHAPELIB_INCLUDE_DIR "../external/shapelib/include")
 set(SHAPELIB_LIBRARY_DIR "../external/shapelib/lib")
@@ -101,10 +126,6 @@ set(CSV_INCLUDE_DIR "../external/fast-cpp-csv-parser/include")
 ### Internal Libraries
 
 set(NCPP_INCLUDE_DIR "../ncpp/include")
-
-### OpenMP
-#find_package(OpenMP)
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
 message("-- Qt Version: ${Qt5Core_VERSION}")
 message("-- NetCDF Version: ${NetCDFVersion}")
@@ -141,10 +162,9 @@ set(SOURCES
     PixmapUtilities.cpp
     PlotCurveTracker.cpp
     PlotItemTitleTracker.cpp
-    #ProjectModel.cpp
-    #ProjectOptionsDialog.h
-    #ProjectTreeView.h
-    ProjectValidation.cpp
+    ProjectModel.cpp
+    ProjectOptionsDialog.cpp
+    ProjectTreeView.cpp
     Projection.cpp
     ProjectionEditor.cpp
     Receptor.cpp
@@ -172,6 +192,7 @@ set(SOURCES
     StandardPlot.cpp
     UDUnitsInterface.cpp
     UDUnitsLineEdit.cpp
+    Validation.cpp
     ctk/ctkCollapsibleGroupBox.cpp
     ctk/ctkProxyStyle.cpp
     ctk/ctkRangeSlider.cpp
@@ -186,6 +207,9 @@ set(SOURCES
     delegate/PointDelegate.cpp
     delegate/ProgressBarDelegate.cpp
     delegate/SpinBoxDelegate.cpp
+    delegate/VertexEditorDelegate.cpp
+    #ribbon/CRibbon.cpp
+    #ribbon/RibbonWindow.cpp
     widgets/BackgroundFrame.cpp
     widgets/DoubleLineEdit.cpp
     widgets/ExtendedComboBox.cpp
@@ -232,6 +256,7 @@ set(HEADERS
     LogWidget.h
     MagneticDeclinationDialog.h
     MainWindow.h
+    Meteorology.h
     MetFileInfoDialog.h
     MetFileParser.h
     MonteCarloDateTimeEdit.h
@@ -240,10 +265,9 @@ set(HEADERS
     PlotCurveTracker.h
     PlotItemTitleTracker.h
     Project.h
-    #ProjectModel.h
-    #ProjectOptionsDialog.h
-    #ProjectTreeView.h
-    ProjectValidation.h
+    ProjectModel.h
+    ProjectOptionsDialog.h
+    ProjectTreeView.h
     Projection.h
     ProjectionEditor.h
     Receptor.h
@@ -277,6 +301,7 @@ set(HEADERS
     StandardPlot.h
     UDUnitsInterface.h
     UDUnitsLineEdit.h
+    Validation.h
     ctk/ctkCollapsibleGroupBox.h
     ctk/ctkProxyStyle.h
     ctk/ctkRangeSlider.h
@@ -292,6 +317,9 @@ set(HEADERS
     delegate/PointDelegate.h
     delegate/ProgressBarDelegate.h
     delegate/SpinBoxDelegate.h
+    delegate/VertexEditorDelegate.h
+    #ribbon/CRibbon.h
+    #ribbon/RibbonWindow.h
     widgets/BackgroundFrame.h
     widgets/DoubleLineEdit.h
     widgets/ExtendedComboBox.h
@@ -309,18 +337,40 @@ set(HEADERS
 )
 
 #############################
-# Target
+# Targets
 #############################
+
+#set(RIBBON_XML "${CMAKE_CURRENT_SOURCE_DIR}/RibbonDefinition.xml")
+#set(RIBBON_H   "${CMAKE_CURRENT_SOURCE_DIR}/RibbonDefinition.h")
+#set(RIBBON_RC  "${CMAKE_CURRENT_SOURCE_DIR}/RibbonDefinition.rc")
+#set(RIBBON_BML "${CMAKE_CURRENT_BINARY_DIR}/RibbonDefinition.bml")
+#
+#file(TO_NATIVE_PATH "${RIBBON_XML}" RIBBON_XML_PATH)
+#file(TO_NATIVE_PATH "${RIBBON_H}"   RIBBON_H_PATH)
+#file(TO_NATIVE_PATH "${RIBBON_BML}" RIBBON_BML_PATH)
+#file(TO_NATIVE_PATH "${RIBBON_RC}"  RIBBON_RC_PATH)
+#
+#add_custom_command(
+#    OUTPUT ${RIBBON_BML} ${RIBBON_H} ${RIBBON_RC}
+#    COMMAND ${UICC} ${RIBBON_XML_PATH} ${RIBBON_BML_PATH} /header:${RIBBON_H_PATH} /res:${RIBBON_RC_PATH}
+#    DEPENDS ${RIBBON_XML}
+#    COMMENT "Running UICC"
+#)
+#list(APPEND HEADERS ${RIBBON_H})
+#add_custom_target(xml ALL SOURCES ${RIBBON_XML})
 
 qt5_wrap_ui(UI_GENERATED_HEADERS)
 
-# ${HEADERS} in add_executable for Qt Creator support
 add_executable(main WIN32 ${SOURCES} ${HEADERS} ${UI_GENERATED_HEADERS})
+#set_source_files_properties(${RIBBON_H} PROPERTIES GENERATED 1)
 set_target_properties(main PROPERTIES OUTPUT_NAME ${CMAKE_PROJECT_NAME})
 
 #############################
 # Definitions
 #############################
+
+# Win32 definitions
+target_compile_definitions(main PRIVATE -DUNICODE -D_UNICODE)
 
 # Boost definitions
 target_compile_definitions(main PRIVATE -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
@@ -346,7 +396,7 @@ endif()
 target_compile_definitions(main PRIVATE -DSCINTILLA_QT)
 target_compile_definitions(main PRIVATE -DSCI_LEXER)
 
-# SOFEA definitions
+# Internal definitions
 if(SOFEA_DEBUG)
     target_compile_definitions(main PRIVATE -DSOFEA_DEBUG)
 endif()
@@ -356,6 +406,7 @@ target_include_directories(main PRIVATE
     ${NETCDF_INCLUDE_DIR}
     ${QWT_INCLUDE_DIR}
     ${QWTPOLAR_INCLUDE_DIR}
+    ${QTPROPERTYBROWSER_INCLUDE_DIR}
     ${CSV_INCLUDE_DIR}
     ${NCPP_INCLUDE_DIR}
     ${SHAPELIB_INCLUDE_DIR}
@@ -370,12 +421,18 @@ target_link_directories(main PRIVATE
     ${NETCDF_LIBRARY}
     ${QWT_LIBRARY_DIR}
     ${QWTPOLAR_LIBRARY_DIR}
+    ${QTPROPERTYBROWSER_LIBRARY_DIR}
     ${SHAPELIB_LIBRARY_DIR}
     ${SCINTILLA_LIBRARY_DIR}
     ${UDUNITS2_LIBRARY_DIR}
 )
 
+# Qt Libraries
 target_link_libraries(main PUBLIC Qt5::Core Qt5::WinMain Qt5::Widgets Qt5::Network Qt5::WinExtras)
+
+# Win32 Libraries
+#target_link_libraries(main PRIVATE user32 gdi32 ole32 shlwapi propsys)
+
 target_link_libraries(main PRIVATE ${Boost_LIBRARIES})
 target_link_libraries(main PRIVATE ${CURL_LIBRARIES})
 target_link_libraries(main PUBLIC netcdf)
@@ -385,9 +442,9 @@ target_link_libraries(main PRIVATE EXPAT::EXPAT)
 target_link_libraries(main PRIVATE date::date date::tz)
 target_link_libraries(main PRIVATE fmt::fmt-header-only)
 target_link_libraries(main PRIVATE cereal)
-
 target_link_libraries(main PRIVATE ${QWT_LIBRARIES})
 target_link_libraries(main PRIVATE ${QWTPOLAR_LIBRARIES})
+target_link_libraries(main PRIVATE ${QTPROPERTYBROWSER_LIBRARIES})
 target_link_libraries(main PRIVATE ${SHAPELIB_LIBRARIES})
 target_link_libraries(main PRIVATE ${UDUNITS2_LIBRARIES})
 target_link_libraries(main PRIVATE ${SCINTILLA_LIBRARIES})

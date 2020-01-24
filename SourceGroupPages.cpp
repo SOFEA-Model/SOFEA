@@ -1,3 +1,18 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #include <QtWidgets>
 
 #include "SourceGroupPages.h"
@@ -155,11 +170,11 @@ DepositionPage::DepositionPage(SourceGroup *sg, QWidget *parent)
     mcHenryConstant->setDecimals(8);
 
     lblDepoNotEnabled = new StatusLabel;
-    lblDepoNotEnabled->setSeverity(2);
+    lblDepoNotEnabled->setStatusType(StatusLabel::Alert);
     lblDepoNotEnabled->setText("Deposition must be enabled for these parameters to take effect.");
 
     lblDepoUserVelocity = new StatusLabel;
-    lblDepoUserVelocity->setSeverity(2);
+    lblDepoUserVelocity->setStatusType(StatusLabel::Alert);
     lblDepoUserVelocity->setText("Custom gas dry deposition velocity must be disabled for these parameters to take effect.");
 
     // Layout
@@ -247,7 +262,7 @@ FluxProfilePage::FluxProfilePage(Scenario *s, SourceGroup *sg, QWidget *parent)
     editor->setColumnHidden(3);
 
     lblNoFluxProfile = new StatusLabel;
-    lblNoFluxProfile->setSeverity(3);
+    lblNoFluxProfile->setStatusType(StatusLabel::Warning);
     lblNoFluxProfile->setText("No flux profiles have been defined in the scenario.");
     lblNoFluxProfile->setVisible(model->rowCount() == 0);
 
@@ -349,7 +364,7 @@ BufferZonePage::BufferZonePage(SourceGroup *sg, QWidget *parent)
     zoneEditor = new StandardTableEditor(Qt::Vertical, zoneEditorOpts);
 
     lblThresholdInfo = new StatusLabel;
-    lblThresholdInfo->setSeverity(2);
+    lblThresholdInfo->setStatusType(StatusLabel::InfoTip);
     lblThresholdInfo->setText(
         "The buffer zone assigned to a source is the last row for which area "
         "and application rate are less than the threshold values.");

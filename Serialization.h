@@ -1,3 +1,18 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #pragma once
 
 #include <iostream>
@@ -490,51 +505,51 @@ struct specialize<
 // Boost.ICL Types
 //-----------------------------------------------------------------------------
 
-//// External save function for boost::icl::discrete_interval<DomainT>
-//template <class Archive, class DomainT>
-//void save(Archive& ar, boost::icl::discrete_interval<DomainT> const& di)
-//{
-//    auto const& bb = di.bounds().bits();
-//    auto const& l  = di.lower();
-//    auto const& u  = di.upper();
-//    ar(bb, l, u);
-//}
-//
-//// External load function for boost::icl::discrete_interval<DomainT>
-//template <class Archive, class DomainT>
-//void load(Archive& ar, boost::icl::discrete_interval<DomainT>& di)
-//{
-//    auto bb = di.bounds().bits();
-//    DomainT l, u;
-//    ar(bb, l, u);
-//    di = boost::icl::discrete_interval<DomainT>(l, u, boost::icl::interval_bounds(bb));
-//}
-//
-//// External save function for boost::icl::interval_map<DomainT, CodomainT>
-//template <class Archive>
-//void save(Archive& ar, IntervalMap const& im)
-//{
-//    auto sz = im.iterative_size();
-//    ar(sz);
-//    for (auto& value : im) {
-//        ar(value.first(), value.second());
-//    }
-//}
-//
-//// Enternal load function for boost::icl::interval_map<DomainT, CodomainT>
-//template <class Archive>
-//void load(Archive& ar, IntervalMap& im)
-//{
-//    im.clear();
-//    size_t sz;
-//    ar(sz);
-//    size_t counter = sz;
-//    while (counter--) {
-//        typename IntervalMap::value_type value;
-//        ar(value);
-//        im.insert(im.end(), value);
-//    }
-//}
+// External save function for boost::icl::discrete_interval<DomainT>
+template <class Archive, class DomainT>
+void save(Archive& ar, boost::icl::discrete_interval<DomainT> const& di)
+{
+    auto const& bb = di.bounds().bits();
+    auto const& l  = di.lower();
+    auto const& u  = di.upper();
+    ar(bb, l, u);
+}
+
+// External load function for boost::icl::discrete_interval<DomainT>
+template <class Archive, class DomainT>
+void load(Archive& ar, boost::icl::discrete_interval<DomainT>& di)
+{
+    auto bb = di.bounds().bits();
+    DomainT l, u;
+    ar(bb, l, u);
+    di = boost::icl::discrete_interval<DomainT>(l, u, boost::icl::interval_bounds(bb));
+}
+
+// External save function for boost::icl::interval_map<DomainT, CodomainT>
+template <class Archive>
+void save(Archive& ar, IntervalMap const& im)
+{
+    auto sz = im.iterative_size();
+    ar(sz);
+    for (auto& value : im) {
+        ar(value.first(), value.second());
+    }
+}
+
+// Enternal load function for boost::icl::interval_map<DomainT, CodomainT>
+template <class Archive>
+void load(Archive& ar, IntervalMap& im)
+{
+    im.clear();
+    size_t sz;
+    ar(sz);
+    size_t counter = sz;
+    while (counter--) {
+        typename IntervalMap::value_type value;
+        ar(value);
+        im.insert(im.end(), value);
+    }
+}
 
 //-----------------------------------------------------------------------------
 // SOFEA Classes
@@ -588,7 +603,7 @@ void serialize(Archive& archive, ReceptorNode& rn, const std::uint32_t version)
 }
 
 // External serialize function for ReceptorRing
-// DEPRECIATED
+// *** Depreciated, For Serialization Only ***
 template <class Archive>
 void serialize(Archive& archive, ReceptorRing& rr, const std::uint32_t version)
 {
@@ -610,7 +625,7 @@ void serialize(Archive& archive, ReceptorRing& rr, const std::uint32_t version)
 
 
 // External serialize function for ReceptorGrid
-// DEPRECIATED
+// *** Depreciated, For Serialization Only ***
 template <class Archive>
 void serialize(Archive& archive, ReceptorGrid& rg, const std::uint32_t version)
 {
@@ -879,7 +894,7 @@ void serialize(Archive& archive, Scenario& s, const std::uint32_t version)
     //        adds support for projections
 
     if (version >= 1) {
-        archive(cereal::make_nvp("title", s.title),
+        archive(cereal::make_nvp("title", s.name),
                 cereal::make_nvp("fumigant_id", s.fumigantId),
                 cereal::make_nvp("decay_coefficient", s.decayCoefficient));
     }

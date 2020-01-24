@@ -1,3 +1,18 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #include "Scenario.h"
 #include "MetFileParser.h"
 #include "Common.h"
@@ -32,7 +47,7 @@ Scenario::Scenario()
     id = sequenceNumber;
     sequenceNumber++;
 
-    title = fmt::format("Run{:0=2}", id);
+    name = fmt::format("Run{:0=2}", id);
     fumigantId = 7; // Other
     decayCoefficient = 0;
 
@@ -76,7 +91,7 @@ Scenario::Scenario()
 Scenario::Scenario(const Scenario& rhs)
 {
     this->id = rhs.id;
-    this->title = rhs.title;
+    this->name = rhs.name;
     this->fumigantId = rhs.fumigantId;
     this->decayCoefficient = rhs.decayCoefficient;
     this->upperAirFile = rhs.upperAirFile;
@@ -260,13 +275,14 @@ std::string Scenario::writeInput() const
     if (aermodLowWind) {
         fmt::format_to(w, "   LOW_WIND {:06.4f} {:06.4f} {:06.4f}\n", aermodSVmin, aermodWSmin, aermodFRANmax);
     }
-    fmt::format_to(w, "   TITLEONE {}\n", title);
+    fmt::format_to(w, "   TITLEONE {}\n", name);
     if (averagingPeriods.size() > 0) {
         fmt::format_to(w, "   AVERTIME");
         for (int i : averagingPeriods)
             fmt::format_to(w, " {}", i);
         fmt::format_to(w, "\n");
     }
+    fmt::format_to(w, "   FLAGPOLE 0.0\n");
     fmt::format_to(w, "   POLLUTID FUMIGANT\n");
     fmt::format_to(w, "   DCAYCOEF {:G}\n", decayCoefficient);
     if (aermodDryDeposition & aermodGDVelocityEnabled & !aermodWetDeposition) {

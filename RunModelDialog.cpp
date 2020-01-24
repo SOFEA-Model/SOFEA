@@ -1,3 +1,18 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #include <QtWidgets>
 
 #include "RunModelDialog.h"
@@ -73,6 +88,8 @@ RunModelDialog::RunModelDialog(QWidget *parent) : QDialog(parent)
     setupConnections();
     ipcServer->start();
     timer->start();
+
+    emit progressVisibilityChanged(true);
 }
 
 void RunModelDialog::setupConnections()
@@ -106,13 +123,6 @@ void RunModelDialog::setWorkingDirectory(const QString& path)
     leWorkingDir->setText(workingDir);
 }
 
-void RunModelDialog::setTaskbarButton(QWinTaskbarButton *button)
-{
-    taskbarButton = button;
-    taskbarProgress = taskbarButton->progress();
-    taskbarProgress->setVisible(true);
-}
-
 void RunModelDialog::addScenario(Scenario *s)
 {
     Job *job = new Job;
@@ -124,7 +134,7 @@ void RunModelDialog::addScenario(Scenario *s)
     for (int j = 0; j < runModel->columnCount(); ++j)
         runModel->setItem(i, j, new QStandardItem);
 
-    QString name = QString::fromStdString(s->title);
+    QString name = QString::fromStdString(s->name);
     runModel->item(i, 0)->setText(name);
     runModel->item(i, 4)->setData(0, Qt::DisplayRole); // 0% complete
 }
@@ -171,7 +181,7 @@ void RunModelDialog::executeJob(int i)
     jobs[i]->queued = false;
 
     // Create the output directory.
-    jobs[i]->subDir = QString::fromStdString(jobs[i]->scenario->title) + "_" + timestamp.toString("yyyyMMddhhmmsszzz");
+    jobs[i]->subDir = QString::fromStdString(jobs[i]->scenario->name) + "_" + timestamp.toString("yyyyMMddhhmmsszzz");
     QDir outputDir(workingDir);
     if (!outputDir.mkdir(jobs[i]->subDir)) {
         runModel->item(i, 1)->setText(getProcessError(QProcess::WriteError));
@@ -330,9 +340,7 @@ void RunModelDialog::updateProgress(quint32 pid, quint32 msg)
             progress = std::min(std::max(progress, 0), 100);
             runModel->item(i, 4)->setData(progress, Qt::DisplayRole);
 
-            if (taskbarProgress) {
-                taskbarProgress->setValue(progress);
-            }
+            emit progressValueChanged(progress);
         }
     }
 }
@@ -375,9 +383,7 @@ void RunModelDialog::reject()
     }
 
     // Clear the progress indicator.
-    if (taskbarProgress) {
-        taskbarProgress->setVisible(false);
-    }
+    emit progressVisibilityChanged(false);
 
     QDialog::reject();
 }

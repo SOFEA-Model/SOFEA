@@ -1,0 +1,832 @@
+<?xml version='1.0' encoding='utf-8'?>
+
+<Application xmlns="http://schemas.microsoft.com/windows/2009/Ribbon">
+
+    <Application.Commands>
+
+        <!-- ApplicationMenu -->
+
+        <Command Name="FileMenu" Symbol="IDC_FILEMENU" />
+        <Command Name="MRUList" Symbol="IDC_MRULIST" />
+
+        <!-- HelpButton -->
+
+        <Command Name="Help" Symbol="IDC_RIBBONHELP" />
+
+        <!-- QuickAccessToolbar -->
+
+        <Command Name="QAT" Symbol="IDC_QAT" />
+
+        <!-- ApplicationMenu: New -->
+
+        <Command Name="NewFile" Symbol="IDC_NEWFILE" LabelTitle="New Project">
+            <Command.LargeImages>
+                <Image Source="res/NewFile_32x.bmp" MinDPI="96" />
+                <Image Source="res/NewFile_40x.bmp" MinDPI="120" />
+                <Image Source="res/NewFile_48x.bmp" MinDPI="144" />
+                <Image Source="res/NewFile_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/NewFile_16x.bmp" MinDPI="96" />
+                <Image Source="res/NewFile_20x.bmp" MinDPI="120" />
+                <Image Source="res/NewFile_24x.bmp" MinDPI="144" />
+                <Image Source="res/NewFile_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <!-- ApplicationMenu: Open -->
+
+        <Command Name="MenuOpen" Symbol="IDC_MENU_OPEN" />
+
+        <Command Name="Open" Symbol="IDC_OPEN" LabelTitle="Open Project">
+            <Command.LargeImages>
+                <Image Source="res/Open_32x.bmp" MinDPI="96" />
+                <Image Source="res/Open_40x.bmp" MinDPI="120" />
+                <Image Source="res/Open_48x.bmp" MinDPI="144" />
+                <Image Source="res/Open_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/Open_16x.bmp" MinDPI="96" />
+                <Image Source="res/Open_20x.bmp" MinDPI="120" />
+                <Image Source="res/Open_24x.bmp" MinDPI="144" />
+                <Image Source="res/Open_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="OpenProject" Symbol="IDC_OPENPROJECT" LabelTitle="Open Project" LabelDescription="Open a project file from the local system or network share.">
+            <Command.LargeImages>
+                <Image Source="res/OpenFile_32x.bmp" MinDPI="96" />
+                <Image Source="res/OpenFile_40x.bmp" MinDPI="120" />
+                <Image Source="res/OpenFile_48x.bmp" MinDPI="144" />
+                <Image Source="res/OpenFile_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/OpenFile_16x.bmp" MinDPI="96" />
+                <Image Source="res/OpenFile_20x.bmp" MinDPI="120" />
+                <Image Source="res/OpenFile_24x.bmp" MinDPI="144" />
+                <Image Source="res/OpenFile_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <!-- ApplicationMenu: Import -->
+
+        <Command Name="MenuImport" Symbol="IDC_MENU_IMPORT" />
+
+        <Command Name="Import" Symbol="IDC_IMPORT" LabelTitle="Import">
+            <Command.LargeImages>
+                <Image Source="res/Import_32x.bmp" MinDPI="96" />
+                <Image Source="res/Import_40x.bmp" MinDPI="120" />
+                <Image Source="res/Import_48x.bmp" MinDPI="144" />
+                <Image Source="res/Import_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/Import_16x.bmp" MinDPI="96" />
+                <Image Source="res/Import_20x.bmp" MinDPI="120" />
+                <Image Source="res/Import_24x.bmp" MinDPI="144" />
+                <Image Source="res/Import_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="ImportFile" Symbol="IDC_IMPORTFILE" LabelTitle="Import File">
+            <Command.LargeImages>
+                <Image Source="res/ImportFile_32x.bmp" MinDPI="96" />
+                <Image Source="res/ImportFile_40x.bmp" MinDPI="120" />
+                <Image Source="res/ImportFile_48x.bmp" MinDPI="144" />
+                <Image Source="res/ImportFile_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/ImportFile_16x.bmp" MinDPI="96" />
+                <Image Source="res/ImportFile_20x.bmp" MinDPI="120" />
+                <Image Source="res/ImportFile_24x.bmp" MinDPI="144" />
+                <Image Source="res/ImportFile_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <!-- ApplicationMenu: Export -->
+
+        <Command Name="MenuExport" Symbol="IDC_MENU_EXPORT" />
+
+        <Command Name="Export" Symbol="IDC_EXPORT" LabelTitle="Export">
+            <Command.LargeImages>
+                <Image Source="res/Export_32x.bmp" MinDPI="96" />
+                <Image Source="res/Export_40x.bmp" MinDPI="120" />
+                <Image Source="res/Export_48x.bmp" MinDPI="144" />
+                <Image Source="res/Export_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/Export_16x.bmp" MinDPI="96" />
+                <Image Source="res/Export_20x.bmp" MinDPI="120" />
+                <Image Source="res/Export_24x.bmp" MinDPI="144" />
+                <Image Source="res/Export_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="ExportData" Symbol="IDC_EXPORTDATA" LabelTitle="Export Data">
+            <Command.LargeImages>
+                <Image Source="res/ExportData_32x.bmp" MinDPI="96" />
+                <Image Source="res/ExportData_40x.bmp" MinDPI="120" />
+                <Image Source="res/ExportData_48x.bmp" MinDPI="144" />
+                <Image Source="res/ExportData_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/ExportData_16x.bmp" MinDPI="96" />
+                <Image Source="res/ExportData_20x.bmp" MinDPI="120" />
+                <Image Source="res/ExportData_24x.bmp" MinDPI="144" />
+                <Image Source="res/ExportData_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="ExportFile" Symbol="IDC_EXPORTFILE" LabelTitle="Export File">
+            <Command.LargeImages>
+                <Image Source="res/ExportFile_32x.bmp" MinDPI="96" />
+                <Image Source="res/ExportFile_40x.bmp" MinDPI="120" />
+                <Image Source="res/ExportFile_48x.bmp" MinDPI="144" />
+                <Image Source="res/ExportFile_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/ExportFile_16x.bmp" MinDPI="96" />
+                <Image Source="res/ExportFile_20x.bmp" MinDPI="120" />
+                <Image Source="res/ExportFile_24x.bmp" MinDPI="144" />
+                <Image Source="res/ExportFile_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="ExportToExcel" Symbol="IDC_EXPORTTOEXCEL" LabelTitle="Export to Excel">
+            <Command.LargeImages>
+                <Image Source="res/ExportToExcel_32x.bmp" MinDPI="96" />
+                <Image Source="res/ExportToExcel_40x.bmp" MinDPI="120" />
+                <Image Source="res/ExportToExcel_48x.bmp" MinDPI="144" />
+                <Image Source="res/ExportToExcel_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/ExportToExcel_16x.bmp" MinDPI="96" />
+                <Image Source="res/ExportToExcel_20x.bmp" MinDPI="120" />
+                <Image Source="res/ExportToExcel_24x.bmp" MinDPI="144" />
+                <Image Source="res/ExportToExcel_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <!-- ApplicationMenu: Save -->
+
+        <Command Name="Save" Symbol="IDC_SAVE" LabelTitle="Save Project">
+            <Command.LargeImages>
+                <Image Source="res/Save_32x.bmp" MinDPI="96" />
+                <Image Source="res/Save_40x.bmp" MinDPI="120" />
+                <Image Source="res/Save_48x.bmp" MinDPI="144" />
+                <Image Source="res/Save_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/Save_16x.bmp" MinDPI="96" />
+                <Image Source="res/Save_20x.bmp" MinDPI="120" />
+                <Image Source="res/Save_24x.bmp" MinDPI="144" />
+                <Image Source="res/Save_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="SaveAs" Symbol="IDC_SAVEAS" LabelTitle="Save Project As">
+            <Command.LargeImages>
+                <Image Source="res/SaveAs_32x.bmp" MinDPI="96" />
+                <Image Source="res/SaveAs_40x.bmp" MinDPI="120" />
+                <Image Source="res/SaveAs_48x.bmp" MinDPI="144" />
+                <Image Source="res/SaveAs_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/SaveAs_16x.bmp" MinDPI="96" />
+                <Image Source="res/SaveAs_20x.bmp" MinDPI="120" />
+                <Image Source="res/SaveAs_24x.bmp" MinDPI="144" />
+                <Image Source="res/SaveAs_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <!-- Tab: Home -->
+
+        <Command Name="TabHome" Symbol="IDC_TAB_HOME" LabelTitle="Home" />
+
+        <!-- Group: Edit -->
+
+        <Command Name="GroupEdit" Symbol="IDC_GROUP_EDIT" LabelTitle="Edit" />
+
+        <Command Name="New" Symbol="IDC_NEW" LabelTitle="New">
+            <Command.LargeImages>
+                <Image Source="res/Create_32x.bmp" MinDPI="96" />
+                <Image Source="res/Create_40x.bmp" MinDPI="120" />
+                <Image Source="res/Create_48x.bmp" MinDPI="144" />
+                <Image Source="res/Create_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/Create_16x.bmp" MinDPI="96" />
+                <Image Source="res/Create_20x.bmp" MinDPI="120" />
+                <Image Source="res/Create_24x.bmp" MinDPI="144" />
+                <Image Source="res/Create_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="Properties" Symbol="IDC_PROPERTIES" LabelTitle="Properties">
+            <Command.LargeImages>
+                <Image Source="res/Settings_32x.bmp" MinDPI="96" />
+                <Image Source="res/Settings_40x.bmp" MinDPI="120" />
+                <Image Source="res/Settings_48x.bmp" MinDPI="144" />
+                <Image Source="res/Settings_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/Settings_16x.bmp" MinDPI="96" />
+                <Image Source="res/Settings_20x.bmp" MinDPI="120" />
+                <Image Source="res/Settings_24x.bmp" MinDPI="144" />
+                <Image Source="res/Settings_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="Clone" Symbol="IDC_CLONE" LabelTitle="Clone">
+            <Command.LargeImages>
+                <Image Source="res/CopyItem_32x.bmp" MinDPI="96" />
+                <Image Source="res/CopyItem_40x.bmp" MinDPI="120" />
+                <Image Source="res/CopyItem_48x.bmp" MinDPI="144" />
+                <Image Source="res/CopyItem_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/CopyItem_16x.bmp" MinDPI="96" />
+                <Image Source="res/CopyItem_20x.bmp" MinDPI="120" />
+                <Image Source="res/CopyItem_24x.bmp" MinDPI="144" />
+                <Image Source="res/CopyItem_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="Rename" Symbol="IDC_RENAME" LabelTitle="Rename">
+            <Command.LargeImages>
+                <Image Source="res/Rename_32x.bmp" MinDPI="96" />
+                <Image Source="res/Rename_40x.bmp" MinDPI="120" />
+                <Image Source="res/Rename_48x.bmp" MinDPI="144" />
+                <Image Source="res/Rename_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/Rename_16x.bmp" MinDPI="96" />
+                <Image Source="res/Rename_20x.bmp" MinDPI="120" />
+                <Image Source="res/Rename_24x.bmp" MinDPI="144" />
+                <Image Source="res/Rename_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="Remove" Symbol="IDC_REMOVE" LabelTitle="Remove">
+            <Command.LargeImages>
+                <Image Source="res/Remove_32x.bmp" MinDPI="96" />
+                <Image Source="res/Remove_40x.bmp" MinDPI="120" />
+                <Image Source="res/Remove_48x.bmp" MinDPI="144" />
+                <Image Source="res/Remove_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/Remove_16x.bmp" MinDPI="96" />
+                <Image Source="res/Remove_20x.bmp" MinDPI="120" />
+                <Image Source="res/Remove_24x.bmp" MinDPI="144" />
+                <Image Source="res/Remove_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <!-- Group: Views -->
+
+        <Command Name="GroupViews" Symbol="IDC_GROUP_VIEWS" LabelTitle="Views" />
+
+        <Command Name="InputFile" Symbol="IDC_INPUTFILE" LabelTitle="Input File">
+            <Command.LargeImages>
+                <Image Source="res/ScriptPreview_32x.bmp" MinDPI="96" />
+                <Image Source="res/ScriptPreview_40x.bmp" MinDPI="120" />
+                <Image Source="res/ScriptPreview_48x.bmp" MinDPI="144" />
+                <Image Source="res/ScriptPreview_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/ScriptPreview_16x.bmp" MinDPI="96" />
+                <Image Source="res/ScriptPreview_20x.bmp" MinDPI="120" />
+                <Image Source="res/ScriptPreview_24x.bmp" MinDPI="144" />
+                <Image Source="res/ScriptPreview_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="SourceTable" Symbol="IDC_SOURCETABLE" LabelTitle="Source Table">
+            <Command.LargeImages>
+                <Image Source="res/Table_32x.bmp" MinDPI="96" />
+                <Image Source="res/Table_40x.bmp" MinDPI="120" />
+                <Image Source="res/Table_48x.bmp" MinDPI="144" />
+                <Image Source="res/Table_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/Table_16x.bmp" MinDPI="96" />
+                <Image Source="res/Table_20x.bmp" MinDPI="120" />
+                <Image Source="res/Table_24x.bmp" MinDPI="144" />
+                <Image Source="res/Table_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="ReceptorEditor" Symbol="IDC_RECEPTOREDITOR" LabelTitle="Receptor Editor">
+            <Command.LargeImages>
+                <Image Source="res/EditorZone_32x.bmp" MinDPI="96" />
+                <Image Source="res/EditorZone_40x.bmp" MinDPI="120" />
+                <Image Source="res/EditorZone_48x.bmp" MinDPI="144" />
+                <Image Source="res/EditorZone_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/EditorZone_16x.bmp" MinDPI="96" />
+                <Image Source="res/EditorZone_20x.bmp" MinDPI="120" />
+                <Image Source="res/EditorZone_24x.bmp" MinDPI="144" />
+                <Image Source="res/EditorZone_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="WindRose" Symbol="IDC_WINDROSE" LabelTitle="Wind Rose">
+            <Command.LargeImages>
+                <Image Source="res/WindRose_32x.bmp" MinDPI="96" />
+                <Image Source="res/WindRose_40x.bmp" MinDPI="120" />
+                <Image Source="res/WindRose_48x.bmp" MinDPI="144" />
+                <Image Source="res/WindRose_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+        </Command>
+
+        <!-- Group: Show -->
+
+        <Command Name="GroupShow" Symbol="IDC_GROUP_SHOW" LabelTitle="Show" />
+        <Command Name="ShowProjectBrowser" Symbol="IDC_SHOWPROJECTBROWSER" LabelTitle="Project Browser" />
+        <Command Name="ShowValidation" Symbol="IDC_SHOWVALIDATION" LabelTitle="Validation" />
+        <Command Name="ShowModelOutput" Symbol="IDC_SHOWMODELOUTPUT" LabelTitle="Model Output" />
+
+        <!-- Group: Model -->
+
+        <Command Name="GroupModel" Symbol="IDC_GROUP_MODEL" LabelTitle="Model" />
+
+        <Command Name="Validate" Symbol="IDC_VALIDATE" LabelTitle="Validate">
+            <Command.LargeImages>
+                <Image Source="res/Checkmark_32x.bmp" MinDPI="96" />
+                <Image Source="res/Checkmark_40x.bmp" MinDPI="120" />
+                <Image Source="res/Checkmark_48x.bmp" MinDPI="144" />
+                <Image Source="res/Checkmark_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/Checkmark_16x.bmp" MinDPI="96" />
+                <Image Source="res/Checkmark_20x.bmp" MinDPI="120" />
+                <Image Source="res/Checkmark_24x.bmp" MinDPI="144" />
+                <Image Source="res/Checkmark_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="Run" Symbol="IDC_RUN" LabelTitle="Run">
+            <Command.LargeImages>
+                <Image Source="res/Run_32x.bmp" MinDPI="96" />
+                <Image Source="res/Run_40x.bmp" MinDPI="120" />
+                <Image Source="res/Run_48x.bmp" MinDPI="144" />
+                <Image Source="res/Run_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/Run_16x.bmp" MinDPI="96" />
+                <Image Source="res/Run_20x.bmp" MinDPI="120" />
+                <Image Source="res/Run_24x.bmp" MinDPI="144" />
+                <Image Source="res/Run_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="Analyze" Symbol="IDC_ANALYZE" LabelTitle="Analyze">
+            <Command.LargeImages>
+                <Image Source="res/Measure_32x.bmp" MinDPI="96" />
+                <Image Source="res/Measure_40x.bmp" MinDPI="120" />
+                <Image Source="res/Measure_48x.bmp" MinDPI="144" />
+                <Image Source="res/Measure_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/Measure_16x.bmp" MinDPI="96" />
+                <Image Source="res/Measure_20x.bmp" MinDPI="120" />
+                <Image Source="res/Measure_24x.bmp" MinDPI="144" />
+                <Image Source="res/Measure_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+
+
+        <Command Name="GenerateFile" Symbol="IDC_GENERATEFILE" LabelTitle="Generate File">
+            <Command.LargeImages>
+                <Image Source="res/GenerateFile_32x.bmp" MinDPI="96" />
+                <Image Source="res/GenerateFile_40x.bmp" MinDPI="120" />
+                <Image Source="res/GenerateFile_48x.bmp" MinDPI="144" />
+                <Image Source="res/GenerateFile_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/GenerateFile_16x.bmp" MinDPI="96" />
+                <Image Source="res/GenerateFile_20x.bmp" MinDPI="120" />
+                <Image Source="res/GenerateFile_24x.bmp" MinDPI="144" />
+                <Image Source="res/GenerateFile_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="GenerateTable" Symbol="IDC_GENERATETABLE" LabelTitle="Generate Table">
+            <Command.LargeImages>
+                <Image Source="res/GenerateTable_32x.bmp" MinDPI="96" />
+                <Image Source="res/GenerateTable_40x.bmp" MinDPI="120" />
+                <Image Source="res/GenerateTable_48x.bmp" MinDPI="144" />
+                <Image Source="res/GenerateTable_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/GenerateTable_16x.bmp" MinDPI="96" />
+                <Image Source="res/GenerateTable_20x.bmp" MinDPI="120" />
+                <Image Source="res/GenerateTable_24x.bmp" MinDPI="144" />
+                <Image Source="res/GenerateTable_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <!-- Group: Receptors -->
+
+        <Command Name="AddReceptorNodes" Symbol="IDC_ADDRECEPTORNODES" LabelTitle="Discrete">
+            <Command.LargeImages>
+                <Image Source="res/ReceptorNodes_32x.bmp" MinDPI="96" />
+                <Image Source="res/ReceptorNodes_40x.bmp" MinDPI="120" />
+                <Image Source="res/ReceptorNodes_48x.bmp" MinDPI="144" />
+                <Image Source="res/ReceptorNodes_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/ReceptorNodes_16x.bmp" MinDPI="96" />
+                <Image Source="res/ReceptorNodes_20x.bmp" MinDPI="120" />
+                <Image Source="res/ReceptorNodes_24x.bmp" MinDPI="144" />
+                <Image Source="res/ReceptorNodes_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="AddReceptorRing" Symbol="IDC_ADDRECEPTORRING" LabelTitle="Ring">
+            <Command.LargeImages>
+                <Image Source="res/ReceptorRing_32x.bmp" MinDPI="96" />
+                <Image Source="res/ReceptorRing_40x.bmp" MinDPI="120" />
+                <Image Source="res/ReceptorRing_48x.bmp" MinDPI="144" />
+                <Image Source="res/ReceptorRing_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/ReceptorRing_16x.bmp" MinDPI="96" />
+                <Image Source="res/ReceptorRing_20x.bmp" MinDPI="120" />
+                <Image Source="res/ReceptorRing_24x.bmp" MinDPI="144" />
+                <Image Source="res/ReceptorRing_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="AddReceptorGrid" Symbol="IDC_ADDRECEPTORGRID" LabelTitle="Grid">
+            <Command.LargeImages>
+                <Image Source="res/ReceptorGrid_32x.bmp" MinDPI="96" />
+                <Image Source="res/ReceptorGrid_40x.bmp" MinDPI="120" />
+                <Image Source="res/ReceptorGrid_48x.bmp" MinDPI="144" />
+                <Image Source="res/ReceptorGrid_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/ReceptorGrid_16x.bmp" MinDPI="96" />
+                <Image Source="res/ReceptorGrid_20x.bmp" MinDPI="120" />
+                <Image Source="res/ReceptorGrid_24x.bmp" MinDPI="144" />
+                <Image Source="res/ReceptorGrid_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <!-- TabGroup: Source Tools -->
+
+        <Command Name="TabGroupSourceTools" Symbol="IDC_TABGROUP_SOURCETOOLS" LabelTitle="Source Tools" />
+
+        <!-- Tab: Source Tools -->
+
+        <Command Name="TabSourceTools" Symbol="IDC_TAB_SOURCETOOLS" LabelTitle="Manage" />
+
+        <!-- Group: Source Tools -->
+
+        <Command Name="GroupSourceTools" Symbol="IDC_GROUP_SOURCETOOLS" LabelTitle="Sources" />
+
+        <Command Name="AddSource" Symbol="IDC_ADDSOURCE" LabelTitle="Add Source">
+            <Command.LargeImages>
+                <Image Source="res/Add_color_32x.bmp" MinDPI="96" />
+                <Image Source="res/Add_color_40x.bmp" MinDPI="120" />
+                <Image Source="res/Add_color_48x.bmp" MinDPI="144" />
+                <Image Source="res/Add_color_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/Add_color_16x.bmp" MinDPI="96" />
+                <Image Source="res/Add_color_20x.bmp" MinDPI="120" />
+                <Image Source="res/Add_color_24x.bmp" MinDPI="144" />
+                <Image Source="res/Add_color_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="AddAreaSource" Symbol="IDC_ADDAREASOURCE" LabelTitle="Area">
+            <Command.LargeImages>
+                <Image Source="res/Area_32x.bmp" MinDPI="96" />
+                <Image Source="res/Area_40x.bmp" MinDPI="120" />
+                <Image Source="res/Area_48x.bmp" MinDPI="144" />
+                <Image Source="res/Area_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/Area_16x.bmp" MinDPI="96" />
+                <Image Source="res/Area_20x.bmp" MinDPI="120" />
+                <Image Source="res/Area_24x.bmp" MinDPI="144" />
+                <Image Source="res/Area_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="AddCircularSource" Symbol="IDC_ADDCIRCULARSOURCE" LabelTitle="Circular">
+            <Command.LargeImages>
+                <Image Source="res/Circular_32x.bmp" MinDPI="96" />
+                <Image Source="res/Circular_40x.bmp" MinDPI="120" />
+                <Image Source="res/Circular_48x.bmp" MinDPI="144" />
+                <Image Source="res/Circular_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/Circular_16x.bmp" MinDPI="96" />
+                <Image Source="res/Circular_20x.bmp" MinDPI="120" />
+                <Image Source="res/Circular_24x.bmp" MinDPI="144" />
+                <Image Source="res/Circular_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="AddPolygonSource" Symbol="IDC_ADDPOLYGONSOURCE" LabelTitle="Polygon">
+            <Command.LargeImages>
+                <Image Source="res/Polygon_32x.bmp" MinDPI="96" />
+                <Image Source="res/Polygon_40x.bmp" MinDPI="120" />
+                <Image Source="res/Polygon_48x.bmp" MinDPI="144" />
+                <Image Source="res/Polygon_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/Polygon_16x.bmp" MinDPI="96" />
+                <Image Source="res/Polygon_20x.bmp" MinDPI="120" />
+                <Image Source="res/Polygon_24x.bmp" MinDPI="144" />
+                <Image Source="res/Polygon_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="Resample" Symbol="IDC_RESAMPLE" LabelTitle="Resample">
+            <Command.LargeImages>
+                <Image Source="res/TableFunction_32x.bmp" MinDPI="96" />
+                <Image Source="res/TableFunction_40x.bmp" MinDPI="120" />
+                <Image Source="res/TableFunction_48x.bmp" MinDPI="144" />
+                <Image Source="res/TableFunction_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/TableFunction_16x.bmp" MinDPI="96" />
+                <Image Source="res/TableFunction_20x.bmp" MinDPI="120" />
+                <Image Source="res/TableFunction_24x.bmp" MinDPI="144" />
+                <Image Source="res/TableFunction_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="EditGeometry" Symbol="IDC_EDITGEOMETRY" LabelTitle="Edit Geometry">
+            <Command.LargeImages>
+                <Image Source="res/Edit_32x.bmp" MinDPI="96" />
+                <Image Source="res/Edit_40x.bmp" MinDPI="120" />
+                <Image Source="res/Edit_48x.bmp" MinDPI="144" />
+                <Image Source="res/Edit_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/Edit_16x.bmp" MinDPI="96" />
+                <Image Source="res/Edit_20x.bmp" MinDPI="120" />
+                <Image Source="res/Edit_24x.bmp" MinDPI="144" />
+                <Image Source="res/Edit_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="PlotFluxProfile" Symbol="IDC_PLOTFLUXPROFILE" LabelTitle="Plot Flux Profile">
+            <Command.LargeImages>
+                <Image Source="res/KagiChart_32x.bmp" MinDPI="96" />
+                <Image Source="res/KagiChart_40x.bmp" MinDPI="120" />
+                <Image Source="res/KagiChart_48x.bmp" MinDPI="144" />
+                <Image Source="res/KagiChart_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/KagiChart_16x.bmp" MinDPI="96" />
+                <Image Source="res/KagiChart_20x.bmp" MinDPI="120" />
+                <Image Source="res/KagiChart_24x.bmp" MinDPI="144" />
+                <Image Source="res/KagiChart_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="Color" Symbol="IDC_COLORDIALOG" LabelTitle="Color">
+            <Command.LargeImages>
+                <Image Source="res/ColorPalette_32x.bmp" MinDPI="96" />
+                <Image Source="res/ColorPalette_40x.bmp" MinDPI="120" />
+                <Image Source="res/ColorPalette_48x.bmp" MinDPI="144" />
+                <Image Source="res/ColorPalette_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/ColorPalette_16x.bmp" MinDPI="96" />
+                <Image Source="res/ColorPalette_20x.bmp" MinDPI="120" />
+                <Image Source="res/ColorPalette_24x.bmp" MinDPI="144" />
+                <Image Source="res/ColorPalette_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <!-- Group: Select -->
+
+        <Command Name="GroupSelect" Symbol="IDC_GROUP_SELECT" LabelTitle="Select" />
+
+        <Command Name="SelectAll" Symbol="IDC_SELECTALL" LabelTitle="Select All">
+            <Command.LargeImages>
+                <Image Source="res/SelectAllItems_32x.bmp" MinDPI="96" />
+                <Image Source="res/SelectAllItems_40x.bmp" MinDPI="120" />
+                <Image Source="res/SelectAllItems_48x.bmp" MinDPI="144" />
+                <Image Source="res/SelectAllItems_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/SelectAllItems_16x.bmp" MinDPI="96" />
+                <Image Source="res/SelectAllItems_20x.bmp" MinDPI="120" />
+                <Image Source="res/SelectAllItems_24x.bmp" MinDPI="144" />
+                <Image Source="res/SelectAllItems_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="SelectNone" Symbol="IDC_SELECTNONE" LabelTitle="Select None">
+            <Command.LargeImages>
+                <Image Source="res/SelectNoItems_32x.bmp" MinDPI="96" />
+                <Image Source="res/SelectNoItems_40x.bmp" MinDPI="120" />
+                <Image Source="res/SelectNoItems_48x.bmp" MinDPI="144" />
+                <Image Source="res/SelectNoItems_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/SelectNoItems_16x.bmp" MinDPI="96" />
+                <Image Source="res/SelectNoItems_20x.bmp" MinDPI="120" />
+                <Image Source="res/SelectNoItems_24x.bmp" MinDPI="144" />
+                <Image Source="res/SelectNoItems_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+        <Command Name="SelectInverse" Symbol="IDC_SELECTINVERSE" LabelTitle="Invert Selection">
+            <Command.LargeImages>
+                <Image Source="res/SelectInverseItems_32x.bmp" MinDPI="96" />
+                <Image Source="res/SelectInverseItems_40x.bmp" MinDPI="120" />
+                <Image Source="res/SelectInverseItems_48x.bmp" MinDPI="144" />
+                <Image Source="res/SelectInverseItems_64x.bmp" MinDPI="192" />
+            </Command.LargeImages>
+            <Command.SmallImages>
+                <Image Source="res/SelectInverseItems_16x.bmp" MinDPI="96" />
+                <Image Source="res/SelectInverseItems_20x.bmp" MinDPI="120" />
+                <Image Source="res/SelectInverseItems_24x.bmp" MinDPI="144" />
+                <Image Source="res/SelectInverseItems_32x.bmp" MinDPI="192" />
+            </Command.SmallImages>
+        </Command>
+
+    </Application.Commands>
+
+    <Application.Views>
+
+        <Ribbon>
+
+            <Ribbon.ApplicationMenu>
+                <ApplicationMenu CommandName="FileMenu">
+
+                    <ApplicationMenu.RecentItems>
+                        <RecentItems CommandName="MRUList" MaxCount="16" EnablePinning="false" />
+                    </ApplicationMenu.RecentItems>
+
+                    <MenuGroup Class="MajorItems">
+                        <Button CommandName="New" />
+
+                        <SplitButton CommandName="MenuOpen">
+                            <SplitButton.ButtonItem>
+                                <Button CommandName="Open" />
+                            </SplitButton.ButtonItem>
+                            <SplitButton.MenuGroups>
+                                <MenuGroup Class="MajorItems">
+                                    <Button CommandName="OpenProject" />
+                                </MenuGroup>
+                            </SplitButton.MenuGroups>
+                        </SplitButton>
+
+                        <SplitButton CommandName="MenuImport">
+                            <SplitButton.ButtonItem>
+                                <Button CommandName="Import" />
+                            </SplitButton.ButtonItem>
+                            <SplitButton.MenuGroups>
+                                <MenuGroup Class="MajorItems">
+                                    <Button CommandName="ImportFile" />
+                                </MenuGroup>
+                            </SplitButton.MenuGroups>
+                        </SplitButton>
+
+                        <SplitButton CommandName="MenuExport">
+                            <SplitButton.ButtonItem>
+                                <Button CommandName="Export" />
+                            </SplitButton.ButtonItem>
+                            <SplitButton.MenuGroups>
+                                <MenuGroup Class="MajorItems">
+                                    <Button CommandName="ExportFile" />
+                                    <Button CommandName="ExportData" />
+                                    <Button CommandName="ExportToExcel" />
+                                </MenuGroup>
+                            </SplitButton.MenuGroups>
+                        </SplitButton>
+
+                        <Button CommandName="Save"  />
+                        <Button CommandName="SaveAs"  />
+                    </MenuGroup>
+
+                </ApplicationMenu>
+            </Ribbon.ApplicationMenu>
+
+            <Ribbon.HelpButton>
+                <HelpButton CommandName="Help" />
+            </Ribbon.HelpButton>
+
+            <Ribbon.QuickAccessToolbar>
+                <QuickAccessToolbar CommandName="QAT">
+                    <QuickAccessToolbar.ApplicationDefaults>
+                        <Button CommandName="Save" ApplicationDefaults.IsChecked="true" />
+                    </QuickAccessToolbar.ApplicationDefaults>
+                </QuickAccessToolbar>
+            </Ribbon.QuickAccessToolbar>
+
+            <Ribbon.Tabs>
+                <Tab CommandName="TabHome">
+                    <Tab.ScalingPolicy>
+                        <ScalingPolicy>
+                            <ScalingPolicy.IdealSizes>
+                                <Scale Group="GroupEdit" Size="Medium" />
+                                <Scale Group="GroupModel" Size="Large" />
+                                <Scale Group="GroupViews" Size="Large" />
+                            </ScalingPolicy.IdealSizes>
+                            <Scale Group="GroupModel" Size="Medium" />
+                            <Scale Group="GroupViews" Size="Medium" />
+                        </ScalingPolicy>
+                    </Tab.ScalingPolicy>
+
+                    <Group CommandName="GroupEdit" SizeDefinition="FourButtons">
+                        <Button CommandName="Properties" />
+                        <Button CommandName="Clone" />
+                        <Button CommandName="Rename" />
+                        <Button CommandName="Remove" />
+                    </Group>
+
+                    <Group CommandName="GroupViews" SizeDefinition="FourButtons">
+                        <ToggleButton CommandName="InputFile" />
+                        <ToggleButton CommandName="SourceTable" />
+                        <Button CommandName="ReceptorEditor" />
+                        <Button CommandName="WindRose" />
+                    </Group>
+
+                    <Group CommandName="GroupModel" SizeDefinition="ThreeButtons">
+                        <Button CommandName="Validate" />
+                        <Button CommandName="Run" />
+                        <Button CommandName="Analyze" />
+                    </Group>
+
+                    <Group CommandName="GroupShow">
+                        <SizeDefinition>
+                            <ControlNameMap>
+                                <ControlNameDefinition Name="ShowProjectBrowser" />
+                                <ControlNameDefinition Name="ShowValidation" />
+                                <ControlNameDefinition Name="ShowModelOutput" />
+                            </ControlNameMap>
+                            <GroupSizeDefinition Size="Large">
+                                <ControlSizeDefinition ControlName="ShowProjectBrowser" ImageSize="Small" IsLabelVisible="true" />
+                                <ControlSizeDefinition ControlName="ShowValidation" ImageSize="Small" IsLabelVisible="true" />
+                                <ControlSizeDefinition ControlName="ShowModelOutput" ImageSize="Small" IsLabelVisible="true" />
+                            </GroupSizeDefinition>
+                            <GroupSizeDefinition Size="Medium">
+                                <ControlSizeDefinition ControlName="ShowProjectBrowser" ImageSize="Small" IsLabelVisible="true" />
+                                <ControlSizeDefinition ControlName="ShowValidation" ImageSize="Small" IsLabelVisible="true" />
+                                <ControlSizeDefinition ControlName="ShowModelOutput" ImageSize="Small" IsLabelVisible="true" />
+                            </GroupSizeDefinition>
+                            <GroupSizeDefinition Size="Small">
+                                <ControlSizeDefinition ControlName="ShowProjectBrowser" ImageSize="Small" IsLabelVisible="true" />
+                                <ControlSizeDefinition ControlName="ShowValidation" ImageSize="Small" IsLabelVisible="true" />
+                                <ControlSizeDefinition ControlName="ShowModelOutput" ImageSize="Small" IsLabelVisible="true" />
+                            </GroupSizeDefinition>
+                        </SizeDefinition>
+                        <CheckBox CommandName="ShowProjectBrowser" />
+                        <CheckBox CommandName="ShowValidation" />
+                        <CheckBox CommandName="ShowModelOutput" />
+                    </Group>
+                </Tab>
+            </Ribbon.Tabs>
+
+            <Ribbon.ContextualTabs>
+                <TabGroup CommandName="TabGroupSourceTools">
+                    <Tab CommandName="TabSourceTools">
+                        <Tab.ScalingPolicy>
+                            <ScalingPolicy>
+                                <ScalingPolicy.IdealSizes>
+                                    <Scale Group="GroupSourceTools" Size="Medium" />
+                                    <Scale Group="GroupSelect" Size="Medium" />
+                                </ScalingPolicy.IdealSizes>
+                            </ScalingPolicy>
+                        </Tab.ScalingPolicy>
+
+                        <Group CommandName="GroupSourceTools" SizeDefinition="FiveButtons">
+                            <DropDownButton CommandName="AddSource">
+                                <MenuGroup>
+                                    <Button CommandName="AddAreaSource" />
+                                    <Button CommandName="AddCircularSource" />
+                                    <Button CommandName="AddPolygonSource" />
+                                </MenuGroup>
+                            </DropDownButton>
+                            <Button CommandName="EditGeometry" />
+                            <Button CommandName="Resample" />
+                            <Button CommandName="PlotFluxProfile" />
+                            <Button CommandName="Color" />
+                            <!--<DropDownColorPicker CommandName="Color" ColorTemplate="ThemeColors" />-->
+                        </Group>
+
+                        <Group CommandName="GroupSelect" SizeDefinition="ThreeButtons">
+                            <Button CommandName="SelectAll" />
+                            <Button CommandName="SelectNone" />
+                            <Button CommandName="SelectInverse" />
+                        </Group>
+                    </Tab>
+                </TabGroup>
+            </Ribbon.ContextualTabs>
+
+        </Ribbon>
+
+    </Application.Views>
+
+</Application>

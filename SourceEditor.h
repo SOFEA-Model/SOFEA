@@ -1,3 +1,18 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #ifndef SOURCEEDITOR_H
 #define SOURCEEDITOR_H
 
@@ -6,16 +21,21 @@
 #include <QWidget>
 
 #include "SourceGroup.h"
+#include "delegate/VertexEditorDelegate.h"
 
 QT_BEGIN_NAMESPACE
-class QDateTimeEdit;
+class QAbstractItemModel;
+class QLabel;
 class QLineEdit;
 class QSpinBox;
+class QDataWidgetMapper;
 class QDoubleSpinBox;
 class QPolygonF;
+class QPushButton;
 class QStackedLayout;
 QT_END_NAMESPACE
 
+class SourceEditor;
 class AreaSourceEditor;
 class AreaCircSourceEditor;
 class AreaPolySourceEditor;
@@ -23,15 +43,24 @@ class AreaPolySourceEditor;
 class SourceEditor : public QWidget
 {
     Q_OBJECT
+
 public:
     SourceEditor(QWidget *parent = nullptr);
-    void setSource(Source *s);
+    void setModel(QAbstractItemModel *model);
+    void setCurrentModelIndex(const QModelIndex& index);
+    void setEditorIndex(int index);
+    void setStatusText(const QString& text);
 
 private:
-    QStackedLayout *stack;
+    QLabel *statusLabel;
     AreaSourceEditor *areaEditor;
     AreaCircSourceEditor *areaCircEditor;
-    AreaPolySourceEditor *areaPolyEditor;
+    VertexEditorDelegate *areaPolyEditorDelegate;
+    VertexEditor *areaPolyEditor;
+    QDataWidgetMapper *mapper;
+    QAbstractItemModel *sourceModel = nullptr;
+    QStackedLayout *stack;
+    QPushButton *btnUpdate;
 };
 
 /****************************************************************************
@@ -41,16 +70,13 @@ private:
 class AreaSourceEditor : public QWidget
 {
     Q_OBJECT
+
+friend class SourceEditor;
+
 public:
     AreaSourceEditor(QWidget *parent = nullptr);
-    void setSource(AreaSource *s);
-
-private slots:
-    void onCoordinatesChanged(double);
 
 private:
-    AreaSource *sPtr = nullptr;
-
     QDoubleSpinBox *sbXCoord;
     QDoubleSpinBox *sbYCoord;
     QDoubleSpinBox *sbXInit;
@@ -65,46 +91,17 @@ private:
 class AreaCircSourceEditor : public QWidget
 {
     Q_OBJECT
+
+friend class SourceEditor;
+
 public:
     AreaCircSourceEditor(QWidget *parent = nullptr);
-    void setSource(AreaCircSource *s);
-
-private slots:
-    void onCoordinatesChanged(double);
 
 private:
-    AreaCircSource *sPtr = nullptr;
-
     QDoubleSpinBox *sbXCoord;
     QDoubleSpinBox *sbYCoord;
     QDoubleSpinBox *sbRadius;
     QSpinBox *sbVertexCount;
 };
-
-/****************************************************************************
-** AREAPOLY
-****************************************************************************/
-
-class AreaPolySourceEditor : public QWidget
-{
-    Q_OBJECT
-public:
-    AreaPolySourceEditor(QWidget *parent = nullptr);
-    void setSource(AreaPolySource *s);
-
-private slots:
-    void onVertexCountChanged(int i);
-    void onVertexChanged(int i);
-    void onCoordinatesChanged(double);
-
-private:
-    AreaPolySource *sPtr = nullptr;
-
-    QSpinBox *sbVertexCount;
-    QSpinBox *sbVertex;
-    QDoubleSpinBox *sbXCoord;
-    QDoubleSpinBox *sbYCoord;
-};
-
 
 #endif // SOURCEEDITOR_H

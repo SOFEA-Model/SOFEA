@@ -1,7 +1,9 @@
+//#include "RibbonDefinition.rc"
+
 IDI_ICON1 ICON DISCARDABLE "sofea.ico"
 1 VERSIONINFO
-FILEVERSION 4,1,4,0
-PRODUCTVERSION 4,1,4,0
+FILEVERSION 4,1,5,0
+PRODUCTVERSION 4,1,5,0
 FILEOS 0x4
 FILETYPE 0x0
 BEGIN
@@ -9,14 +11,14 @@ BEGIN
   BEGIN
     BLOCK "040904E4"
     BEGIN
-      VALUE "CompanyName", "Corteva Agriscience"
+      VALUE "CompanyName", "Dow, Inc."
       VALUE "FileDescription", "SOFEA"
-      VALUE "FileVersion", "4.1.4"
+      VALUE "FileVersion", "4.1.5"
       VALUE "InternalName", "SOFEA"
-      VALUE "LegalCopyright", "Copyright \251 2018 DowDuPont Inc."
+      VALUE "LegalCopyright", "Copyright \251 2020 Dow, Inc."
       VALUE "OriginalFilename", "sofea.exe"
       VALUE "ProductName", "SOFEA"
-      VALUE "ProductVersion", "4.1.4"
+      VALUE "ProductVersion", "4.1.5"
     END
   END
 

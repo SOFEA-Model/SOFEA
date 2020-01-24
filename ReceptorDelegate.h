@@ -1,5 +1,19 @@
-#ifndef RECEPTORDELEGATE_H
-#define RECEPTORDELEGATE_H
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+#pragma once
 
 #include <QApplication>
 #include <QAbstractItemModel>
@@ -13,7 +27,7 @@
 #include <QString>
 #include <QStyledItemDelegate>
 
-#include "delegate/ColorPickerDelegate.h"
+#include "Receptor.h"
 
 //-----------------------------------------------------------------------------
 // ReceptorGridDelegate
@@ -25,6 +39,14 @@ public:
     explicit ReceptorGridDelegate(QObject *parent = nullptr)
         : QStyledItemDelegate(parent)
     {}
+
+    QString ReceptorGridDelegate::displayText(const QVariant &value, const QLocale &) const override
+    {
+        if (value.canConvert<double>())
+            return QString::number(value.toDouble(), 'f', 2);
+
+        return value.toString();
+    }
 
 protected:
     void paint(QPainter *painter, const QStyleOptionViewItem &option,
@@ -56,6 +78,11 @@ public:
     explicit ReceptorGroupDelegate(QObject *parent = nullptr)
         : ReceptorGridDelegate(parent)
     {}
+
+    QString ReceptorGroupDelegate::displayText(const QVariant &value, const QLocale &) const override
+    {
+        return value.toString();
+    }
 
 protected:
     QWidget *createEditor(QWidget *parent,
@@ -126,18 +153,48 @@ protected:
         QColorDialog dialog(color);
         dialog.setOptions(QColorDialog::ShowAlphaChannel | QColorDialog::DontUseNativeDialog);
         int rc = dialog.exec();
-        if (rc != QDialog::Accepted)
-            return false;
+        if (rc == QDialog::Accepted) {
+            color = dialog.currentColor();
+            model->setData(index, color, Qt::EditRole);
+        }
 
-        color = dialog.currentColor();
-        model->setData(index, color, Qt::EditRole);
         return true;
     }
 
     void paint(QPainter *painter, const QStyleOptionViewItem &option,
         const QModelIndex &index) const override
     {
-        // Disable focus rect for children.
+        static const QPointF nodePoints[4] = {
+            QPointF(0.1875, 0.375),
+            QPointF(0.625, 0.1875),
+            QPointF(0.8125, 0.625),
+            QPointF(0.3125, 0.75)
+        };
+
+        static const QPointF ringPoints[8] = {
+            QPointF(0.5, 0.15625),
+            QPointF(0.75, 0.25),
+            QPointF(0.84375, 0.5),
+            QPointF(0.75, 0.75),
+            QPointF(0.5, 0.84375),
+            QPointF(0.25, 0.75),
+            QPointF(0.15625, 0.5),
+            QPointF(0.25, 0.25)
+        };
+
+        static const QPointF gridPoints[9] = {
+            QPointF(0.1875, 0.1875),
+            QPointF(0.5, 0.1875),
+            QPointF(0.8125, 0.1875),
+            QPointF(0.1875, 0.5),
+            QPointF(0.5, 0.5),
+            QPointF(0.8125, 0.5),
+            QPointF(0.1875, 0.8125),
+            QPointF(0.5, 0.8125),
+            QPointF(0.8125, 0.8125)
+        };
+
+        // Skip children and disable focus rect.
         if (index.internalId() != 0) {
             QStyleOptionViewItem opt = option;
             opt.state = option.state & (~QStyle::State_HasFocus);
@@ -145,29 +202,56 @@ protected:
             return;
         }
 
-        // TODO: QwtSymbol::drawSymbol
-        QColor color = index.data(Qt::DisplayRole).value<QColor>();
-        QPixmap pixmap = ColorPickerDelegate::brushValuePixmap(QBrush(color));
-
-        const int x = option.rect.center().x() - pixmap.rect().width() / 2;
-        const int y = option.rect.center().y() - pixmap.rect().height() / 2;
-
         // Draw background when selected.
         if (option.state & QStyle::State_Selected)
             painter->fillRect(option.rect, option.palette.highlight());
         else
             painter->fillRect(option.rect, option.palette.window());
 
-        painter->drawPixmap(QRect(x, y, pixmap.rect().width(), pixmap.rect().height()), pixmap);
+        QVariant groupTypeVar = index.data(Qt::UserRole);
+        QVariant colorVar = index.data(Qt::DisplayRole);
+        if (!groupTypeVar.canConvert(QVariant::Int) || !colorVar.canConvert(QVariant::Color))
+            return;
+
+        ReceptorGroupType groupType = static_cast<ReceptorGroupType>(groupTypeVar.value<int>());
+        QBrush brush = colorVar.value<QColor>();
+
+        int iconSize = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+        const int x = option.rect.center().x() - iconSize / 2;
+        const int y = option.rect.center().y() - iconSize / 2;
+        const double radius = 1.25 / 16.;
+
+        painter->save();
+        painter->translate(x, y);
+        painter->scale(iconSize, iconSize);
+        painter->setRenderHint(QPainter::Antialiasing, true);
+        painter->setPen(Qt::NoPen);
+        painter->setBrush(brush);
+
+        switch (groupType) {
+        case ReceptorGroupType::Node:
+            for (int i = 0; i < sizeof nodePoints / sizeof nodePoints[0]; ++i)
+                painter->drawEllipse(nodePoints[i], radius, radius);
+            break;
+        case ReceptorGroupType::Ring:
+            for (int i = 0; i < sizeof ringPoints / sizeof ringPoints[0]; ++i)
+                painter->drawEllipse(ringPoints[i], radius, radius);
+            break;
+        case ReceptorGroupType::Grid:
+            for (int i = 0; i < sizeof gridPoints / sizeof gridPoints[0]; ++i)
+                painter->drawEllipse(gridPoints[i], radius, radius);
+            break;
+        default:
+            break;
+        }
+
+        painter->restore();
     }
 
     QSize sizeHint(const QStyleOptionViewItem &option,
         const QModelIndex &index) const override
     {
         const int iconSize = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-        return QSize(iconSize, iconSize);
+        return QSize(iconSize * 1.5, iconSize);
     }
 };
-
-
-#endif // RECEPTORDELEGATE_H

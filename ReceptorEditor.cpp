@@ -1,3 +1,18 @@
+// Copyright 2020 Dow, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #include <QAbstractButton>
 #include <QApplication>
 #include <QBoxLayout>
@@ -591,13 +606,13 @@ void ReceptorParamsEditor::onRemoveClicked(bool)
 
         if (next != selectedRows.end()) {
             auto start = next;
-            int count = std::distance(current, std::next(next));
+            int count = static_cast<int>(std::distance(current, std::next(next)));
             remove.emplace_back(std::make_pair(start->row(), count));
             current = std::next(next);
         }
         else {
             auto start = std::prev(next);
-            int count = std::distance(current, next);
+            int count = static_cast<int>(std::distance(current, next));
             remove.emplace_back(std::make_pair(start->row(), count));
             break;
         }
@@ -642,8 +657,9 @@ void ReceptorParamsEditor::onUpdateClicked(bool)
     if (!model)
         return;
 
-    QModelIndex& index = selectedRows.front();
-    if (selectedRows.size() == 1 && index.internalId() == 0) {
+    QModelIndex& front = selectedRows.front();
+
+    if (selectedRows.size() == 1 && front.internalId() == 0) {
         // Updating a ring or grid.
         if (currentState == StateFlag::EditRingGroup) {
             RingParamsEditor *re = this->ringEditor;
@@ -655,7 +671,7 @@ void ReceptorParamsEditor::onUpdateClicked(bool)
             std::shared_ptr<SourceGroup> sgPtr = sgPtrs.at(sgi).lock();
             if (!sgPtr)
                 return;
-            model->updateRing(index, buffer, spacing, sgPtr);
+            model->updateRing(front, buffer, spacing, sgPtr);
         }
         else if (currentState == StateFlag::EditGridGroup) {
             GridParamsEditor *ge = this->gridEditor;
@@ -665,7 +681,7 @@ void ReceptorParamsEditor::onUpdateClicked(bool)
             int yCount = ge->sbGridYCount->value();
             double xDelta = ge->sbGridXDelta->value();
             double yDelta = ge->sbGridYDelta->value();
-            model->updateGrid(index, xInit, yInit, xCount, yCount, xDelta, yDelta);
+            model->updateGrid(front, xInit, yInit, xCount, yCount, xDelta, yDelta);
         }
     }
     else {
@@ -708,7 +724,6 @@ void ReceptorParamsEditor::onSelectionChanged(const QItemSelection&, const QItem
 {
     selectedRows = view->selectionModel()->selectedRows();
     ReceptorModel *model = qobject_cast<ReceptorModel *>(view->model());
-    ReceptorParamsEditor::State state;
 
     if (selectedRows.empty()) {
         currentState = StateFlag::NoSelection;
@@ -717,7 +732,7 @@ void ReceptorParamsEditor::onSelectionChanged(const QItemSelection&, const QItem
     }
 
     QModelIndex& first = selectedRows.front();
-    int id = first.internalId();
+    auto id = first.internalId();
 
     if (selectedRows.size() != 1) {
         if (id == 0) {
@@ -1066,10 +1081,10 @@ void ReceptorEditor::load(Scenario *s)
     paramsEditor->load(s);
     model->load(s->receptors);
 
-    for (const auto sgptr : s->sourceGroups) {
-        for (const Source &s : sgptr->sources) {
-            QString title = QString::fromStdString(s.srcid);
-            plot->addRing(s.geometry, s.pen, s.brush, title);
+    for (const auto& sgptr : s->sourceGroups) {
+        for (const Source &so : sgptr->sources) {
+            QString title = QString::fromStdString(so.srcid);
+            plot->addRing(so.geometry, so.pen, so.brush, title);
         }
     }
 
