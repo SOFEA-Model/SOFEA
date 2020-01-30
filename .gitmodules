@@ -1,0 +1,3 @@
+[submodule "ncpp"]
+	path = ncpp
+	url = https://github.com/jbuonagurio/ncpp
