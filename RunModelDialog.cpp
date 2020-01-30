@@ -15,6 +15,7 @@
 
 #include <QtWidgets>
 
+#include "AppStyle.h"
 #include "RunModelDialog.h"
 #include "delegate/ProgressBarDelegate.h"
 
@@ -22,7 +23,7 @@ const QString AERMODEXE = "sofea_aermod.exe";
 
 RunModelDialog::RunModelDialog(QWidget *parent) : QDialog(parent)
 {
-    setWindowIcon(QIcon(":/images/ApplicationRunning_32x.png"));
+    setWindowIcon(this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_RunSettings)));
     setWindowTitle("Run Model");
     setWindowFlag(Qt::WindowMaximizeButtonHint);
 

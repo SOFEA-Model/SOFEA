@@ -59,7 +59,7 @@
 
 MainWindow::MainWindow()
 {
-    setWindowIcon(QIcon(":/images/Corteva_64x.png"));
+    //setWindowIcon(QIcon(":/res/SOFEA_64x.png"));
     setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
     int largeIconSize = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
     setIconSize(QSize(largeIconSize, largeIconSize));

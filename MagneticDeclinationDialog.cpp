@@ -42,13 +42,14 @@
 #include <QUrl>
 #include <QUrlQuery>
 
+#include "AppStyle.h"
 #include "widgets/StatusLabel.h"
 
 MagneticDeclinationDialog::MagneticDeclinationDialog(QWidget *parent)
     : QDialog(parent)
 {
     setWindowTitle(tr("Magnetic Declination Calculator"));
-    setWindowIcon(QIcon(":/images/Calculator_32x.png"));
+    setWindowIcon(this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_CalculateButton)));
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
     setAttribute(Qt::WA_DeleteOnClose);
 

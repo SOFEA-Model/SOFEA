@@ -22,6 +22,7 @@
 #include <QString>
 #include <QVBoxLayout>
 
+#include "AppStyle.h"
 #include "ReceptorDialog.h"
 #include "ReceptorEditor.h"
 #include "Scenario.h"
@@ -34,7 +35,7 @@ ReceptorDialog::ReceptorDialog(Scenario *s, QWidget *parent)
     : QDialog(parent), sPtr(s)
 {
     setAttribute(Qt::WA_DeleteOnClose, true);
-    setWindowIcon(QIcon(":/images/EditReceptors_32x.png"));
+    setWindowIcon(this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionEditorZone)));
     setWindowTitle(QString::fromStdString(sPtr->name));
 
     editor = new ReceptorEditor;

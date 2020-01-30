@@ -570,7 +570,7 @@ void FileInfoPanel::clearContents()
 AnalysisWindow::AnalysisWindow(QWidget *parent) : QMainWindow(parent)
 {
     setWindowTitle("Analysis");
-    setWindowIcon(QIcon(":/images/Measure_32x.png"));
+    setWindowIcon(this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_Measure)));
     setAttribute(Qt::WA_DeleteOnClose, false);
 
     // File Information

@@ -17,6 +17,7 @@
 #include <QWidget>
 #include <QIcon>
 
+#include "AppStyle.h"
 #include "ScenarioProperties.h"
 #include "Scenario.h"
 
@@ -24,7 +25,7 @@ ScenarioProperties::ScenarioProperties(Scenario *s, QWidget *parent)
     : SettingsDialog(parent), sPtr(s)
 {
     setWindowTitle(QString::fromStdString(s->name));
-    setWindowIcon(QIcon(":/images/Settings_32x.png"));
+    setWindowIcon(this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionSettings)));
 
     generalPage = new GeneralPage(s);
     projectionPage = new ProjectionPage(s);

@@ -1,25 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file>images/Application_16x.png</file>
-        <file>images/Application_32x.png</file>
-        <file>images/Application_64x.png</file>
-        <file>images/Corteva_64x.png</file>
-        <file>images/ApplicationRunning_16x.png</file>
-        <file>images/ApplicationRunning_32x.png</file>
-        <file>images/BuildQueue_16x.png</file>
-        <file>images/BuildQueue_32x.png</file>
-        <file>images/Settings_16x.png</file>
-        <file>images/Settings_32x.png</file>
-        <file>images/EditReceptors_16x.png</file>
-        <file>images/EditReceptors_32x.png</file>
-        <file>images/KagiChart_16x.png</file>
-        <file>images/KagiChart_32x.png</file>
-        <file>images/Measure_48x.png</file>
-        <file>images/Measure_32x.png</file>
-        <file>images/Measure_40x.png</file>
-        <file>images/Calculator_16x.png</file>
-        <file>images/Calculator_32x.png</file>
-        <file>images/Calculator_24x.png</file>
         <file>res/Close_NoHalo_16x.png</file>
         <file>res/Close_NoHalo_20x.png</file>
         <file>res/Close_NoHalo_24x.png</file>
@@ -308,5 +288,8 @@
         <file>res/AddBuildQueue_20x.png</file>
         <file>res/AddBuildQueue_24x.png</file>
         <file>res/AddBuildQueue_32x.png</file>
+        <file>res/Dow_16x.png</file>
+        <file>res/Dow_32x.png</file>
+        <file>res/Dow_64x.png</file>
     </qresource>
 </RCC>

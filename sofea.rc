@@ -1,6 +1,6 @@
 //#include "RibbonDefinition.rc"
 
-IDI_ICON1 ICON DISCARDABLE "sofea.ico"
+//IDI_ICON1 ICON DISCARDABLE "sofea.ico"
 1 VERSIONINFO
 FILEVERSION 4,1,5,0
 PRODUCTVERSION 4,1,5,0
@@ -11,7 +11,7 @@ BEGIN
   BEGIN
     BLOCK "040904E4"
     BEGIN
-      VALUE "CompanyName", "Dow, Inc."
+      VALUE "CompanyName", "Dow AgroSciences"
       VALUE "FileDescription", "SOFEA"
       VALUE "FileVersion", "4.1.5"
       VALUE "InternalName", "SOFEA"

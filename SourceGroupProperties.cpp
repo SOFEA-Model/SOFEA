@@ -17,13 +17,14 @@
 #include <QWidget>
 #include <QIcon>
 
+#include "AppStyle.h"
 #include "SourceGroupProperties.h"
 
 SourceGroupProperties::SourceGroupProperties(Scenario *s, SourceGroup *sg, QWidget *parent)
     : SettingsDialog(parent), sgPtr(sg)
 {
     setWindowTitle(QString::fromStdString(sg->grpid));
-    setWindowIcon(QIcon(":/images/BuildQueue_32x.png"));
+    setWindowIcon(this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionSettings)));
 
     applicationPage = new ApplicationPage(sg);
     depositionPage = new DepositionPage(sg);

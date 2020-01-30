@@ -25,6 +25,7 @@
 #include <qteditorfactory.h>
 #include <qttreepropertybrowser.h>
 
+#include "AppStyle.h"
 #include "ProjectOptionsDialog.h"
 #include "Project.h"
 
@@ -33,7 +34,7 @@ ProjectOptionsDialog::ProjectOptionsDialog(QWidget *parent)
 {
     setWindowTitle(tr("Project Options"));
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
-    setWindowIcon(QIcon(":/images/Settings_32x.png"));
+    setWindowIcon(this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionSettings)));
 
     intManager = new QtIntPropertyManager(this);
     enumManager = new QtEnumPropertyManager(this);

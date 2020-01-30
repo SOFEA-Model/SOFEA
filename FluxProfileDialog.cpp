@@ -15,6 +15,7 @@
 
 #include <QtWidgets>
 
+#include "AppStyle.h"
 #include "StandardPlot.h"
 #include "FluxProfileDialog.h"
 #include "FluxProfilePlot.h"
@@ -43,7 +44,7 @@ FluxProfileDialog::FluxProfileDialog(std::shared_ptr<FluxProfile> fp, QWidget *p
     : QDialog(parent), wptr(fp)
 {
     setWindowTitle(QString::fromStdString(fp->name));
-    setWindowIcon(QIcon(":/images/KagiChart_32x.png"));
+    setWindowIcon(this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionStepChart)));
     setMinimumSize(650, 500);
 
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);

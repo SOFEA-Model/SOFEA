@@ -455,6 +455,53 @@ void analysis::calc_histogram(const options::general& opts, const options::histo
     }
 }
 
+/*
+// Reads records for a single averaging period.
+struct postfile_reader
+{
+    const ncpp::dataset& ds_;
+    std::size_t ntime_ = 0;
+    std::size_t nrecs_ = 0;
+    int ave_ = 0;
+
+    postfile_reader(const ncpp::dataset& ds, int ave)
+        : ds_(ds), ave_(ave)
+    {
+        auto avepers = ds_.vars["ave"].values<int>();
+        int minave = *std::min_element(avepers.begin(), avepers.end());
+        ntime_ = ds_.vars["time"].size() / static_cast<std::size_t>(ave / minave);
+        nrecs_ = ds_.vars["rec"].size();
+    }
+
+    std::vector<double> read(const std::string& grp, int rec, const std::string& datavar, double sf = 1.0)
+    {
+        auto slice = ds_.vars[datavar]
+            .select<int>({
+                {"ave", ave_, ave_},
+                {"rec", rec, rec}
+            })
+            .select<std::string>({
+                {"grp", grp, grp}
+            });
+
+        auto values = slice.values<double>();
+
+        // Remove fill values for missing averaging periods.
+        values.erase(std::remove(values.begin(), values.end(), NC_FILL_DOUBLE), values.end());
+        if (values.size() != ntime_) {
+            throw std::runtime_error("Data array has unexpected missing values.");
+        }
+
+        if (sf != 1.0) {
+            for (double &value : values)
+                value *= sf;
+        }
+
+        return values;
+    }
+};
+*/
+
 void analysis::read_values(const options::general& opts, std::vector<double>& values,
                            std::size_t& ntime, std::size_t& nrecs, int& minave) const
 {
@@ -474,7 +521,7 @@ void analysis::read_values(const options::general& opts, std::vector<double>& va
     minave = *std::min_element(ave.begin(), ave.end());
 
     // Read the data array.
-    // FIXME: optimize this - use chunking and/or parallel I/O.
+    // FIXME: optimize this - read by receptor.
     values = slice.values<double>();
 
     // Remove fill values. The resulting size should be:
