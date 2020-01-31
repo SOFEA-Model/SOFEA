@@ -10,6 +10,7 @@ Version 4.1.5
 * Stability improvements.
 * Improved High-DPI support.
 * Internal refactoring for MCABLE integration.
+* Add moving averages to time series export function.
 
 Version 4.1.4
 =============
