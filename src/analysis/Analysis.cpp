@@ -169,10 +169,16 @@ metadata_type analysis::metadata() const
     return metadata_;
 }
 
-void analysis::export_time_series(const options::general& opts, const std::string& filepath) const
+void analysis::export_time_series(const options::general& opts, const options::tsexport& exopts) const
 {
+    using namespace boost::accumulators;
+
+    // Define the statistical accumulator types.
+    using rmacc_t = accumulator_set<double, stats<tag::rolling_mean>>;
+    using rsacc_t = accumulator_set<double, stats<tag::rolling_sum, tag::rolling_count>>;
+
     // Open the output stream.
-    std::ofstream ofs(filepath);
+    std::ofstream ofs(exopts.output_file);
 
     // Read the data array.
     std::vector<double> values;
@@ -191,11 +197,22 @@ void analysis::export_time_series(const options::general& opts, const std::strin
     progress.setWindowModality(Qt::ApplicationModal);
     progress.setMinimumDuration(1000);
 
-    // Write CSV file header.
+    // Write CSV header.
+    fmt::memory_buffer header;
+
     if (opts.averaging_period == 1)
-        ofs << "receptor_group,receptor,time,calm_missing,x,y,zelev,zhill,zflag," << opts.output_type << "\n";
+        fmt::format_to(header, "receptor_group,receptor,time,calm_missing,x,y,zelev,zhill,zflag,{}", opts.output_type);
     else
-        ofs << "receptor_group,receptor,time,x,y,zelev,zhill,zflag," <<  opts.output_type << "\n";
+        fmt::format_to(header, "receptor_group,receptor,time,x,y,zelev,zhill,zflag,{}", opts.output_type);
+
+    if (exopts.rm_windows.size() > 0) {
+        for (const auto& w : exopts.rm_windows) {
+            fmt::format_to(header, ",{}[RM{}]", opts.output_type, w);
+        }
+    }
+
+    fmt::format_to(header, "\n");
+    ofs << fmt::to_string(header);
 
     // Write CSV records.
     for (std::size_t i = 0; i < nrecs; ++i)
@@ -204,9 +221,35 @@ void analysis::export_time_series(const options::general& opts, const std::strin
         if (progress.wasCanceled())
             throw std::exception("Export cancelled.");
 
+        // Create the accumulators.
+        std::vector<std::pair<rsacc_t, rsacc_t>> rsaccs;
+        std::vector<rmacc_t> rmaccs;
+
+        for (double w : exopts.rm_windows) {
+            // Determine the window size. This depends on the averaging period.
+            int aveper_hours = opts.averaging_period;
+            int window_hours = static_cast<int>(w) * 24;
+            // This should evaluate true for any short-term averaging periods:
+            // (1, 2, 3, 4, 6, 8, 12, 24)
+            if (window_hours % aveper_hours == 0) {
+                int wsize = window_hours / aveper_hours;
+                rsacc_t rsacc1(tag::rolling_window::window_size = wsize); // concentration
+                rsacc_t rsacc2(tag::rolling_window::window_size = wsize); // valid hours
+                rsaccs.push_back(std::make_pair(rsacc1, rsacc2));
+                rmacc_t rmacc(tag::rolling_window::window_size = wsize);
+                rmaccs.push_back(rmacc);
+            }
+            else {
+                throw std::runtime_error("Invalid averaging period.");
+            }
+        }
+
         fmt::memory_buffer w;
+
         for (int t = 0; t < ntime; ++t)
         {
+            std::vector<double> rmvals(exopts.rm_windows.size(), 0);
+
             const auto timepoint = metadata_.time_steps.at(t * opts.averaging_period / minave);
             const std::string timestr = date::format("%F %R", timepoint);
 
@@ -219,14 +262,57 @@ void analysis::export_time_series(const options::general& opts, const std::strin
 
             const double val = values.at(i * ntime + t);
 
+            if (exopts.rm_windows.size() > 0) {
+                if (opts.averaging_period == 1) {
+                    // Apply EPA averaging policy for 1 hour averaging period.
+                    int cmflag = clmsg.at(t * static_cast<std::size_t>(opts.averaging_period / minave));
+                    double cm = (cmflag == 0) ? 0 : 1;
+
+                    for (std::size_t j = 0; j < rsaccs.size(); ++j) {
+                        rsaccs[j].first(val);
+                        rsaccs[j].second(cm);
+
+                        // Current number of elements in the rolling window.
+                        double n = static_cast<double>(rolling_count(rsaccs[j].first));
+
+                        double numerator = rolling_sum(rsaccs[j].first);
+                        if (n <= 24) {
+                            // Short-term average. See SUBROUTINE AVER in AERMOD calc2.f
+                            double denominator = std::max(n - rolling_sum(rsaccs[j].second), std::round(n * 0.75 + 0.4));
+                            rmvals.at(j) = numerator / denominator;
+                        }
+                        else {
+                            // Long-term average. See SUBROUTINE PERAVE in AERMOD output.f
+                            double denominator = n - rolling_sum(rsaccs[j].second);
+                            rmvals.at(j) = numerator / denominator;
+                        }
+                    }
+                }
+                else {
+                    // Calculate standard rolling mean. Averaging already applied.
+                    for (std::size_t j = 0; j < rmaccs.size(); ++j) {
+                        rmaccs[j](val);
+                        rmvals.at(j) = rolling_mean(rmaccs[j]);
+                    }
+                }
+            }
+
             if (opts.averaging_period == 1)
-                fmt::format_to(w, "{},{},{},{},{},{},{},{},{},{}\n",
+                fmt::format_to(w, "{},{},{},{},{},{},{},{},{},{}",
                     recgrp, rec.id, timestr, clmsg.at(t), rec.x, rec.y,
                     rec.zelev, rec.zhill, rec.zflag, val);
             else
-                fmt::format_to(w, "{},{},{},{},{},{},{},{},{}\n",
+                fmt::format_to(w, "{},{},{},{},{},{},{},{},{}",
                    recgrp, rec.id, timestr, rec.x, rec.y,
                    rec.zelev, rec.zhill, rec.zflag, val);
+
+            if (exopts.rm_windows.size() > 0) {
+                for (std::size_t j = 0; j < rmaccs.size(); ++j) {
+                    fmt::format_to(w, ",{}", rmvals.at(j));
+                }
+            }
+
+            fmt::format_to(w, "\n");
         }
 
         ofs << fmt::to_string(w);

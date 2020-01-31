@@ -9,6 +9,7 @@ Version 4.1.5
 * Configurable deposition by source.
 * Stability improvements.
 * Improved High-DPI support.
+* Internal refactoring for MCABLE integration.
 
 Version 4.1.4
 =============

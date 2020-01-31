@@ -1,0 +1,173 @@
+{
+"value0": {
+"value0": 1,
+"value1": {
+"cereal_class_version": 6,
+"title": "NWDurham",
+"fumigant_id": 7,
+"decay_coefficient": 0.0,
+"averaging_periods": [
+1,
+24
+],
+"flux_profiles": [],
+"aermet_sf_file": "",
+"aermet_ua_file": "",
+"aermet_sf_id": "",
+"aermet_ua_id": "",
+"min_time": "",
+"max_time": "",
+"anemometer_height": 10.0,
+"wind_rotation": 0.0,
+"aermod_flat": false,
+"aermod_fast_area": false,
+"aermod_dry_deposition": false,
+"aermod_dry_depletion": true,
+"aermod_area_depletion": false,
+"aermod_gd_user_velocity_enabled": false,
+"aermod_gd_user_velocity": 0.01,
+"aermod_gd_reactivity": 0.0,
+"aermod_gd_season_f": {
+"value0": 1.0,
+"value1": 0.5,
+"value2": 1.0,
+"value3": 1.0,
+"value4": 0.25
+},
+"aermod_wet_deposition": false,
+"aermod_wet_depletion": true,
+"aermod_low_wind": false,
+"aermod_low_wind_svmin": 0.2,
+"aermod_low_wind_wsmin": 0.2828,
+"aermod_low_wind_franmax": 1.0,
+"source_groups": [
+{
+"ptr_wrapper": {
+"id": 2147483649,
+"data": {
+"cereal_class_version": 7,
+"group_id": "Domain",
+"app_method": 0,
+"app_factor": 1.0,
+"validation_mode": false,
+"dist_app_start": {
+"which": 0,
+"data": "2000-01-01T00:00:00Z"
+},
+"dist_app_rate": {
+"which": 23,
+"data": "0"
+},
+"dist_inc_depth": {
+"which": 23,
+"data": "0"
+},
+"air_diffusion": {
+"which": 23,
+"data": "0"
+},
+"water_diffusion": {
+"which": 23,
+"data": "0"
+},
+"cuticular_resistance": {
+"which": 23,
+"data": "0"
+},
+"henrys_law_constant": {
+"which": 23,
+"data": "0"
+},
+"flux_profile": {
+"value0": []
+},
+"enable_buffer_zones": false,
+"buffer_zones": [],
+"sources": {
+"value0": 1,
+"value1": 4,
+"value2": {
+"cereal_class_version": 4,
+"src_id": "Domain",
+"xs": 683500.0,
+"ys": 3990500.0,
+"zs": 0.0,
+"app_start": "2000-01-01T00:00:00Z",
+"app_rate": 0.0,
+"incorp_depth": 0.0,
+"geometry": {
+"value0": 5,
+"value1": {
+"first": 683500.0,
+"second": 3990500.0
+},
+"value2": {
+"first": 683500.0,
+"second": 3993500.0
+},
+"value3": {
+"first": 686500.0,
+"second": 3993500.0
+},
+"value4": {
+"first": 686500.0,
+"second": 3990500.0
+},
+"value5": {
+"first": 683500.0,
+"second": 3990500.0
+}
+},
+"aremis": 1.0,
+"relhgt": 0.0,
+"xinit": 3000.0,
+"yinit": 3000.0,
+"angle": 0.0,
+"szinit": 0.0,
+"air_diffusion": 0.0,
+"water_diffusion": 0.0,
+"cuticular_resistance": 0.0,
+"henrys_law_constant": 0.0,
+"flux_profile": {
+"ptr_wrapper": {
+"id": 0
+}
+},
+"pen": "AFEAP/AAAAAAAAABAf//AAAAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAE=",
+"brush": "AQEYGP////8AAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAA"
+}
+}
+}
+}
+}
+],
+"receptor_groups": [
+{
+"which": 0,
+"data": {
+"cereal_class_version": 1,
+"grpid": "ANCHOR",
+"color": {
+"value0": 18446462598732840960
+},
+"nodes": [
+{
+"cereal_class_version": 4,
+"x": 685019.5,
+"y": 3992216.93,
+"zelev": 0.0,
+"zhill": 0.0,
+"zflag": 0.0
+}
+]
+}
+}
+],
+"conversion_code": "16017",
+"horizontal_units_code": "9001",
+"horizontal_datum_code": "6318",
+"vertical_units_code": "9001",
+"vertical_datum_code": "5103"
+}
+}
+}

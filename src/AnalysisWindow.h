@@ -43,6 +43,33 @@ class QToolBox;
 class QToolButton;
 QT_END_NAMESPACE
 
+
+/****************************************************************************
+** ExportTool
+****************************************************************************/
+
+class ExportTool : public QWidget
+{
+    Q_OBJECT
+
+public:
+    ExportTool(QWidget *parent = nullptr);
+    ncpost::options::tsexport exportOpts() const;
+
+signals:
+    void exportRequested();
+
+private slots:
+    void onExportClicked();
+
+private:
+    QGroupBox *gbMovingAverage;
+    ListEditor *windowEditor;
+    QPushButton *btnExport;
+    QString selectedFile;
+};
+
+
 /****************************************************************************
 ** ReceptorAnalysisTool
 ****************************************************************************/
@@ -110,6 +137,7 @@ class OptionsPanel : public QWidget
 public:
     OptionsPanel(QWidget *parent = nullptr);
     ncpost::options::general analysisOpts() const;
+    ncpost::options::tsexport exportOpts() const;
     ncpost::options::statistics receptorAnalysisOpts() const;
     ncpost::options::histogram histogramAnalysisOpts() const;
     QString currentFile() const;
@@ -119,6 +147,7 @@ public:
     void setSourceGroups(std::vector<std::string>& groups);
 
 signals:
+    void exportRequested();
     void receptorAnalysisRequested();
     void histogramAnalysisRequested();
     void currentFileChanged();
@@ -130,7 +159,7 @@ public slots:
 
 private slots:
     void selectFile();
-    void exportTimeSeries();
+
 
 private:
     void setupConnections();
@@ -145,8 +174,9 @@ private:
     UDUnitsLineEdit *leUnitOut;
     ReadOnlyLineEdit *leUnitOutVal;
     ReadOnlyLineEdit *leScaleFactor;
-    QPushButton *btnExport;
+
     QToolBox *toolbox;
+    ExportTool *exportTool;
     ReceptorAnalysisTool *receptorTool;
     HistogramAnalysisTool *histogramTool;
 };
@@ -189,6 +219,7 @@ public:
 
 private slots:
     void setCurrentFile();
+    void exportTimeSeries();
     void calcReceptorStats();
     void calcHistogram();
 

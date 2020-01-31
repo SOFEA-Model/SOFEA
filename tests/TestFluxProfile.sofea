@@ -1,0 +1,317 @@
+{
+"value0": {
+"value0": 1,
+"value1": {
+"cereal_class_version": 6,
+"title": "Test",
+"fumigant_id": 7,
+"decay_coefficient": 0.0,
+"averaging_periods": [
+1
+],
+"flux_profiles": [
+{
+"ptr_wrapper": {
+"id": 2147483649,
+"data": {
+"cereal_class_version": 1,
+"name": "TestProfile",
+"ts_method": 0,
+"ds_method": 0,
+"ref_flux": [
+{
+"first": 6,
+"second": 50.0
+},
+{
+"first": 6,
+"second": 100.0
+},
+{
+"first": 6,
+"second": 200.0
+}
+],
+"ref_app_rate": 100.0,
+"ref_start": "2000-01-01T00:00:00Z",
+"ref_depth": 2.54,
+"ref_vol_loss": 1.0,
+"max_vol_loss": 1.0,
+"warm_season_start": "2000-06-22",
+"warm_season_end": "2000-09-21",
+"warm_season_sf": 1.6,
+"amplitude": 0.3,
+"center_amplitude": 1.3,
+"phase": 270.0,
+"wavelength": 365.25
+}
+}
+}
+],
+"aermet_sf_file": "../metfiles/aermet2.sfc",
+"aermet_ua_file": "../metfiles/aermet2.pfl",
+"aermet_sf_id": "14735",
+"aermet_ua_id": "00014735",
+"min_time": "1988-03-01T00:00:00Z",
+"max_time": "1988-03-04T23:00:00Z",
+"anemometer_height": 10.0,
+"wind_rotation": 0.0,
+"aermod_flat": false,
+"aermod_fast_area": false,
+"aermod_dry_deposition": false,
+"aermod_dry_depletion": true,
+"aermod_area_depletion": false,
+"aermod_gd_user_velocity_enabled": false,
+"aermod_gd_user_velocity": 0.01,
+"aermod_gd_reactivity": 0.0,
+"aermod_gd_season_f": {
+"value0": 1.0,
+"value1": 0.5,
+"value2": 1.0,
+"value3": 1.0,
+"value4": 0.25
+},
+"aermod_wet_deposition": false,
+"aermod_wet_depletion": true,
+"aermod_low_wind": false,
+"aermod_low_wind_svmin": 0.2,
+"aermod_low_wind_wsmin": 0.2828,
+"aermod_low_wind_franmax": 1.0,
+"source_groups": [
+{
+"ptr_wrapper": {
+"id": 2147483650,
+"data": {
+"cereal_class_version": 7,
+"group_id": "Crop01",
+"app_method": 0,
+"app_factor": 1.0,
+"validation_mode": false,
+"dist_app_start": {
+"which": 0,
+"data": "2000-01-01T00:00:00Z"
+},
+"dist_app_rate": {
+"which": 23,
+"data": "0"
+},
+"dist_inc_depth": {
+"which": 23,
+"data": "0"
+},
+"air_diffusion": {
+"which": 23,
+"data": "0"
+},
+"water_diffusion": {
+"which": 23,
+"data": "0"
+},
+"cuticular_resistance": {
+"which": 23,
+"data": "0"
+},
+"henrys_law_constant": {
+"which": 23,
+"data": "0"
+},
+"flux_profile": {
+"value0": [
+{
+"key": {
+"ptr_wrapper": {
+"id": 1
+}
+},
+"value": 1.0
+}
+]
+},
+"enable_buffer_zones": false,
+"buffer_zones": [],
+"sources": {
+"value0": 1,
+"value1": 4,
+"value2": {
+"cereal_class_version": 4,
+"src_id": "Area0001",
+"xs": 0.0,
+"ys": 0.0,
+"zs": 0.0,
+"app_start": "1988-03-01T06:00:00Z",
+"app_rate": 100.0,
+"incorp_depth": 0.0,
+"geometry": {
+"value0": 5,
+"value1": {
+"first": 0.0,
+"second": 0.0
+},
+"value2": {
+"first": 0.0,
+"second": 100.0
+},
+"value3": {
+"first": 100.0,
+"second": 100.0
+},
+"value4": {
+"first": 100.0,
+"second": 0.0
+},
+"value5": {
+"first": 0.0,
+"second": 0.0
+}
+},
+"aremis": 1.0,
+"relhgt": 0.0,
+"xinit": 100.0,
+"yinit": 100.0,
+"angle": 0.0,
+"szinit": 0.0,
+"air_diffusion": 0.0,
+"water_diffusion": 0.0,
+"cuticular_resistance": 0.0,
+"henrys_law_constant": 0.0,
+"flux_profile": {
+"ptr_wrapper": {
+"id": 1
+}
+},
+"pen": "AFEAP/AAAAAAAAABAf//AAAAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAE=",
+"brush": "AQEYGAAAAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAA"
+}
+}
+}
+}
+}
+],
+"receptor_groups": [
+{
+"which": 2,
+"data": {
+"cereal_class_version": 1,
+"grpid": "GRID",
+"color": {
+"value0": 18446744069414584320
+},
+"xinit": -50.0,
+"yinit": -50.0,
+"xcount": 5,
+"ycount": 5,
+"xdelta": 50.0,
+"ydelta": 50.0,
+"zelevm": {
+"size1": 5,
+"size2": 5,
+"capacity": 5,
+"filled1": 1,
+"filled2": 0,
+"index1_data": {
+"size": 6,
+"value0": 0,
+"value1": 140721828790464,
+"value2": 4294967297,
+"value3": 2452426326564,
+"value4": 4294967297,
+"value5": 2452426326564
+},
+"index2_data": {
+"size": 6,
+"value0": 12369505812481,
+"value1": 2605310984784,
+"value2": 1065151889823,
+"value3": 1215475745262,
+"value4": 1065151889823,
+"value5": 1215475745262
+},
+"value_data": {
+"size": 6,
+"value0": 6.1113478779805e-311,
+"value1": 6.9525821225322e-310,
+"value2": 1.93e-321,
+"value3": 7.4269852916e-313,
+"value4": 1.93e-321,
+"value5": 7.4269852916e-313
+}
+},
+"zhillm": {
+"size1": 5,
+"size2": 5,
+"capacity": 5,
+"filled1": 1,
+"filled2": 0,
+"index1_data": {
+"size": 6,
+"value0": 0,
+"value1": 140721828790464,
+"value2": 0,
+"value3": 150323855499,
+"value4": 0,
+"value5": 150323855499
+},
+"index2_data": {
+"size": 6,
+"value0": 12369505812481,
+"value1": 140721828790464,
+"value2": 1065151889823,
+"value3": 1215475745262,
+"value4": 1065151889823,
+"value5": 1215475745262
+},
+"value_data": {
+"size": 6,
+"value0": 6.1113478779805e-311,
+"value1": 6.9525821225322e-310,
+"value2": 5.262549563644e-312,
+"value3": 6.00524809087e-312,
+"value4": 5.262549563644e-312,
+"value5": 6.00524809087e-312
+}
+},
+"zflagm": {
+"size1": 5,
+"size2": 5,
+"capacity": 5,
+"filled1": 1,
+"filled2": 0,
+"index1_data": {
+"size": 6,
+"value0": 0,
+"value1": 140720308486157,
+"value2": 24,
+"value3": 29555366483525734,
+"value4": 27303266021671023,
+"value5": 33495998977409138
+},
+"index2_data": {
+"size": 6,
+"value0": 8589934592,
+"value1": 140720308486146,
+"value2": 24,
+"value3": 339302416560,
+"value4": 489626272134,
+"value5": 768799146399
+},
+"value_data": {
+"size": 6,
+"value0": 6.1113478779805e-311,
+"value1": 1.2871946514925e-311,
+"value2": 5.262549563644e-312,
+"value3": 6.00524809087e-312,
+"value4": 5.262549563644e-312,
+"value5": 6.00524809087e-312
+}
+}
+}
+}
+],
+"conversion_code": "",
+"horizontal_units_code": "9001",
+"horizontal_datum_code": "",
+"vertical_units_code": "9001",
+"vertical_datum_code": "5103"
+}
+}
+}

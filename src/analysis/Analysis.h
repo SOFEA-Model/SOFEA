@@ -84,7 +84,7 @@ public:
     explicit analysis(const std::string& filepath);
 
     metadata_type metadata() const;
-    void export_time_series(const options::general& opts, const std::string& filepath) const;
+    void export_time_series(const options::general& opts, const options::tsexport& exopts) const;
     void calc_receptor_stats(const options::general& opts, const options::statistics& statopts, statistics_type& out) const;
     void calc_histogram(const options::general& opts, const options::histogram& histopts, histogram_type& out) const;
 

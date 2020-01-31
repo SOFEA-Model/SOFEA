@@ -33,6 +33,12 @@ struct general
     date::sys_seconds end_time;
 };
 
+struct tsexport
+{
+    std::vector<int> rm_windows;
+    std::string output_file;
+};
+
 struct statistics
 {
     bool calc_avg = true;

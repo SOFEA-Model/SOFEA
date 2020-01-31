@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     font.setPointSize(font.pointSize() + 1);
     app.setFont(font);
 
-    QCoreApplication::setOrganizationName("Dow");
+    QCoreApplication::setOrganizationName("Dow AgroSciences");
     QCoreApplication::setOrganizationDomain("dow.com");
     QCoreApplication::setApplicationName("SOFEA");
 

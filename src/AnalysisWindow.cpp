@@ -20,6 +20,82 @@
 #include "AnalysisWindow.h"
 
 /****************************************************************************
+** ExportTool
+****************************************************************************/
+
+ExportTool::ExportTool(QWidget *parent)
+    : QWidget(parent)
+{
+    windowEditor = new ListEditor;
+    windowEditor->setValidator(1, 180, 0);
+    std::vector<double> windowDefault{1, 28, 90};
+    windowEditor->setValues(windowDefault);
+    windowEditor->setComboBoxItems(QStringList{"1","28","90"});
+
+    btnExport = new QPushButton("Export...");
+
+    // Layout
+    QVBoxLayout *layout1 = new QVBoxLayout;
+    layout1->addWidget(new QLabel("Window size (days):"));
+    layout1->addWidget(windowEditor);
+    gbMovingAverage = new QGroupBox(QLatin1String("Enable moving average"));
+    gbMovingAverage->setCheckable(true);
+    gbMovingAverage->setChecked(false);
+    gbMovingAverage->setFlat(true);
+    gbMovingAverage->setLayout(layout1);
+
+    QHBoxLayout *layoutCalc = new QHBoxLayout;
+    layoutCalc->addStretch(1);
+    layoutCalc->addWidget(btnExport);
+
+    // Main Layout
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->addWidget(gbMovingAverage);
+    mainLayout->addLayout(layoutCalc);
+    mainLayout->addStretch(1);
+    setLayout(mainLayout);
+
+    // Connections
+    connect(btnExport, &QPushButton::clicked,
+            this, &ExportTool::onExportClicked);
+}
+
+void ExportTool::onExportClicked()
+{
+    QSettings settings;
+    QString settingsKey = "DefaultPostFileDirectory";
+
+    QString defaultDirectory = settings.value(settingsKey, qApp->applicationDirPath()).toString();
+
+    const QString csvfile = QFileDialog::getSaveFileName(
+        this, tr("Export Time Series"), defaultDirectory, tr("CSV File (*.csv)"));
+
+    if (csvfile.isEmpty())
+        return;
+
+    QFileInfo fi(csvfile);
+    QString dir = fi.absoluteDir().absolutePath();
+    settings.setValue(settingsKey, dir);
+
+    selectedFile = csvfile;
+
+    emit exportRequested();
+}
+
+ncpost::options::tsexport ExportTool::exportOpts() const
+{
+    ncpost::options::tsexport opts;
+    opts.output_file = selectedFile.toStdString();
+    if (gbMovingAverage->isChecked()) {
+        for (const auto& w : windowEditor->values()) {
+            opts.rm_windows.push_back(static_cast<int>(w));
+        }
+    }
+    return opts;
+}
+
+/****************************************************************************
 ** ReceptorAnalysisTool
 ****************************************************************************/
 
@@ -233,15 +309,15 @@ OptionsPanel::OptionsPanel(QWidget *parent)
     QLabel *syncLabel = new QLabel;
     syncLabel->setPixmap(syncPixmap);
 
-    btnExport = new QPushButton("Export...");
-
     // Toolbox
+    exportTool = new ExportTool;
     receptorTool = new ReceptorAnalysisTool;
     histogramTool = new HistogramAnalysisTool;
 
     toolbox = new QToolBox;
     toolbox->setContentsMargins(10, 0, 10, 10);
     toolbox->setMinimumSize(400, 500);
+    toolbox->addItem(exportTool, "Time Series Export");
     toolbox->addItem(receptorTool, "Receptors");
     toolbox->addItem(histogramTool, "Overall Distribution");
 
@@ -255,12 +331,6 @@ OptionsPanel::OptionsPanel(QWidget *parent)
     unitLayout2->addWidget(leUnitOut);
     unitLayout2->addWidget(syncLabel);
     unitLayout2->addWidget(leUnitOutVal);
-
-    // Button Layout
-    QHBoxLayout *layoutExport = new QHBoxLayout;
-    layoutExport->setContentsMargins(0, 0, 0, 0);
-    layoutExport->addStretch(1);
-    layoutExport->addWidget(btnExport);
 
     // Grid Layout
     QGridLayout *controlsLayout = new QGridLayout;
@@ -282,7 +352,6 @@ OptionsPanel::OptionsPanel(QWidget *parent)
     controlsLayout->addLayout(unitLayout2, 6, 1, 1, 2);
     controlsLayout->addWidget(new QLabel("Scale factor: "), 7, 0);
     controlsLayout->addWidget(leScaleFactor, 7, 1, 1, 2);
-    controlsLayout->addLayout(layoutExport, 9, 0, 1, 3);
 
     // Main Layout
     QVBoxLayout *mainLayout = new QVBoxLayout;
@@ -299,9 +368,6 @@ void OptionsPanel::setupConnections()
 {
     connect(btnBrowse, &QToolButton::clicked,
             this, &OptionsPanel::selectFile);
-
-    connect(btnExport, &QPushButton::clicked,
-            this, &OptionsPanel::exportTimeSeries);
 
     connect(cboType, QOverload<int>::of(&QComboBox::currentIndexChanged),
         [=](int index) {
@@ -332,7 +398,10 @@ void OptionsPanel::setupConnections()
         leScaleFactor->setText(QString::number(sf));
     });
 
-    // Calculate Actions
+    // Tool Actions
+    connect(exportTool, &ExportTool::exportRequested,
+            this, &OptionsPanel::exportRequested);
+
     connect(receptorTool, &ReceptorAnalysisTool::calcRequested,
             this, &OptionsPanel::receptorAnalysisRequested);
 
@@ -350,16 +419,19 @@ ncpost::options::general OptionsPanel::analysisOpts() const
     return opts;
 }
 
+ncpost::options::tsexport OptionsPanel::exportOpts() const
+{
+    return exportTool->exportOpts();
+}
+
 ncpost::options::statistics OptionsPanel::receptorAnalysisOpts() const
 {
-    ncpost::options::statistics opts = receptorTool->analysisOpts();
-    return opts;
+    return receptorTool->analysisOpts();
 }
 
 ncpost::options::histogram OptionsPanel::histogramAnalysisOpts() const
 {
-    ncpost::options::histogram opts = histogramTool->analysisOpts();
-    return opts;
+    return histogramTool->analysisOpts();
 }
 
 QString OptionsPanel::currentFile() const
@@ -411,14 +483,14 @@ void OptionsPanel::setSourceGroups(std::vector<std::string>& groups)
 
 void OptionsPanel::enableTools()
 {
-    btnExport->setEnabled(true);
+    exportTool->setEnabled(true);
     receptorTool->setEnabled(true);
     histogramTool->setEnabled(true);
 }
 
 void OptionsPanel::disableTools()
 {
-    btnExport->setEnabled(false);
+    exportTool->setEnabled(false);
     receptorTool->setEnabled(false);
     histogramTool->setEnabled(false);
 }
@@ -447,44 +519,16 @@ void OptionsPanel::selectFile()
     else
         defaultDirectory = settings.value(settingsKey, qApp->applicationDirPath()).toString();
 
-    const QString filename = QFileDialog::getOpenFileName(
+    const QString openfile = QFileDialog::getOpenFileName(
         this, tr("Select Output File"), defaultDirectory, tr("netCDF POSTFILE (*.nc)"));
 
-    if (!filename.isEmpty()) {
-        QFileInfo fi(filename);
+    if (!openfile.isEmpty()) {
+        QFileInfo fi(openfile);
         QString dir = fi.absoluteDir().absolutePath();
         settings.setValue(settingsKey, dir);
 
-        leFile->setText(filename);
+        leFile->setText(openfile);
         emit currentFileChanged();
-    }
-}
-
-void OptionsPanel::exportTimeSeries()
-{
-    QSettings settings;
-    QString settingsKey = "DefaultPostFileDirectory";
-
-    QString defaultDirectory = settings.value(settingsKey, qApp->applicationDirPath()).toString();
-
-    const QString csvfile = QFileDialog::getSaveFileName(
-        this, tr("Export Time Series"), defaultDirectory, tr("CSV File (*.csv)"));
-
-    if (csvfile.isEmpty())
-        return;
-
-    QFileInfo fi(csvfile);
-    QString dir = fi.absoluteDir().absolutePath();
-    settings.setValue(settingsKey, dir);
-
-    ncpost::options::general genOpts = analysisOpts();
-
-    try {
-        ncpost::analysis analysis(currentFile().toStdString());
-        analysis.export_time_series(genOpts, csvfile.toStdString());
-    } catch (const std::exception &e) {
-        QMessageBox::critical(this, "Export Error", QString::fromLocal8Bit(e.what()));
-        return;
     }
 }
 
@@ -615,6 +659,9 @@ AnalysisWindow::AnalysisWindow(QWidget *parent) : QMainWindow(parent)
 
 void AnalysisWindow::setupConnections()
 {
+    connect(optionsPanel, &OptionsPanel::exportRequested,
+            this, &AnalysisWindow::exportTimeSeries);
+
     connect(optionsPanel, &OptionsPanel::receptorAnalysisRequested,
             this, &AnalysisWindow::calcReceptorStats);
 
@@ -673,6 +720,20 @@ void AnalysisWindow::setCurrentFile()
     catch (const std::exception& e)
     {
         QMessageBox::critical(this, "File Error", QString::fromLocal8Bit(e.what()));
+    }
+}
+
+void AnalysisWindow::exportTimeSeries()
+{
+    auto opts = optionsPanel->analysisOpts();
+    auto exopts = optionsPanel->exportOpts();
+
+    try {
+        ncpost::analysis analysis(filename.toStdString());
+        analysis.export_time_series(opts, exopts);
+    } catch (const std::exception &e) {
+        QMessageBox::critical(this, "Export Error", QString::fromLocal8Bit(e.what()));
+        return;
     }
 }
 
