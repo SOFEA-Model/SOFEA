@@ -1,0 +1,212 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Creating Scenarios &#8212; SOFEA 4.1.5-ALPHA documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Creating Source Groups" href="creating-source-groups.html" />
+    <link rel="prev" title="Getting Started" href="getting-started.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="creating-scenarios">
+<span id="id1"></span><h1>Creating Scenarios<a class="headerlink" href="#creating-scenarios" title="Permalink to this headline">¶</a></h1>
+<p>The <strong>Scenario Context Menu</strong> is the central point for managing all actions
+related to a specific scenario. This menu is accessed by right-clicking a
+scenario in the Project Browser:</p>
+<a class="reference internal image-reference" href="../_images/ContextMenu1.png"><img alt="Scenario Context Menu" class="align-center" src="../_images/ContextMenu1.png" style="width: 240px;" /></a>
+<blockquote class="epigraph">
+<div><dl class="docutils">
+<dt><strong>Clone</strong></dt>
+<dd>Creates a duplicate scenario in the same project.</dd>
+<dt><strong>Rename</strong></dt>
+<dd>Changes the scenario name. Must contain only letters and numbers.</dd>
+<dt><strong>Remove</strong></dt>
+<dd>Removes the scenario from the project.</dd>
+<dt><strong>Add Source Group</strong></dt>
+<dd>Creates a new, empty source group.</dd>
+<dt><strong>Import Retrospective Data</strong></dt>
+<dd>Creates a new source group by importing area sources from a CSV file. Sample CSV files are included in the <em>examples</em> directory of the application.</dd>
+<dt><strong>Export Flux File</strong></dt>
+<dd>Exports the generated flux data to a new file in AERMOD <code class="docutils literal notranslate"><span class="pre">SO</span> <span class="pre">HOUREMIS</span></code> format.</dd>
+<dt><strong>Properties</strong></dt>
+<dd>View and edit parameters for the scenario.</dd>
+<dt><strong>Edit Receptors</strong></dt>
+<dd>Open the receptor editor.</dd>
+<dt><strong>Show Input File</strong></dt>
+<dd>View the generated AERMOD input file.</dd>
+</dl>
+</div></blockquote>
+<div class="section" id="general-settings">
+<h2>General Settings<a class="headerlink" href="#general-settings" title="Permalink to this headline">¶</a></h2>
+<a class="reference internal image-reference" href="../_images/Scenario1.png"><img alt="Scenario General Settings" class="align-center" src="../_images/Scenario1.png" style="width: 624px;" /></a>
+<p>A number of common fumigants are included in the fumigant type menu.
+This is for reference only; no physical/chemical or fate properties associated
+with these fumigants are populated within SOFEA.</p>
+<p>A non-zero decay coefficient enables exponential decay calculations in
+AERMOD using the DCAYCOEF keyword. See the AERMOD documentation for more
+information.</p>
+<p>Averaging period in hours can be any factor of 24. Any desired combination of
+averaging periods can be requested (e.g., 1 hour and 24 hours).</p>
+</div>
+<div class="section" id="meteorological-data">
+<h2>Meteorological Data<a class="headerlink" href="#meteorological-data" title="Permalink to this headline">¶</a></h2>
+<a class="reference internal image-reference" href="../_images/Scenario2.png"><img alt="Scenario Meteorological Data" class="align-center" src="../_images/Scenario2.png" style="width: 624px;" /></a>
+<p>AERMET format surface and upper air data files (<code class="docutils literal notranslate"><span class="pre">*</span></code>.SFC and <code class="docutils literal notranslate"><span class="pre">*</span></code>.PFL) are
+required. After selecting the files and clicking <strong>Update</strong>, the files will be
+checked for validity. Once updated, the surface station ID, upper air station
+ID, and all contiguous time intervals in the surface file are shown in the
+dialog box.</p>
+<p>The anemometer height menu shows 10 m as a default value. Adjust the anemometer
+height as needed by typing in the desired value or using the up-down control.</p>
+<p>The wind rotation value is set to zero by default and should be modified only
+if clear justification is provided. Check AERMOD documentation for guidance.</p>
+<p>The <strong>Diagnostics</strong> button opens an interactive dialog with a wind rose and
+total/calm/missing hours metrics, updated in real-time as the slider is
+moved to change the time interval. Wind speed bins (color, intervals)
+and sector size can be customized.</p>
+<a class="reference internal image-reference" href="../_images/Diagnostics.png"><img alt="Scenario Meteorological Data Diagnostics" class="align-center" src="../_images/Diagnostics.png" style="width: 624px;" /></a>
+</div>
+<div class="section" id="flux-profiles">
+<h2>Flux Profiles<a class="headerlink" href="#flux-profiles" title="Permalink to this headline">¶</a></h2>
+<a class="reference internal image-reference" href="../_images/Scenario3.png"><img alt="Scenario Flux Profiles" class="align-center" src="../_images/Scenario3.png" style="width: 624px;" /></a>
+<p>One scenario may define multiple flux profiles, and flux profiles are
+assigned to individual sources manually or with probabilities defined
+at the source group level.</p>
+<p>The <strong>Edit</strong> button opens a dialog to define the reference flux profile,
+and scaling settings based on the application start time and/or
+incorporation depth for a specific source.</p>
+<a class="reference internal image-reference" href="../_images/ReferenceFlux.png"><img alt="Scenario Reference Flux" class="align-center" src="../_images/ReferenceFlux.png" style="width: 436px;" /></a>
+<p>The <strong>Plot</strong> button displays an interactive plot of the flux profile.
+Editing the application start time, application rate, or incorporation
+depth will show the flux profile with scaling applied based on these
+specific parameters.</p>
+<a class="reference internal image-reference" href="../_images/ReferenceFluxPlot.png"><img alt="Scenario Reference Flux Plot" class="align-center" src="../_images/ReferenceFluxPlot.png" style="width: 624px;" /></a>
+</div>
+<div class="section" id="dispersion-model">
+<h2>Dispersion Model<a class="headerlink" href="#dispersion-model" title="Permalink to this headline">¶</a></h2>
+<a class="reference internal image-reference" href="../_images/Scenario4.png"><img alt="Scenario Dispersion Model" class="align-center" src="../_images/Scenario4.png" style="width: 624px;" /></a>
+<p>The Dispersion Model page is used to set specific control options for
+AERMOD. See the AERMOD documentation for more information on specific
+keywords.</p>
+<p>A typical option used in SOFEA modeling is <code class="docutils literal notranslate"><span class="pre">FASTAREA</span></code>, which simplifies
+calculations for receptors far from a source. This can significantly
+reduce processing time in complex models.</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/sofea-logo-256.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+<p class="blurb">SOil Fumigant Exposure Assessment Modeling System</p>
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=sofea-model&repo=sofea&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Creating Scenarios</a></li>
+<li class="toctree-l2"><a class="reference internal" href="creating-source-groups.html">Creating Source Groups</a></li>
+<li class="toctree-l2"><a class="reference internal" href="managing-sources.html">Managing Sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="managing-receptors.html">Managing Receptors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="running-the-model.html">Running the Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analyzing-results.html">Analyzing Results</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../release-notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../citing.html">Citing SOFEA</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">User Guide</a><ul>
+      <li>Previous: <a href="getting-started.html" title="previous chapter">Getting Started</a></li>
+      <li>Next: <a href="creating-source-groups.html" title="next chapter">Creating Source Groups</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy; 2020 Dow, Inc. and Exponent.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/user-guide/creating-scenarios.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
