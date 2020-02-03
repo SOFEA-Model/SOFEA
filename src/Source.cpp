@@ -68,7 +68,7 @@ void AreaSource::setGeometry()
     }
 }
 
-std::string AreaSource::toString(int isrc) const
+std::string AreaSource::toString(std::size_t isrc) const
 {
     fmt::memory_buffer w;
     fmt::format_to(w, "** Source {} (S{:0=3})\n", srcid, isrc);
@@ -113,7 +113,7 @@ void AreaCircSource::setGeometry()
     geometry = p;
 }
 
-std::string AreaCircSource::toString(int isrc) const
+std::string AreaCircSource::toString(std::size_t isrc) const
 {
     fmt::memory_buffer w;
     fmt::format_to(w, "** Source {} (S{:0=3})\n", srcid, isrc);
@@ -147,7 +147,7 @@ void AreaPolySource::setGeometry()
     }
 }
 
-std::string AreaPolySource::toString(int isrc) const
+std::string AreaPolySource::toString(std::size_t isrc) const
 {
     double xs = geometry.first().x();
     double ys = geometry.first().y();

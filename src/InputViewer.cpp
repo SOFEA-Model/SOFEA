@@ -17,18 +17,19 @@
 
 #include <QApplication>
 #include <QScrollBar>
-#include <QSet>
-#include <QString>
 #include <QStringList>
 #include <QVBoxLayout>
+
+#include <string>
+#include <sstream>
+
+#include <boost/algorithm/string.hpp>
+#include <boost/spirit/home/x3/string/symbols.hpp>
 
 #include <SciLexer.h>
 
 const int LINE_MARGIN_INDEX = 0;
 const int FOLD_MARGIN_INDEX = 1;
-
-QSet<QString> pathways;
-QSet<QString> keywords;
 
 int QColorToCA(const QColor& c)
 {
@@ -45,28 +46,6 @@ InputViewer::InputViewer(Scenario *s, QWidget *parent)
     sci = new ScintillaEditBase;
     sci->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     sci->setAttribute(Qt::WA_NativeWindow);
-
-    pathways << "CO" << "SO" << "RE" << "ME" << "EV" << "OU" << "STARTING" << "FINISHED";
-    keywords << "TITLEONE" << "TITLETWO" << "MODELOPT" << "AVERTIME" << "POLLUTID" <<
-                "HALFLIFE" << "DCAYCOEF" << "DEBUGOPT" << "ELEVUNIT" << "FLAGPOLE" <<
-                "RUNORNOT" << "EVENTFIL" << "SAVEFILE" << "INITFILE" << "MULTYEAR" <<
-                "ERRORFIL" << "GASDEPDF" << "GDSEASON" << "GDLANUSE" << "GASDEPVD" <<
-                "URBANOPT" << "NO2EQUIL" << "NO2STACK" << "OZONEVAL" << "OZONEFIL" <<
-                "O3VALUES" << "OZONUNIT" << "O3SECTOR" << "LOW_WIND" << "ARMRATIO" <<
-                "XBADJ"    << "YBADJ"    <<
-                "LOCATION" << "SRCPARAM" << "BUILDHGT" << "BUILDWID" << "BUILDLEN" <<
-                "EMISFACT" << "EMISUNIT" << "PARTDIAM" << "MASSFRAX" << "PARTDENS" <<
-                "METHOD_2" << "CONCUNIT" << "DEPOUNIT" << "GASDEPOS" << "HOUREMIS" <<
-                "NO2RATIO" << "AREAVERT" << "URBANSRC" << "SRCGROUP" << "OLMGROUP" <<
-                "PSDGROUP" << "BACKGRND" << "BACKUNIT" << "BGSECTOR" << "BLPINPUT" <<
-                "BLPGROUP" << "BUFRZONE" << "INCLUDED" << "EVENTPER" << "EVENTLOC" <<
-                "GRIDCART" << "GRIDPOLR" << "DISCCART" << "DISCPOLR" << "EVALCART" <<
-                "SURFFILE" << "PROFFILE" << "PROFBASE" << "SURFDATA" << "UAIRDATA" <<
-                "SITEDATA" << "STARTEND" << "DAYRANGE" << "SCIMBYHR" << "WDROTATE" <<
-                "WINDCATS" << "NUMYEARS" << "RECTABLE" << "MAXTABLE" << "DAYTABLE" <<
-                "SUMMFILE" << "MAXIFILE" << "POSTFILE" << "PLOTFILE" << "TOXXFILE" <<
-                "SEASONHR" << "EVENTOUT" << "RANKFILE" << "EVALFILE" << "FILEFORM" <<
-                "MAXDAILY" << "MXDYBYYR" << "MAXDCONT" << "NOHEADER";
 
     sendMessage(SCI_SETLEXER, SCLEX_CONTAINER);
     sendMessage(SCI_SETMULTIPLESELECTION, 1);
@@ -186,7 +165,7 @@ void InputViewer::setupConnections()
 
 void InputViewer::onMarginClicked(int position, int modifiers, int margin)
 {
-    Q_UNUSED(modifiers);
+    Q_UNUSED(modifiers)
 
     const int lineNumber = sendMessage(SCI_LINEFROMPOSITION, position, 0);
 
@@ -201,52 +180,82 @@ void InputViewer::onMarginClicked(int position, int modifiers, int margin)
 
 void InputViewer::onStyleNeeded(int position)
 {
+    static const boost::spirit::x3::symbols<> pathways{
+        "CO", "SO", "RE", "ME", "EV", "OU"
+    };
+
+    static const boost::spirit::x3::symbols<> keywords{
+        "TITLEONE", "TITLETWO", "MODELOPT", "AVERTIME", "POLLUTID",
+        "HALFLIFE", "DCAYCOEF", "DEBUGOPT", "ELEVUNIT", "FLAGPOLE",
+        "RUNORNOT", "EVENTFIL", "SAVEFILE", "INITFILE", "MULTYEAR",
+        "ERRORFIL", "GASDEPDF", "GDSEASON", "GDLANUSE", "GASDEPVD",
+        "URBANOPT", "NO2EQUIL", "NO2STACK", "OZONEVAL", "OZONEFIL",
+        "O3VALUES", "OZONUNIT", "O3SECTOR", "LOW_WIND", "ARMRATIO",
+        "XBADJ",    "YBADJ",
+        "LOCATION", "SRCPARAM", "BUILDHGT", "BUILDWID", "BUILDLEN",
+        "EMISFACT", "EMISUNIT", "PARTDIAM", "MASSFRAX", "PARTDENS",
+        "METHOD_2", "CONCUNIT", "DEPOUNIT", "GASDEPOS", "HOUREMIS",
+        "NO2RATIO", "AREAVERT", "URBANSRC", "SRCGROUP", "OLMGROUP",
+        "PSDGROUP", "BACKGRND", "BACKUNIT", "BGSECTOR", "BLPINPUT",
+        "BLPGROUP", "BUFRZONE", "INCLUDED", "EVENTPER", "EVENTLOC",
+        "GRIDCART", "GRIDPOLR", "DISCCART", "DISCPOLR", "EVALCART",
+        "SURFFILE", "PROFFILE", "PROFBASE", "SURFDATA", "UAIRDATA",
+        "SITEDATA", "STARTEND", "DAYRANGE", "SCIMBYHR", "WDROTATE",
+        "WINDCATS", "NUMYEARS", "RECTABLE", "MAXTABLE", "DAYTABLE",
+        "SUMMFILE", "MAXIFILE", "POSTFILE", "PLOTFILE", "TOXXFILE",
+        "SEASONHR", "EVENTOUT", "RANKFILE", "EVALFILE", "FILEFORM",
+        "MAXDAILY", "MXDYBYYR", "MAXDCONT", "NOHEADER"
+    };
+
     // Get the styling positions.
-    int startPos = sendMessage(SCI_GETENDSTYLED);
-    int endPos = position;
+    std::size_t startPos = static_cast<std::size_t>(sendMessage(SCI_GETENDSTYLED));
+    std::size_t endPos = static_cast<std::size_t>(position);
 
     // Get the start and end line numbers.
-    const int startLineNo = sendMessage(SCI_LINEFROMPOSITION, startPos);
-    const int endLineNo = sendMessage(SCI_LINEFROMPOSITION, endPos);
-
-    // Set the start position to beginning of line.
-    startPos = sendMessage(SCI_POSITIONFROMLINE, startLineNo);
-
-    // Start styling.
-    sendMessage(SCI_STARTSTYLING, startPos, 0x1f);
+    const std::size_t startLineNo = static_cast<std::size_t>(sendMessage(SCI_LINEFROMPOSITION, startPos));
+    const std::size_t endLineNo = static_cast<std::size_t>(sendMessage(SCI_LINEFROMPOSITION, endPos));
 
     // Iterate over the lines.
-    for (int i = startLineNo; i < endLineNo; ++i)
+    for (std::size_t i = startLineNo; i < endLineNo; ++i)
     {
+        // Set the start position to beginning of line.
+        startPos = static_cast<std::size_t>(sendMessage(SCI_POSITIONFROMLINE, i));
+        sendMessage(SCI_STARTSTYLING, startPos, 0x1f);
+
         // Read the line text into a buffer.
-        int lineLen = sendMessage(SCI_LINELENGTH, i);
-        QByteArray lineData;
-        lineData.resize(lineLen + 1);
-        sendMessage(SCI_GETLINE, i, (uptr_t)lineData.data());
-        QString lineText = QString(lineData).toUpper();
+        std::size_t lineLen = static_cast<std::size_t>(sendMessage(SCI_LINELENGTH, i));
+        std::string line(lineLen, '\0');
+        sendMessage(SCI_GETLINE, i, (uptr_t)line.data());
+        boost::to_upper(line);
 
-        // Truncate the string to reported line length.
-        lineText.truncate(lineLen);
-
-        if (lineText.left(2) == "**") {
+        // Apply styling to pathway and keyword.
+        std::istringstream ss(line);
+        std::string token;
+        ss >> std::skipws >> token;
+        if (boost::starts_with(token, "**")) {
             // Style comments. Must be at start of line.
             sendMessage(SCI_SETSTYLING, lineLen, SCE_C_COMMENTLINE);
         }
-        else {
-            // Style keywords. Split the line into tokens at word boundaries.
-            QStringList tokens = lineText.split(QRegExp("\\b"));
-            for (int i = 0; i < tokens.size(); ++i) {
-                const QString& token = tokens.at(i);
-                if (pathways.contains(token) && i < 4) {
-                    sendMessage(SCI_SETSTYLING, token.length(), SCE_C_WORD);
-                }
-                else if (keywords.contains(token) && i < 4) {
-                    sendMessage(SCI_SETSTYLING, token.length(), SCE_C_WORD2);
-                }
-                else {
-                    sendMessage(SCI_SETSTYLING, token.length(), SCE_C_DEFAULT);
-                }
+        else if (pathways.find(token)) {
+            ss >> token;
+            std::streamoff sspos = ss.tellg();
+            if (boost::iequals(token, "STARTING") ||
+                boost::iequals(token, "FINISHED")) {
+                sendMessage(SCI_SETSTYLING, sspos, SCE_C_WORD);
+                sendMessage(SCI_SETSTYLING, lineLen - sspos, SCE_C_DEFAULT);
             }
+            else if (keywords.find(token)) {
+                sendMessage(SCI_SETSTYLING, sspos, SCE_C_WORD2);
+                sendMessage(SCI_SETSTYLING, lineLen - sspos, SCE_C_DEFAULT);
+            }
+            else {
+                sendMessage(SCI_SETSTYLING, lineLen, SCE_C_DEFAULT);
+            }
+        }
+        else if (keywords.find(token)) {
+            std::streamoff sspos = ss.tellg();
+            sendMessage(SCI_SETSTYLING, sspos, SCE_C_WORD2);
+            sendMessage(SCI_SETSTYLING, lineLen - sspos, SCE_C_DEFAULT);
         }
     }
 
@@ -256,18 +265,20 @@ void InputViewer::onStyleNeeded(int position)
 
     // Set folding, iterating over all lines in the document.
     int lineCount = sendMessage(SCI_GETLINECOUNT);
-    for (int i = 0; i < lineCount; ++i)
+    for (std::size_t i = 0; i < lineCount; ++i)
     {
-        int lineLen = sendMessage(SCI_LINELENGTH, i);
-        QByteArray lineData;
-        lineData.resize(lineLen + 1);
-        sendMessage(SCI_GETLINE, i, (uptr_t)lineData.data());
-        QString lineText = QString(lineData).toUpper().trimmed();
+        std::size_t lineLen = static_cast<std::size_t>(sendMessage(SCI_LINELENGTH, i));
+        std::string line(lineLen, '\0');
+        sendMessage(SCI_GETLINE, i, (uptr_t)line.data());
 
-        if (lineText.left(2) != "**") {
-            if (lineText.indexOf("STARTING") == 3)
+        std::istringstream ss(line);
+        std::string pathway, keyword;
+        ss >> std::skipws >> pathway;
+        if (!boost::starts_with(pathway, "**")) {
+            ss >> keyword;
+            if (boost::iequals(keyword, "STARTING"))
                 levelCurrent++;
-            else if (lineText.indexOf("FINISHED") == 3)
+            else if (boost::iequals(keyword, "FINISHED"))
                 levelCurrent--;
         }
 
@@ -283,13 +294,13 @@ void InputViewer::onStyleNeeded(int position)
 
 void InputViewer::onNotify(SCNotification *pscn)
 {
-    Q_UNUSED(pscn);
+    Q_UNUSED(pscn)
 }
 
 void InputViewer::onCommand(uptr_t wParam, sptr_t lParam)
 {
-    Q_UNUSED(wParam);
-    Q_UNUSED(lParam);
+    Q_UNUSED(wParam)
+    Q_UNUSED(lParam)
 }
 
 void InputViewer::refresh()

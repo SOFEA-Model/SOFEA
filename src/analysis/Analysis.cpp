@@ -29,6 +29,7 @@
 
 // FIXME: use std::function callback
 #include <QProgressDialog>
+#include <QDebug>
 
 // TODO: replace Boost.Accumulators with MKL
 // https://software.intel.com/en-us/mkl-ssnotes-computing-quantiles-for-streaming-data
@@ -46,8 +47,6 @@
 #include <boost/accumulators/statistics/p_square_cumul_dist.hpp>
 #include <boost/accumulators/statistics/density.hpp>
 #include <boost/lexical_cast.hpp>
-//#include <boost/log/trivial.hpp>
-//#include <boost/log/attributes/scoped_attribute.hpp>
 
 #include <fmt/format.h>
 
@@ -490,16 +489,11 @@ void analysis::calc_histogram(const options::general& opts, const options::histo
 {
     using namespace boost::accumulators;
 
+    using cdfacc_t = accumulator_set<double, stats<tag::p_square_cumulative_distribution>>;
+    using pdfacc_t = accumulator_set<double, stats<tag::density>>;
+
     if (!histopts.calc_cdf && !histopts.calc_pdf)
         return;
-
-    // Create the accumulators.
-    using cdfacc_t = accumulator_set<double, stats<tag::p_square_cumulative_distribution>>;
-    cdfacc_t cdfacc(tag::p_square_cumulative_distribution::num_cells = static_cast<std::size_t>(histopts.cdf_bins));
-
-    using pdfacc_t = accumulator_set<double, stats<tag::density>>;
-    pdfacc_t pdfacc(tag::density::num_bins = static_cast<std::size_t>(histopts.pdf_bins),
-                    tag::density::cache_size = static_cast<std::size_t>(histopts.pdf_cache_size));
 
     // Read the data array.
     std::vector<double> values;
@@ -507,6 +501,15 @@ void analysis::calc_histogram(const options::general& opts, const options::histo
     std::size_t nrecs = 0;
     int minave = 0;
     read_values(opts, values, ntime, nrecs, minave);
+
+    // Create the accumulators.
+    cdfacc_t cdfacc(tag::p_square_cumulative_distribution::num_cells = static_cast<std::size_t>(histopts.cdf_bins));
+
+    // If selected cache size exceeds sample count, use all samples.
+    std::size_t cache_size = std::max(static_cast<std::size_t>(histopts.pdf_cache_size), values.size());
+
+    pdfacc_t pdfacc(tag::density::num_bins = static_cast<std::size_t>(histopts.pdf_bins),
+                    tag::density::cache_size = cache_size);
 
     QProgressDialog progress("Processing...", "Abort", 0, static_cast<int>(nrecs));
     progress.setWindowModality(Qt::ApplicationModal);
@@ -535,7 +538,7 @@ void analysis::calc_histogram(const options::general& opts, const options::histo
         histogram_t cdf = p_square_cumulative_distribution(cdfacc);
         out.cdf.insert(out.cdf.end(), boost::make_move_iterator(cdf.begin()), boost::make_move_iterator(cdf.end()));
     }
-    if (histopts.calc_cdf) {
+    if (histopts.calc_pdf) {
         histogram_t pdf = density(pdfacc);
         out.pdf.insert(out.pdf.end(), boost::make_move_iterator(pdf.begin()), boost::make_move_iterator(pdf.end()));
     }

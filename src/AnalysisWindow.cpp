@@ -214,7 +214,7 @@ HistogramAnalysisTool::HistogramAnalysisTool(QWidget *parent)
     sbBinsPDF->setValue(100);
 
     sbCacheSizePDF = new QSpinBox;
-    sbCacheSizePDF->setRange(5, 100000);
+    sbCacheSizePDF->setRange(5, 10000000);
     sbCacheSizePDF->setValue(1000);
 
     btnCalc = new QPushButton("Calculate");

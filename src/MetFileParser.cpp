@@ -33,6 +33,8 @@
 #include <boost/icl/gregorian.hpp>
 #include <boost/icl/ptime.hpp>
 #include <boost/icl/interval_set.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/attributes/scoped_attribute.hpp>
 
 #include <fmt/format.h>
 
@@ -93,6 +95,8 @@ MetFileParser::MetFileParser(const QString& filename)
 
 MetFileParser::MetFileParser(const std::string& filename)
 {
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Model")
+
     using namespace boost::gregorian;
     using namespace boost::posix_time;
     using namespace boost::icl;
@@ -104,7 +108,7 @@ MetFileParser::MetFileParser(const std::string& filename)
 
     sd = std::make_shared<SurfaceData>();
 
-    std::string line; // buffer
+    std::string line;
 
     if (std::getline(ifs, line) && line.size() >= 99)
     {
@@ -146,12 +150,17 @@ MetFileParser::MetFileParser(const std::string& filename)
             sd->records.push_back(sr);
 
             // Interval calculations to track contiguous time intervals.
-            ptime t(date(sr.mpyr, sr.mpcmo, sr.mpcdy), hours(sr.j - 1));
-            sd->intervals += discrete_interval<ptime>::right_open(t, t + hours(1));
+            try {
+                ptime t(date(sr.mpyr, sr.mpcmo, sr.mpcdy), hours(sr.j - 1));
+                sd->intervals += discrete_interval<ptime>::right_open(t, t + hours(1));
+            }
+            catch (std::exception& e) {
+                BOOST_LOG_TRIVIAL(error) << "Surface file parse error: " << e.what();
+            }
         }
     }
 
-    sd->nrec = sd->records.size();
+    sd->nrec = static_cast<int>(sd->records.size());
 }
 
 SurfaceInfo MetFileParser::getSurfaceInfo() const
@@ -210,6 +219,8 @@ std::shared_ptr<SurfaceData> MetFileParser::getSurfaceData() const
 std::string MetFileParser::absolutePath(const std::string& filename)
 {
     // If this is a relative path, assume current project directory.
+    // FIXME: store current directory in project.
+
     QString path = QString::fromStdString(filename);
     QFileInfo fi(path);
     if (!path.isEmpty() && fi.isRelative()) {

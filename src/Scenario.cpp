@@ -312,7 +312,7 @@ std::string Scenario::writeInput() const
     // identifiers, because AERMOD only supports one hourly emissions
     // file per run.
 
-    int isrc, igrp;
+    std::size_t isrc, igrp;
 
     fmt::format_to(w, "SO STARTING\n");
 
@@ -364,12 +364,12 @@ std::string Scenario::writeInput() const
     fmt::format_to(w, "   SRCGROUP ALL\n");
     isrc = 0;
     igrp = 0;
-    for (const SourceGroupPtr sgptr : sourceGroups) {
-        int ns = sgptr->sources.size();
+    for (const SourceGroupPtr& sgptr : sourceGroups) {
+        std::size_t ns = sgptr->sources.size();
         if (ns == 0)
             continue;
 
-        int isrc0 = ++isrc;
+        std::size_t isrc0 = ++isrc;
         isrc += ns - 1;
         fmt::format_to(w, "   SRCGROUP G{:0=3} S{:0=3}-S{:0=3}\n", ++igrp, isrc0, isrc);
     }

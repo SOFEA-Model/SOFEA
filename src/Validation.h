@@ -27,8 +27,7 @@ struct ValidateScenario
     explicit ValidateScenario(const Scenario& s);
 
 private:
-    void validateSurfaceFile();
-    void validateUpperAirFile();
+    void validateMeteorology();
     void validateFluxProfiles();
     void validateReceptors();
     void validateSourceGroups();

@@ -88,7 +88,9 @@ struct SurfaceData
     SurfaceHeader header;
     std::vector<SurfaceRecord> records;
     boost::icl::interval_set<boost::posix_time::ptime> intervals;
-    int nrec = 0, ncalm = 0, nmiss = 0;
+    int nrec = 0;
+    int ncalm = 0;
+    int nmiss = 0;
 };
 
 //-----------------------------------------------------------------------------

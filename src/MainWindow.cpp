@@ -1198,13 +1198,7 @@ void MainWindow::analyzeOutput()
 
 void MainWindow::showHelp()
 {
-    static QString helpPath = QDir::cleanPath(QCoreApplication::applicationDirPath()
-        + QDir::separator() + "doc/index.html");
-
-    QFileInfo fi(helpPath);
-    if (fi.exists()) {
-        QDesktopServices::openUrl(QUrl(helpPath));
-    }
+    QDesktopServices::openUrl(QUrl("https://sofea-model.github.io/user-guide/index.html"));
 }
 
 void MainWindow::about()

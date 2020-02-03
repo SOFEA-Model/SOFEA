@@ -51,7 +51,7 @@ struct Source
     double area() const;
 
     virtual void setGeometry() = 0;
-    virtual std::string toString(int isrc) const = 0;
+    virtual std::string toString(std::size_t isrc) const = 0;
     virtual SourceType getType() const = 0;
     virtual Source* clone() const = 0;
 
@@ -87,7 +87,7 @@ inline Source* new_clone(const Source& c)
 struct AreaSource : Source
 {
     void setGeometry() override;
-    std::string toString(int isrc) const override;
+    std::string toString(std::size_t isrc) const override;
     SourceType getType() const  override {
         return SourceType::AREA;
     }
@@ -111,7 +111,7 @@ struct AreaSource : Source
 struct AreaCircSource : Source
 {
     void setGeometry() override;
-    std::string toString(int isrc) const override;
+    std::string toString(std::size_t isrc) const override;
     SourceType getType() const  override{
         return SourceType::AREACIRC;
     }
@@ -136,7 +136,7 @@ struct AreaPolySource : Source
     using Source::Source;
 
     void setGeometry() override;
-    std::string toString(int isrc) const override;
+    std::string toString(std::size_t isrc) const override;
     SourceType getType() const override {
         return SourceType::AREAPOLY;
     }
