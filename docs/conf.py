@@ -31,7 +31,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.githubpages',
-    'sphinx.ext.todo',
+    'sphinx.ext.todo'
 ]
 
 templates_path = ['_templates']
@@ -53,8 +53,8 @@ html_theme = 'alabaster'
 html_theme_options = {
     'logo': 'sofea-logo-256.png',
     'description': 'SOil Fumigant Exposure Assessment Modeling System',
-    'page_width': '940px',
-    'sidebar_width': '220px',
+#   'page_width': '940px',
+#   'sidebar_width': '220px',
     'github_button': 'true',
     'github_banner': 'false',
     'github_user': 'sofea-model',

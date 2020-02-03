@@ -75,4 +75,4 @@ The main project controls are available in the menus and toolbar:
 .. |OpenProject| image:: ../_static/OpenFolder_16x.png
 .. |SaveProject| image:: ../_static/Save_16x.png
 .. |RunModel| image:: ../_static/Run_16x.png
-.. |AnalyzeResults| image:: ../_static/RunPerformance_16x.png
+.. |AnalyzeResults| image:: ../_static/Measure_16x.png

@@ -57,8 +57,10 @@ A non-zero decay coefficient enables exponential decay calculations in
 AERMOD using the DCAYCOEF keyword. See the AERMOD documentation for more 
 information. 
 
-Averaging period in hours can be any factor of 24. Any desired combination of
-averaging periods can be requested (e.g., 1 hour and 24 hours). 
+Averaging period in hours can be any factor of 24. Any desired 
+combination of averaging periods can be requested (e.g., 1 hour and 24 
+hours). Shorter averaging periods will produce larger output files and 
+require additional post-processing time.
 
 Meteorological Data
 -------------------
@@ -66,7 +68,7 @@ Meteorological Data
 .. image:: ../_static/Scenario2.png
    :width: 624
    :align: center
-   :alt: Scenario Meteorological Data
+   :alt: Meteorological Data
 
 AERMET format surface and upper air data files (``*``.SFC and ``*``.PFL) are 
 required. After selecting the files and clicking **Update**, the files will be 
@@ -77,8 +79,19 @@ dialog box.
 The anemometer height menu shows 10 m as a default value. Adjust the anemometer
 height as needed by typing in the desired value or using the up-down control. 
 
-The wind rotation value is set to zero by default and should be modified only
-if clear justification is provided. Check AERMOD documentation for guidance. 
+The wind rotation value is set to zero by default and should be modified 
+only if clear justification is provided. The calculator button opens a 
+magnetic declination calculator which estimates the rotation angle to 
+true north using `NCEI Geomagnetic Models`_. This option should only be 
+used if wind direction is referenced to magnetic north, which is 
+uncommon.
+
+.. _NCEI Geomagnetic Models: https://www.ngdc.noaa.gov/geomag/calculators/magcalc.shtml
+
+.. image:: ../_static/MagneticDeclination.png
+   :width: 484
+   :align: center
+   :alt: Magnetic Declination Calculator
 
 The **Diagnostics** button opens an interactive dialog with a wind rose and 
 total/calm/missing hours metrics, updated in real-time as the slider is 
@@ -88,7 +101,7 @@ and sector size can be customized.
 .. image:: ../_static/Diagnostics.png
    :width: 624
    :align: center
-   :alt: Scenario Meteorological Data Diagnostics
+   :alt: Meteorological Data Diagnostics
 
 Flux Profiles
 -------------
@@ -109,7 +122,7 @@ incorporation depth for a specific source.
 .. image:: ../_static/ReferenceFlux.png
    :width: 436
    :align: center
-   :alt: Scenario Reference Flux
+   :alt: Reference Flux Profile
 
 The **Plot** button displays an interactive plot of the flux profile.
 Editing the application start time, application rate, or incorporation
@@ -119,7 +132,7 @@ specific parameters.
 .. image:: ../_static/ReferenceFluxPlot.png
    :width: 624
    :align: center
-   :alt: Scenario Reference Flux Plot
+   :alt: Reference Flux Profile Plot
 
 Dispersion Model
 ----------------
@@ -127,7 +140,7 @@ Dispersion Model
 .. image:: ../_static/Scenario4.png
    :width: 624
    :align: center
-   :alt: Scenario Dispersion Model
+   :alt: Dispersion Model Settings
    
 The Dispersion Model page is used to set specific control options for 
 AERMOD. See the AERMOD documentation for more information on specific 
