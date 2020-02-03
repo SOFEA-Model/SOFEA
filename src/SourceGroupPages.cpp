@@ -251,7 +251,7 @@ void DepositionPage::load()
 ****************************************************************************/
 
 FluxProfilePage::FluxProfilePage(Scenario *s, SourceGroup *sg, QWidget *parent)
-    : QWidget(parent), sgPtr(sg), sPtr(s)
+    : QWidget(parent), sPtr(s), sgPtr(sg)
 {
     model = new FluxProfileModel(this);
     model->load(sPtr->fluxProfiles);
@@ -298,7 +298,7 @@ void FluxProfilePage::save()
     for (int row = 0; row < model->rowCount(); ++row) {
         QModelIndex index = model->index(row, 0);
         auto fp = model->fluxProfileFromIndex(index);
-        double probability = editor->getProbability(row);
+        double probability = editor->probability(row);
 
         // SourceGroup holds a weak_ptr to Scenario flux profile.
         std::weak_ptr<FluxProfile> weak = fp;

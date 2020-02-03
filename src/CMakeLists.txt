@@ -117,8 +117,8 @@ set(UDUNITS2_INCLUDE_DIR "../external/udunits-2.2.27.12/include")
 set(UDUNITS2_LIBRARY_DIR "../external/udunits-2.2.27.12/lib")
 set(UDUNITS2_LIBRARIES "udunits2")
 
-set(SCINTILLA_ROOT "../external/scintilla-4.2.0")
-set(SCINTILLA_LIBRARY_DIR "../external/scintilla-4.2.0/bin")
+set(SCINTILLA_ROOT "../external/scintilla-4.3.0")
+set(SCINTILLA_LIBRARY_DIR "../external/scintilla-4.3.0/bin")
 set(SCINTILLA_LIBRARIES "ScintillaEditBase")
 
 set(CSV_INCLUDE_DIR "../external/fast-cpp-csv-parser/include")
@@ -157,6 +157,7 @@ set(SOURCES
     MainWindow.cpp
     MetFileInfoDialog.cpp
     MetFileParser.cpp
+    MeteorologyModel.cpp
     MonteCarloDateTimeEdit.cpp
     MonteCarloLineEdit.cpp
     PixmapUtilities.cpp
@@ -203,6 +204,7 @@ set(SOURCES
     delegate/DateTimeEditDelegate.cpp
     delegate/DoubleItemDelegate.cpp
     delegate/DoubleSpinBoxDelegate.cpp
+    delegate/FilePickerDelegate.cpp
     delegate/GradientItemDelegate.cpp
     delegate/PointDelegate.cpp
     delegate/ProgressBarDelegate.cpp
@@ -257,6 +259,7 @@ set(HEADERS
     MagneticDeclinationDialog.h
     MainWindow.h
     Meteorology.h
+    MeteorologyModel.h
     MetFileInfoDialog.h
     MetFileParser.h
     MonteCarloDateTimeEdit.h
@@ -313,6 +316,7 @@ set(HEADERS
     delegate/DateTimeEditDelegate.h
     delegate/DoubleItemDelegate.h
     delegate/DoubleSpinBoxDelegate.h
+    delegate/FilePickerDelegate.h
     delegate/GradientItemDelegate.h
     delegate/PointDelegate.h
     delegate/ProgressBarDelegate.h

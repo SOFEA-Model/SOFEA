@@ -23,6 +23,16 @@
 #include <qwt_scale_widget.h>
 #include <qwt_symbol.h>
 
+class ScaleDraw : public QwtScaleDraw
+{
+    virtual QwtText label(double value) const override
+    {
+        // Disable scientific notation.
+        return QwtText(QString::number(value, 'f', 0));
+    }
+};
+
+
 StandardPlot::StandardPlot(QWidget *parent) : QwtPlot(parent)
 {
     // Canvas
@@ -38,6 +48,7 @@ StandardPlot::StandardPlot(QWidget *parent) : QwtPlot(parent)
     // Axis
     for(int axis=0; axis < QwtPlot::axisCnt; axis++) {
         axisWidget(axis)->setMargin(0);
+        setAxisScaleDraw(axis, new ScaleDraw);
         axisScaleDraw(axis)->enableComponent(QwtAbstractScaleDraw::Backbone, false);
         QFont axisFont = QApplication::font();
         //axisFont.setPointSize(8);

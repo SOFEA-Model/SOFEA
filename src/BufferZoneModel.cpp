@@ -109,7 +109,7 @@ bool BufferZoneModel::setData(const QModelIndex &index, const QVariant &value, i
                 it->distance = value.toDouble();
                 break;
             case 3:
-                it->duration = value.toDouble();
+                it->duration = value.toInt();
                 break;
             default:
                 return false;

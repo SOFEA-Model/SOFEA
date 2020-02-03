@@ -65,7 +65,6 @@ MainWindow::MainWindow()
     setIconSize(QSize(largeIconSize, largeIconSize));
     setAcceptDrops(true);
 
-    // TODO: use QProxyStyle for PE_IndicatorTabClose (SP_DialogCloseButton)
     centralTabWidget = new QTabWidget;
     centralTabWidget->setTabsClosable(true);
     centralTabWidget->setDocumentMode(true);

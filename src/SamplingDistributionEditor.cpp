@@ -80,7 +80,7 @@ bool SamplingDistributionEditor::setProbability(int row, double value)
     return proxyModel->setData(index, value);
 }
 
-double SamplingDistributionEditor::getProbability(int row) const
+double SamplingDistributionEditor::probability(int row) const
 {
     int column = proxyModel->proxyColumnForExtraColumn(0);
     QModelIndex index = proxyModel->index(row, column);

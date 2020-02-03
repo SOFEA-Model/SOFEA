@@ -40,7 +40,7 @@ public:
     SamplingDistributionEditor(QAbstractItemModel *model, QWidget *parent = nullptr);
     void setColumnHidden(int column);
     bool setProbability(int row, double value);
-    double getProbability(int row) const;
+    double probability(int row) const;
     void normalize();
 
 private:

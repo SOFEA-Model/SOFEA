@@ -24,7 +24,7 @@
 ShapefileAttributeDialog::ShapefileAttributeDialog(
         const ShapefileAttributeInfo &attrInfo,
         QMap<ShapefileSelectedIndex, int> *indexMap, QWidget *parent)
-    : pIndexMap(indexMap), QDialog(parent)
+    : QDialog(parent), pIndexMap(indexMap)
 {
     setWindowTitle(tr("Select Attributes"));
     setWindowModality(Qt::ApplicationModal);

@@ -138,16 +138,16 @@ void ValidateScenario::validateFluxProfiles()
             continue;
 
         if (fp->refAppRate < 0)
-            BOOST_LOG_TRIVIAL(error) << "Reference application rate for flux profile " << fp->name << " is negative";
+            BOOST_LOG_TRIVIAL(error) << "Reference application rate for flux profile '" << fp->name << "' is negative";
 
         if (fp->refAppRate == 0)
-            BOOST_LOG_TRIVIAL(warning) << "Reference application rate for flux profile " << fp->name << " is zero; reference flux profile will not be scaled by source application rate";
+            BOOST_LOG_TRIVIAL(warning) << "Reference application rate for flux profile '" << fp->name << "' is zero; reference flux profile will not be scaled by source application rate";
 
         if (fp->refFlux.empty())
-            BOOST_LOG_TRIVIAL(error) << "Flux profile " << fp->name << " has no reference flux data; flux will be zero for all hours";
+            BOOST_LOG_TRIVIAL(error) << "Flux profile '" << fp->name << "' has no reference flux data; flux will be zero for all hours";
 
         if (fp->dsMethod != FluxProfile::DSMethod::Disabled && fp->refVL == fp->maxVL)
-            BOOST_LOG_TRIVIAL(warning) << "Depth scaling enabled for flux profile " << fp->name << " and reference volatilization loss equals maximum volatilization loss; depth scaling will not be used";
+            BOOST_LOG_TRIVIAL(warning) << "Depth scaling enabled for flux profile '" << fp->name << "' and reference volatilization loss equals maximum volatilization loss; depth scaling will not be used";
     }
 }
 
@@ -165,7 +165,7 @@ void ValidateScenario::validateReceptors()
         std::string name = boost::apply_visitor(ReceptorGroupNameVisitor(), rg);
         std::size_t n = boost::apply_visitor(ReceptorNodeCountVisitor(), rg);
         if (n == 0)
-            BOOST_LOG_TRIVIAL(error) << "Receptor group " << name << " contains no receptors";
+            BOOST_LOG_TRIVIAL(error) << "Receptor group '" << name << "' contains no receptors";
 
         for (std::size_t i = 0; i < n; ++i) {
             ReceptorNode node = boost::apply_visitor(ReceptorGroupNodeVisitor(i), rg);
@@ -178,7 +178,7 @@ void ValidateScenario::validateReceptors()
         BOOST_LOG_TRIVIAL(warning) << "ELEV is enabled, but all receptors have equal elevation";
     }
 
-    // Check that receptors are within domain
+    // Receptor group 'G' contains receptors outside of modeling domain
 }
 
 void ValidateScenario::validateSourceGroups()
@@ -192,14 +192,15 @@ void ValidateScenario::validateSourceGroups()
             continue;
 
         if (sg->sources.empty())
-            BOOST_LOG_TRIVIAL(error) << "No sources have been defined for source group " << sg->grpid;
+            BOOST_LOG_TRIVIAL(error) << "No sources have been defined for source group '" << sg->grpid << "'";
 
         if (sg->fluxProfile.data.empty())
-            BOOST_LOG_TRIVIAL(error) << "Flux profile probabilities have not been set for source group " << sg->grpid;
+            BOOST_LOG_TRIVIAL(error) << "Flux profile probabilities have not been set for source group '" << sg->grpid << "'";
     }
 
     // Sources 'A', 'B', 'C' ... have overlapping geometry within the same emission period
-    // Receptor rings not updated after source geometry changed
+    // Receptor ring 'R' not updated after source geometry changed
+    // Receptor ring 'R' references a missing source group
     // Missing flux profile for source 'S'
     // Emission period for Source 'S' overlaps met file start
     // Emission period for Source 'S' overlaps met file end
