@@ -32,6 +32,7 @@ Contributions and feature requests are welcome.
    
    introduction
    user-guide/index
+   screenshots
    release-notes
    citing
    Download <https://github.com/SOFEA-Model/SOFEA/releases>
