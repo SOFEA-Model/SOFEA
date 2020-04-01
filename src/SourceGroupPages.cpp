@@ -13,16 +13,35 @@
 // limitations under the License.
 //
 
-#include <QtWidgets>
-
 #include "SourceGroupPages.h"
+
+#include "BufferZoneModel.h"
+#include "BufferZoneEditor.h"
+#include "FluxProfileModel.h"
+#include "MonteCarloLineEdit.h"
+#include "MonteCarloDateTimeEdit.h"
+#include "SamplingDistributionEditor.h"
+#include "delegate/DoubleSpinBoxDelegate.h"
+#include "delegate/SpinBoxDelegate.h"
 #include "widgets/BackgroundFrame.h"
 #include "widgets/GridLayout.h"
+#include "widgets/StandardTableView.h"
+#include "widgets/StatusLabel.h"
 
 #include <boost/log/trivial.hpp>
 #include <boost/log/attributes/scoped_attribute.hpp>
 
 #include <csv/csv.h>
+
+#include <QBoxLayout>
+#include <QButtonGroup>
+#include <QComboBox>
+#include <QDoubleSpinBox>
+#include <QGroupBox>
+#include <QLabel>
+#include <QMap>
+#include <QRadioButton>
+#include <QString>
 
 /****************************************************************************
 ** Application
@@ -144,7 +163,6 @@ void ApplicationPage::load()
     mcAppRate->setDistribution(sgPtr->appRate);
     mcIncorpDepth->setDistribution(sgPtr->incorpDepth);
 }
-
 
 /****************************************************************************
 ** Deposition
@@ -329,74 +347,19 @@ void FluxProfilePage::load()
 BufferZonePage::BufferZonePage(SourceGroup *sg, QWidget *parent)
     : QWidget(parent), sgPtr(sg)
 {
-    chkEnable = new QCheckBox("Enable buffer zone processing");
-
-    sbAreaThreshold = new QDoubleSpinBox;
-    sbAreaThreshold->setRange(0, 10000);
-
-    sbAppRateThreshold = new QDoubleSpinBox;
-    sbAppRateThreshold->setRange(0, 10000000);
-    sbAppRateThreshold->setDecimals(2);
-
-    zoneModel = new BufferZoneModel;
-
-    zoneTable = new StandardTableView;
-    zoneTable->setModel(zoneModel);
-    zoneTable->setDoubleSpinBoxForColumn(2, 0, 99000, 2, 1);
-    zoneTable->setSpinBoxForColumn(3, 0, 1000, 1);
-    zoneTable->setSelectionBehavior(QAbstractItemView::SelectItems);
-    zoneTable->setSelectionMode(QAbstractItemView::ContiguousSelection);
-    zoneTable->setEditTriggers(QAbstractItemView::AllEditTriggers);
-
-    int startingWidth = zoneTable->font().pointSize();
-    int frameWidth = zoneTable->frameWidth();
-    zoneTable->setColumnWidth(0, startingWidth * 10);
-    zoneTable->setColumnWidth(1, startingWidth * 20);
-    zoneTable->setColumnWidth(2, startingWidth * 15);
-    zoneTable->setColumnWidth(3, startingWidth * 15);
-    zoneTable->setMinimumWidth(startingWidth * 60 + frameWidth * 2);
-
-    StandardTableEditor::StandardButtons zoneEditorOpts =
-        StandardTableEditor::Add |
-        StandardTableEditor::Remove |
-        StandardTableEditor::Import;
-
-    zoneEditor = new StandardTableEditor(Qt::Vertical, zoneEditorOpts);
-
-    lblThresholdInfo = new StatusLabel;
-    lblThresholdInfo->setStatusType(StatusLabel::InfoTip);
-    lblThresholdInfo->setText(
-        "The buffer zone assigned to a source is the last row for which area "
-        "and application rate are less than the threshold values.");
+    model = new BufferZoneModel(this);
+    editor = new BufferZoneEditor(model);
 
     // Layout
-    GridLayout *zoneInputLayout = new GridLayout;
-    zoneInputLayout->setMargin(0);
-    zoneInputLayout->addWidget(new QLabel(tr("Area threshold (ha):")), 0, 0);
-    zoneInputLayout->addWidget(sbAreaThreshold, 0, 1);
-    zoneInputLayout->addWidget(new QLabel(tr("App. rate threshold (kg/ha):")), 1, 0);
-    zoneInputLayout->addWidget(sbAppRateThreshold, 1, 1);
-
-    QHBoxLayout *zoneTableLayout = new QHBoxLayout;
-    zoneTableLayout->setMargin(0);
-    zoneTableLayout->addWidget(zoneTable);
-    zoneTableLayout->addWidget(zoneEditor);
-
     QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->addWidget(chkEnable);
-    mainLayout->addSpacing(5);
-    mainLayout->addLayout(zoneInputLayout);
-    mainLayout->addSpacing(5);
-    mainLayout->addLayout(zoneTableLayout);
-    mainLayout->addStretch(1);
-    mainLayout->addWidget(lblThresholdInfo);
-    mainLayout->addSpacing(5);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->addWidget(editor);
 
     BackgroundFrame *frame = new BackgroundFrame;
     frame->setLayout(mainLayout);
     QVBoxLayout *frameLayout = new QVBoxLayout;
+    frameLayout->setContentsMargins(0, 0, 0, 0);
     frameLayout->addWidget(frame);
-    frameLayout->setMargin(0);
 
     setLayout(frameLayout);
     init();
@@ -404,66 +367,18 @@ BufferZonePage::BufferZonePage(SourceGroup *sg, QWidget *parent)
 
 void BufferZonePage::init()
 {
-    connect(zoneEditor->btnAdd,    &QPushButton::clicked, this, &BufferZonePage::onAddZoneClicked);
-    connect(zoneEditor->btnRemove, &QPushButton::clicked, this, &BufferZonePage::onRemoveZoneClicked);
-    connect(zoneEditor, &StandardTableEditor::importRequested, this, &BufferZonePage::importBufferZoneTable);
-
-    zoneEditor->init(zoneTable);
-    zoneEditor->setImportFilter("Buffer Zone Table (*.csv *.txt)");
-    zoneEditor->setImportCaption(tr("Import Buffer Zone Table"));
-
-    disconnect(zoneEditor->btnAdd,    &QPushButton::clicked, zoneEditor, &StandardTableEditor::onAddItemClicked);
-    disconnect(zoneEditor->btnRemove, &QPushButton::clicked, zoneEditor, &StandardTableEditor::onRemoveItemClicked);
-
     load();
 }
 
 void BufferZonePage::save()
 {
-    sgPtr->enableBufferZones = chkEnable->isChecked();
-    zoneModel->save(sgPtr->zones);
+    sgPtr->enableBufferZones = editor->isEnableChecked();
+    model->save(sgPtr->zones);
 }
 
 void BufferZonePage::load()
 {
-    chkEnable->setChecked(sgPtr->enableBufferZones);
-    zoneModel->load(sgPtr->zones);
+    editor->setEnableChecked(sgPtr->enableBufferZones);
+    model->load(sgPtr->zones);
 }
 
-void BufferZonePage::onAddZoneClicked()
-{
-    BufferZone z;
-    z.areaThreshold = sbAreaThreshold->value();
-    z.appRateThreshold = sbAppRateThreshold->value();
-    zoneModel->insert(z);
-}
-
-void BufferZonePage::onRemoveZoneClicked()
-{
-    zoneTable->removeSelectedRows();
-}
-
-void BufferZonePage::importBufferZoneTable(const QString& filename)
-{
-    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Import");
-
-    std::set<BufferZone> imported;
-
-    io::CSVReader<4> in(filename.toStdString());
-    in.read_header(io::ignore_extra_column, "area", "apprate", "distance", "duration");
-
-    while (true) {
-        try {
-            BufferZone z;
-            if (in.read_row(z.areaThreshold, z.appRateThreshold, z.distance, z.duration))
-                imported.insert(z);
-            else
-                break;
-        } catch (const std::exception &e) {
-            BOOST_LOG_TRIVIAL(error) << e.what();
-            break;
-        }
-    }
-
-    zoneModel->load(imported);
-}

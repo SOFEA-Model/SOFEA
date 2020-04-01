@@ -67,7 +67,7 @@ private slots:
     //void onCommandToggled(int commandId, bool checked);
     //void onCurrentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
     void onItemChanged(QTreeWidgetItem *item, int);
-    void contextMenuRequested(QPoint const& pos);
+    void contextMenuRequested(const QPoint& pos);
     void onScenarioUpdated(Scenario *s);
     void onSourceGroupUpdated(SourceGroup *s);
 
@@ -126,12 +126,12 @@ private:
     QMenu *helpMenu;
     QToolBar *toolbar;
     QDockWidget *dwProjectTree;
-    QDockWidget *dwMessages;
+    QDockWidget *dwValidation;
     QDockWidget *dwOutput;
     ProjectTreeView *projectTreeView;
     ProjectModel *projectModel;
     QTreeWidget *projectTree;
-    LogWidget *lwMessages;
+    LogWidget *lwValidation;
     LogWidget *lwOutput;
     AnalysisWindow *analysisWindow = nullptr;
 
@@ -161,7 +161,6 @@ private:
 
     // Project Properties
     QString projectFile;
-    QString projectDir;
     mutable bool projectModified;
 
     // Main Actions

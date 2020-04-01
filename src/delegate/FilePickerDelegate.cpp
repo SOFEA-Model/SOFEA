@@ -128,15 +128,17 @@ bool FilePickerDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, c
         if (xpos > x && xpos < x + w && ypos > y && ypos < y + h)
         {
             QString currentPath = model->data(index, Qt::DisplayRole).value<QString>();
-            QFileInfo fi(currentPath);
-            QString dir = dialogDirectory_;
-            if (!currentPath.isEmpty() && fi.isRelative()) {
-                QDir currentDir(dialogDirectory_ + QDir::separator() + fi.path());
-                if (currentDir.exists())
-                    dir = currentDir.canonicalPath();
+            QString initDir = dialogDirectory_;
+            if (!currentPath.isEmpty()) {
+                QFileInfo fi(currentPath);
+                if (fi.isRelative()) {
+                    QDir currentDir(dialogDirectory_ + QDir::separator() + fi.path());
+                    if (currentDir.exists())
+                        initDir = currentDir.canonicalPath();
+                }
             }
 
-            QFileDialog dialog(nullptr, dialogCaption_, dir, dialogFilter_);
+            QFileDialog dialog(nullptr, dialogCaption_, initDir, dialogFilter_);
             dialog.setFileMode(dialogFileMode_);
             if (dialog.exec())
                 model->setData(index, dialog.selectedFiles().front(), Qt::EditRole);

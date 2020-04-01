@@ -13,9 +13,17 @@
 // limitations under the License.
 //
 
-#include <sstream>
-#include <locale>
+
+#include "AppStyle.h"
+#include "DateTimeDistributionDialog.h"
+#include "core/DateTimeConversion.h"
+#include "delegate/DoubleSpinBoxDelegate.h"
+
 #include <utility>
+
+#include <boost/icl/gregorian.hpp>
+#include <boost/icl/ptime.hpp>
+#include <boost/icl/interval_map.hpp>
 
 #include <QBoxLayout>
 #include <QDateTime>
@@ -29,63 +37,6 @@
 #include <QStandardItemModel>
 
 #include <QDebug>
-
-#include <boost/icl/gregorian.hpp>
-#include <boost/icl/ptime.hpp>
-#include <boost/icl/interval_map.hpp>
-
-#include "DateTimeDistributionDialog.h"
-#include "AppStyle.h"
-
-inline boost::posix_time::ptime asPosixTime(const QDateTime& dt)
-{
-    using namespace boost::gregorian;
-    using namespace boost::posix_time;
-
-    int y = dt.date().year();
-    int m = dt.date().month();
-    int d = dt.date().day();
-    int h = dt.time().hour();
-
-    ptime pt(date(y, m, d), hours(h));
-    return pt;
-}
-
-inline QDateTime asDateTime(const boost::posix_time::ptime& pt)
-{
-    using namespace boost::gregorian;
-    using namespace boost::posix_time;
-
-    date gd = pt.date();
-    time_duration td = pt.time_of_day();
-
-    return QDateTime(QDate(gd.year(), gd.month(), gd.day()),
-                     QTime(td.hours(), 0, 0), Qt::UTC);
-}
-
-inline QString intervalString(const boost::icl::discrete_interval<boost::posix_time::ptime>& i)
-{
-    using namespace boost::gregorian;
-    using namespace boost::posix_time;
-
-    std::ostringstream oss;
-    ptime lower = i.lower();
-    ptime upper = i.upper();
-    time_period period(lower, upper);
-
-    time_facet *facet = new time_facet(); // std::locale handles destruction
-    facet->format("%Y-%m-%d %H:%M");
-    period_formatter formatter(period_formatter::AS_OPEN_RANGE, ", ", "[", ")", "]");
-    facet->period_formatter(formatter);
-    oss.imbue(std::locale(std::locale::classic(), facet));
-
-    oss << period;
-    return QString::fromStdString(oss.str());
-}
-
-//-----------------------------------------------------------------------------
-// DateTimeDistributionDialog
-//-----------------------------------------------------------------------------
 
 DateTimeDistributionDialog::DateTimeDistributionDialog(const DateTimeDistribution &d, QWidget *parent)
     : QDialog(parent), currentDist(d)
@@ -111,7 +62,7 @@ DateTimeDistributionDialog::DateTimeDistributionDialog(const DateTimeDistributio
     view = new StandardTableView;
     view->setModel(model);
     view->setMinimumWidth(450);
-    view->setDoubleSpinBoxForColumn(1, 0.0001, 1, 4, 0.1);
+    view->setItemDelegateForColumn(1, new DoubleSpinBoxDelegate(0.0001, 1, 4, 0.1));
     view->setSelectionBehavior(QAbstractItemView::SelectItems);
     view->setSelectionMode(QAbstractItemView::SingleSelection);
     view->setEditTriggers(QAbstractItemView::AllEditTriggers);
@@ -178,6 +129,7 @@ void DateTimeDistributionDialog::init()
             dteLower->setDateTime(dt);
             dteUpper->setDateTime(dt);
         }
+        break;
     }
     case 1: {
         DiscreteDateTime *d = boost::get<DiscreteDateTime>(&currentDist);
@@ -188,11 +140,12 @@ void DateTimeDistributionDialog::init()
             // Initialize the DateTimeEdits with the first interval lower bound.
             if (!intervals.empty()) {
                 auto i = *intervals.begin();
-                QDateTime dt = asDateTime(i.first.lower());
+                QDateTime dt = sofea::utilities::convert<QDateTime>(i.first.lower());
                 dteLower->setDateTime(dt);
                 dteUpper->setDateTime(dt);
             }
         }
+        break;
     }
     }
 }
@@ -213,8 +166,8 @@ void DateTimeDistributionDialog::onAddClicked()
     double probability = 1.0;
 
     // Update the interval map.
-    ptime ptlower = asPosixTime(dtlower);
-    ptime ptupper = asPosixTime(dtupper);
+    ptime ptlower = sofea::utilities::convert<ptime>(dtlower);
+    ptime ptupper = sofea::utilities::convert<ptime>(dtupper);
     auto di = discrete_interval<ptime>::right_open(ptlower, ptupper);
     intervals += std::make_pair(di, probability);
 
@@ -233,11 +186,13 @@ void DateTimeDistributionDialog::resetTable()
     model->removeRows(0, model->rowCount());
     for (const auto& i : intervals)
     {
+        std::string is = sofea::utilities::convert<std::string>(i.first);
+
         int currentRow = model->rowCount();
         model->insertRow(currentRow);
         QStandardItem *item0 = new QStandardItem;
         QStandardItem *item1 = new QStandardItem;
-        item0->setData(intervalString(i.first), Qt::DisplayRole);
+        item0->setData(QString::fromStdString(is), Qt::DisplayRole);
         item1->setData(i.second, Qt::DisplayRole);
         model->setItem(currentRow, 0, item0);
         model->setItem(currentRow, 1, item1);

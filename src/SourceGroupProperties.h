@@ -16,8 +16,8 @@
 #ifndef SOURCEGROUPPROPERTIES_H
 #define SOURCEGROUPPROPERTIES_H
 
-#include "Scenario.h"
-#include "SourceGroup.h"
+#include "core/Scenario.h"
+#include "core/SourceGroup.h"
 #include "SourceGroupPages.h"
 #include "SettingsDialog.h"
 

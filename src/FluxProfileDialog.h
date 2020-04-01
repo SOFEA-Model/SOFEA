@@ -21,7 +21,7 @@
 #include <QDialog>
 #include <QMap>
 
-#include "FluxProfile.h"
+#include "core/FluxProfile.h"
 #include "widgets/StandardTableEditor.h"
 #include "widgets/StandardTableView.h"
 

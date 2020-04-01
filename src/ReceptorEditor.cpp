@@ -48,7 +48,7 @@
 
 #include "ReceptorEditor.h"
 #include "ReceptorVisitor.h"
-#include "SourceGroup.h"
+#include "core/SourceGroup.h"
 #include "widgets/GridLineFrame.h"
 #include "widgets/NavButton.h"
 
@@ -341,6 +341,7 @@ ReceptorParamsEditor::ReceptorParamsEditor(ReceptorTreeView *view, QWidget *pare
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->setContentsMargins(24, 16, 24, 16);
     mainLayout->addWidget(headerLabel);
+    mainLayout->addSpacing(5);
     mainLayout->addWidget(editorStack);
     mainLayout->addSpacing(5);
     mainLayout->addStretch(1);
@@ -830,6 +831,11 @@ ReceptorEditor::ReceptorEditor(QWidget *parent)
     plot->setItemTitleTracker(true);
     plot->setMinimumHeight(600);
     plot->setMinimumWidth(600);
+
+    plot->setXAxisScaleFormat('f');
+    plot->setXAxisScalePrecision(0);
+    plot->setYAxisScaleFormat('f');
+    plot->setYAxisScalePrecision(0);
 
     // Layout
     QHBoxLayout *navLayout = new QHBoxLayout;

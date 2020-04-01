@@ -22,7 +22,7 @@
 #include <QString>
 #include <QVariant>
 
-#include "Project.h"
+#include "core/Project.h"
 
 class ProjectModel : public QAbstractItemModel
 {

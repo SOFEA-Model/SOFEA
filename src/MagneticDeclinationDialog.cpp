@@ -15,35 +15,34 @@
 
 #include "MagneticDeclinationDialog.h"
 
-// Widgets
+#include "AppStyle.h"
+#include "core/Common.h"
+#include "qtcurl/CurlEasy.h"
+#include "widgets/DoubleLineEdit.h"
+#include "widgets/StatusLabel.h"
+
 #include <QBoxLayout>
 #include <QButtonGroup>
 #include <QComboBox>
 #include <QDateEdit>
 #include <QDialogButtonBox>
-#include <QDoubleSpinBox>
 #include <QFrame>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QLineEdit>
 #include <QLabel>
 #include <QMessageBox>
-#include <QNetworkReply>
 #include <QPushButton>
 #include <QRadioButton>
 
-// Network
 #include <QByteArray>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QJsonDocument>
-#include <QSslError>
-#include <QTimer>
 #include <QUrl>
 #include <QUrlQuery>
 
-#include "AppStyle.h"
-#include "widgets/StatusLabel.h"
+#include <QDebug>
 
 MagneticDeclinationDialog::MagneticDeclinationDialog(QWidget *parent)
     : QDialog(parent)
@@ -67,15 +66,8 @@ MagneticDeclinationDialog::MagneticDeclinationDialog(QWidget *parent)
     infoLabel->setStatusType(StatusLabel::InfoTip);
     infoLabel->setText(infoText);
 
-    sbLongitude = new QDoubleSpinBox;
-    sbLongitude->setRange(-180.0, 180.0);
-    sbLongitude->setDecimals(5);
-    sbLongitude->setSuffix(QLatin1String("\x00b0"));
-
-    sbLatitude = new QDoubleSpinBox;
-    sbLatitude->setRange(-90.0, 90.0);
-    sbLatitude->setDecimals(5);
-    sbLatitude->setSuffix(QLatin1String("\x00b0"));
+    sbLongitude = new DoubleLineEdit(-180.0, 180.0, 6);
+    sbLatitude = new DoubleLineEdit(-90.0, 90.0, 6);
 
     deModelDate = new QDateEdit;
     deModelDate->setDisplayFormat("yyyy-MM-dd");
@@ -107,9 +99,22 @@ MagneticDeclinationDialog::MagneticDeclinationDialog(QWidget *parent)
 
     statusLabel = new QLabel;
 
-    btnUpdate = new QPushButton(tr("Update"));
-    btnUpdate->setDefault(true);
+    btnStartStop = new QPushButton(tr("Update"));
+    btnStartStop->setDefault(true);
+
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+
+    transfer = new CurlEasy(this);
+
+    // Connections
+    connect(btnStartStop, &QPushButton::clicked, this, &MagneticDeclinationDialog::onStartStopClicked);
+
+    connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+
+    connect(transfer, &CurlEasy::done, this, &MagneticDeclinationDialog::onTransferDone);
+    connect(transfer, &CurlEasy::aborted, this, &MagneticDeclinationDialog::onTransferAborted);
+    connect(transfer, &CurlEasy::progress, this, &MagneticDeclinationDialog::onTransferProgress);
 
     // Input Layout
     QHBoxLayout *modelLayout = new QHBoxLayout;
@@ -138,7 +143,7 @@ MagneticDeclinationDialog::MagneticDeclinationDialog(QWidget *parent)
     // Output Layout
     QHBoxLayout *updateLayout = new QHBoxLayout;
     updateLayout->addWidget(statusLabel, 1);
-    updateLayout->addWidget(btnUpdate, 0, Qt::AlignRight);
+    updateLayout->addWidget(btnStartStop, 0, Qt::AlignRight);
 
     QGridLayout *outputLayout = new QGridLayout;
     outputLayout->setColumnMinimumWidth(0, 125);
@@ -165,53 +170,6 @@ MagneticDeclinationDialog::MagneticDeclinationDialog(QWidget *parent)
     mainLayout->addWidget(buttonBox);
 
     setLayout(mainLayout);
-    setupConnections();
-}
-
-void MagneticDeclinationDialog::setLongitude(double longitude)
-{
-    sbLongitude->setValue(longitude);
-}
-
-void MagneticDeclinationDialog::setLatitude(double latitude)
-{
-    sbLatitude->setValue(latitude);
-}
-
-void MagneticDeclinationDialog::accept()
-{
-    if (updateComplete)
-        emit declinationUpdated(declination);
-
-    QDialog::done(QDialog::Accepted);
-}
-
-void MagneticDeclinationDialog::reject()
-{
-    QDialog::done(QDialog::Rejected);
-}
-
-void MagneticDeclinationDialog::setupConnections()
-{
-    timer.setSingleShot(true);
-
-    connect(&timer, &QTimer::timeout,
-            this, &MagneticDeclinationDialog::abortRequest);
-
-    connect(buttonBox, &QDialogButtonBox::accepted,
-            this, &QDialog::accept);
-
-    connect(buttonBox, &QDialogButtonBox::rejected,
-            this, &QDialog::reject);
-
-    connect(btnUpdate, &QPushButton::clicked, [=]() {
-        leResult->clear();
-        QUrl newUrl = createUrl();
-        startRequest(newUrl);
-    });
-
-    connect(&qnam, &QNetworkAccessManager::sslErrors,
-            this, &MagneticDeclinationDialog::sslErrors);
 }
 
 QUrl MagneticDeclinationDialog::createUrl() const
@@ -222,16 +180,13 @@ QUrl MagneticDeclinationDialog::createUrl() const
     int model = bgModel->checkedId();
     switch (model) {
     case Model::WMM:
-        url.setUrl("https://www.ngdc.noaa.gov/geomag-web/calculators/calculateDeclination?");
-        query.addQueryItem("model", "WMM");
+        url.setUrl(GEOMAG_API_URL_WMM);
         break;
     case Model::IGRF:
-        url.setUrl("https://www.ngdc.noaa.gov/geomag-web/calculators/calculateDeclination?");
-        query.addQueryItem("model", "IGRF");
+        url.setUrl(GEOMAG_API_URL_IGRF);
         break;
     case Model::EMM:
-        url.setUrl("https://emmcalc.geomag.info/?");
-        query.addQueryItem("magneticComponent", "d");
+        url.setUrl(GEOMAG_API_URL_EMM);
         break;
     }
 
@@ -246,75 +201,86 @@ QUrl MagneticDeclinationDialog::createUrl() const
     return url;
 }
 
-void MagneticDeclinationDialog::startRequest(const QUrl& url)
+void MagneticDeclinationDialog::setLongitude(double longitude)
 {
-    currentUrl = url;
-    httpRequestAborted = false;
-    btnUpdate->setEnabled(false);
+    sbLongitude->setValue(longitude);
+}
+
+void MagneticDeclinationDialog::setLatitude(double latitude)
+{
+    sbLatitude->setValue(latitude);
+}
+
+void MagneticDeclinationDialog::accept()
+{
+    if (transfer->isRunning())
+        transfer->abort();
+
+    if (updateComplete)
+        emit declinationUpdated(declination);
+
+    QDialog::done(QDialog::Accepted);
+}
+
+void MagneticDeclinationDialog::reject()
+{
+    if (transfer->isRunning())
+        transfer->abort();
+
+    QDialog::done(QDialog::Rejected);
+}
+
+void MagneticDeclinationDialog::onStartStopClicked()
+{
+    if (transfer->isRunning()) {
+        transfer->abort();
+        return;
+    }
+
+    leResult->clear();
+    btnStartStop->setText(tr("Abort"));
     statusLabel->setText(tr("Connecting..."));
 
-    timer.start(15000); // 15 second timeout
-    reply = qnam.get(QNetworkRequest(url));
+    response.buffer().clear();
+    response.open(QIODevice::ReadWrite);
 
-    connect(reply, &QNetworkReply::finished,
-            this, &MagneticDeclinationDialog::httpFinished);
+    transfer->setWriteFunction([this](char *data, std::size_t size) {
+        qint64 bytesWritten = response.write(data, static_cast<qint64>(size));
+        return static_cast<size_t>(bytesWritten);
+    });
 
-    connect(reply, &QNetworkReply::downloadProgress,
-            this, &MagneticDeclinationDialog::httpProgress);
+    transfer->set(CURLOPT_URL, createUrl());
+    transfer->set(CURLOPT_FOLLOWLOCATION, long(1));
+    transfer->set(CURLOPT_FAILONERROR, long(1));
+
+    transfer->perform();
 }
 
-void MagneticDeclinationDialog::abortRequest()
+void MagneticDeclinationDialog::onTransferProgress(qint64 downloadTotal, qint64 downloadNow, qint64, qint64)
 {
-    if (reply == nullptr)
-        return;
-
-    if (timer.isActive())
-        timer.stop();
-
-    httpRequestAborted = true;
-    reply->abort();
-    statusLabel->setText(tr("Update canceled"));
-    btnUpdate->setEnabled(true);
-}
-
-void MagneticDeclinationDialog::httpProgress(qint64 bytesRead, qint64 totalBytes)
-{
-    statusLabel->setText(tr("Downloading..."));
-    return;
-}
-
-void MagneticDeclinationDialog::httpFinished()
-{
-    if (timer.isActive())
-        timer.stop();
-
-    if (httpRequestAborted) {
-        reply->deleteLater();
-        reply = nullptr;
-        return;
+    qint64 progress = 0;
+    if (downloadTotal > 0) {
+        if (downloadNow > downloadTotal) downloadNow = downloadTotal;
+        progress = (downloadNow / downloadTotal) * 100;
     }
 
-    if (reply->error()) {
-        statusLabel->setText(tr("Network Error: %1").arg(reply->errorString()));
-        btnUpdate->setEnabled(true);
-        reply->deleteLater();
-        reply = nullptr;
-        return;
-    }
+    statusLabel->setText(QString("Downloading... %1%").arg(progress));
+}
 
-    const QVariant redirectionTarget = reply->attribute(QNetworkRequest::RedirectionTargetAttribute);
-    if (!redirectionTarget.isNull()) {
-        reply->deleteLater();
-        reply = nullptr;
-        const QUrl redirectedUrl = currentUrl.resolved(redirectionTarget.toUrl());
-        startRequest(redirectedUrl);
+void MagneticDeclinationDialog::onTransferDone()
+{
+    if (transfer->result() != CURLE_OK) {
+        statusLabel->setText(tr("Network Error: %1").arg(curl_easy_strerror(transfer->result())));
+        btnStartStop->setText(tr("Update"));
+        response.buffer().clear();
+        response.close();
         return;
     }
 
     // Decode the response.
-    QJsonDocument document = QJsonDocument::fromJson(reply->readAll());
-    reply->deleteLater();
-    reply = nullptr;
+    QJsonDocument document = QJsonDocument::fromJson(response.buffer());
+    response.buffer().clear();
+    response.close();
 
     updateComplete = false;
 
@@ -340,27 +306,18 @@ void MagneticDeclinationDialog::httpFinished()
         }
     }
 
-    if (updateComplete) {
+    if (updateComplete)
         statusLabel->setText(tr("Update complete"));
-    }
-    else {
+    else
         statusLabel->setText(tr("Error: Invalid data received."));
-    }
 
-    btnUpdate->setEnabled(true);
+    btnStartStop->setText(tr("Update"));
 }
 
-void MagneticDeclinationDialog::sslErrors(QNetworkReply *, const QList<QSslError> &errors)
+void MagneticDeclinationDialog::onTransferAborted()
 {
-    QString errorString;
-    for (const QSslError &error : errors) {
-        if (!errorString.isEmpty())
-            errorString += '\n';
-        errorString += error.errorString();
-    }
-
-    QString message = tr("One or more SSL errors have occurred:\n%1").arg(errorString);
-    int rc = QMessageBox::warning(this, tr("SSL Errors"), message, QMessageBox::Ignore | QMessageBox::Abort);
-    if (rc == QMessageBox::Ignore)
-        reply->ignoreSslErrors();
+    response.buffer().clear();
+    response.close();
+    statusLabel->setText(tr("Update aborted"));
+    btnStartStop->setText(tr("Update"));
 }

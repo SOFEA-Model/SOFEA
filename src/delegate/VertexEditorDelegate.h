@@ -16,37 +16,10 @@
 #pragma once
 
 #include <QStyledItemDelegate>
-#include <QWidget>
 
 QT_BEGIN_NAMESPACE
 class QAbstractItemModel;
-class QDoubleSpinBox;
-class QSpinBox;
 QT_END_NAMESPACE
-
-class VertexEditorDelegate;
-
-class VertexEditor : public QWidget
-{
-    Q_OBJECT
-
-friend class VertexEditorDelegate;
-
-public:
-    VertexEditor(QWidget *parent = nullptr);
-
-signals:
-    void geometryChanged();
-    void vertexCountChanged(int i);
-    void vertexChanged(int i);
-    void coordinatesChanged(double);
-
-private:
-    QSpinBox *sbVertexCount;
-    QSpinBox *sbVertex;
-    QDoubleSpinBox *sbXCoord;
-    QDoubleSpinBox *sbYCoord;
-};
 
 class VertexEditorDelegate : public QStyledItemDelegate
 {

@@ -21,7 +21,7 @@
 #include <QAbstractItemModel>
 #include <QVariant>
 
-#include "Receptor.h"
+#include "core/Receptor.h"
 
 struct SourceGroup;
 

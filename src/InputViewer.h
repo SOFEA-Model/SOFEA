@@ -16,7 +16,7 @@
 #ifndef INPUTVIEWER_H
 #define INPUTVIEWER_H
 
-#include "Scenario.h"
+#include "core/Scenario.h"
 
 #include <Scintilla.h>
 #include <ScintillaEditBase.h>

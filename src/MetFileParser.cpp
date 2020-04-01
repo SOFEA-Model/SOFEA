@@ -14,7 +14,9 @@
 //
 
 #include "MetFileParser.h"
+#include "core/DateTimeConversion.h"
 
+#include <cmath>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -36,16 +38,11 @@
 #include <boost/log/trivial.hpp>
 #include <boost/log/attributes/scoped_attribute.hpp>
 
-#include <fmt/format.h>
-
 inline bool checkCalm(const SurfaceData::SurfaceRecord& sr)
 {
     // Based on subroutine CHKCLM in METEXT.F
 
-    if (sr.wspd == 0)
-        return true;
-    else
-        return false;
+    return std::fpclassify(sr.wspd) == FP_ZERO;
 }
 
 inline bool checkMiss(const SurfaceData::SurfaceRecord& sr)
@@ -95,14 +92,13 @@ MetFileParser::MetFileParser(const QString& filename)
 
 MetFileParser::MetFileParser(const std::string& filename)
 {
-    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Model")
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Import")
 
     using namespace boost::gregorian;
     using namespace boost::posix_time;
     using namespace boost::icl;
 
-    std::string path = absolutePath(filename);
-    std::ifstream ifs(path, std::ios_base::in);
+    std::ifstream ifs(filename, std::ios_base::in);
     if (!ifs)
         return;
 
@@ -190,23 +186,8 @@ SurfaceInfo MetFileParser::getSurfaceInfo() const
     info.nmiss = sd->nmiss;
 
     // Intervals
-    for (const discrete_interval<ptime>& i : sd->intervals) {
-        std::ostringstream oss;
-        ptime lower = i.lower();
-        ptime upper = i.upper();
-        time_period period(lower, upper);
-
-        // I/O Setup
-        time_facet *facet = new time_facet(); // std::locale handles destruction
-        facet->format("%Y-%m-%d %H:%M");
-        period_formatter formatter(period_formatter::AS_OPEN_RANGE, ", ", "[", ")", "]");
-        facet->period_formatter(formatter);
-        oss.imbue(std::locale(std::locale::classic(), facet));
-
-        // Output
-        oss << period;
-        info.intervals.push_back(oss.str());
-    }
+    for (const discrete_interval<ptime>& i : sd->intervals)
+        info.intervals.emplace_back(sofea::utilities::convert<std::string>(i));
 
     return info;
 }
@@ -214,20 +195,4 @@ SurfaceInfo MetFileParser::getSurfaceInfo() const
 std::shared_ptr<SurfaceData> MetFileParser::getSurfaceData() const
 {
     return sd;
-}
-
-std::string MetFileParser::absolutePath(const std::string& filename)
-{
-    // If this is a relative path, assume current project directory.
-    // FIXME: store current directory in project.
-
-    QString path = QString::fromStdString(filename);
-    QFileInfo fi(path);
-    if (!path.isEmpty() && fi.isRelative()) {
-        QSettings settings;
-        QString dir = settings.value("DefaultDirectory", QDir::currentPath()).toString();
-        path = QDir::cleanPath(dir + QDir::separator() + path);
-    }
-
-    return path.toStdString();
 }

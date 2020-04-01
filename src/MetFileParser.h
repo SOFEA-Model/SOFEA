@@ -26,7 +26,7 @@
 #include <boost/icl/ptime.hpp>
 #include <boost/icl/interval_set.hpp>
 
-#include "Scenario.h"
+#include "core/Scenario.h"
 
 //-----------------------------------------------------------------------------
 // SurfaceData
@@ -34,21 +34,26 @@
 
 struct SurfaceData
 {
+
+
     struct SurfaceHeader
     {
+        // Format from MPMET.FOR in AERMET source.
+        // Required header only. Excludes THRESH1SPD, CC_TT_Subs, MMIF_Vers.
+
         std::string mplat;      // T2,A8    latitude
         std::string mplon;      // T12,A8   longitude
         std::string ualoc;      // T37,A8   upper air station identifier
         std::string sfloc;      // T54,A8   surface station identifier
         std::string osloc;      // T71,A8   site-specific identifier
         std::string versno;     // T93,A6   AERMET version
-        double thresh1spd;      // F5.2     optional
-        std::string cc_tt_subs; // A17      optional
-        std::string mmif_vers;  // A40      optional
     };
 
     struct SurfaceRecord
     {
+        // Format from MPOUT.FOR in AERMET source.
+        // Variable definitions from MP2.INC in AERMET source.
+
         int mpyr;               // I2,1X    year
         int mpcmo;              // I2,1X    month
         int mpcdy;              // I2,1X    day
@@ -136,7 +141,6 @@ public:
 
     SurfaceInfo getSurfaceInfo() const;
     std::shared_ptr<SurfaceData> getSurfaceData() const;
-    static std::string absolutePath(const std::string& filename);
 
 private:
     std::shared_ptr<SurfaceData> sd = nullptr;

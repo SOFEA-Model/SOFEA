@@ -13,126 +13,26 @@
 // limitations under the License.
 //
 
-#include "FilterHeaderView.h"
 #include "AppStyle.h"
+#include "FilterEditor.h"
+#include "FilterHeaderView.h"
 
 #include <QApplication>
+#include <QBoxLayout>
 #include <QEvent>
 #include <QIcon>
-#include <QLineEdit>
-#include <QListView>
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPixmap>
+#include <QRegularExpression>
+#include <QRegularExpressionValidator>
 #include <QScreen>
 #include <QSortFilterProxyModel>
-#include <QStandardItemModel>
 #include <QStyleOptionMenuItem>
-#include <QVBoxLayout>
 #include <QWidgetAction>
 
 #include <QDebug>
-
-//-----------------------------------------------------------------------------
-// FilterEditorProxyModel
-//-----------------------------------------------------------------------------
-
-FilterEditorProxyModel::FilterEditorProxyModel(QObject *parent)
-    : QSortFilterProxyModel(parent)
-{}
-
-QVariant FilterEditorProxyModel::data(const QModelIndex &index, int role) const
-{
-    if (!index.isValid())
-        return QVariant();
-
-    if (role == Qt::CheckStateRole && index.column() == filterKeyColumn()) {
-        QString displayText = sourceModel()->data(mapToSource(index), Qt::DisplayRole).toString();
-        if (checkStateMap.contains(displayText))
-            return QVariant(checkStateMap.value(displayText));
-        else
-            return QVariant(Qt::Checked);
-    }
-
-    return QSortFilterProxyModel::data(index, role);
-}
-
-bool FilterEditorProxyModel::setData(const QModelIndex &index, const QVariant &value, int role)
-{
-    if (!index.isValid() && role != Qt::CheckStateRole)
-        return false;
-
-    if (value.canConvert(QVariant::Int)) {
-        QString displayText = sourceModel()->data(mapToSource(index), Qt::DisplayRole).toString();
-        Qt::CheckState state = qvariant_cast<Qt::CheckState>(value);
-        checkStateMap[displayText] = state;
-        return true;
-    }
-
-    return false;
-}
-
-Qt::ItemFlags FilterEditorProxyModel::flags(const QModelIndex& index) const
-{
-    if (!index.isValid())
-        return QSortFilterProxyModel::flags(index);
-
-    return Qt::ItemIsUserCheckable | Qt::ItemIsSelectable | Qt::ItemIsEnabled;
-}
-
-void FilterEditorProxyModel::setFilterWildcard(const QString& pattern)
-{
-    checkStateMap.clear();
-    QSortFilterProxyModel::setFilterWildcard(pattern);
-}
-
-bool FilterEditorProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
-{
-    // Accept rows with unique DisplayText.
-    QModelIndex index = sourceModel()->index(sourceRow, filterKeyColumn(), sourceParent);
-    QString displayText = sourceModel()->data(index, Qt::DisplayRole).toString();
-    if (!checkStateMap.contains(displayText)) {
-        checkStateMap[displayText] = Qt::Checked;
-        return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
-    }
-    return false;
-}
-
-//-----------------------------------------------------------------------------
-// FilterEditor
-//-----------------------------------------------------------------------------
-
-FilterEditor::FilterEditor(QWidget *parent)
-    : QWidget(parent)
-{
-    searchBox = new QLineEdit;
-    searchBox->setPlaceholderText(tr("Search"));
-    searchBox->setClearButtonEnabled(true);
-
-    QStandardItemModel *model = new QStandardItemModel(this);
-
-    proxyModel = new FilterEditorProxyModel(this);
-    proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
-    proxyModel->setSourceModel(model);
-    //proxyModel->setFilterKeyColumn(0);
-    proxyModel->sort(0, Qt::AscendingOrder);
-
-    listView = new QListView;
-    listView->setFixedHeight(200);
-    listView->setModel(proxyModel);
-
-    connect(searchBox, &QLineEdit::textEdited, proxyModel,
-            &FilterEditorProxyModel::setFilterWildcard);
-
-    QVBoxLayout *mainLayout = new QVBoxLayout;
-    const int scaleFactor = static_cast<int>(this->logicalDpiX() / 96.0);
-    const int xOffset = 21 * scaleFactor + 16; // Check CE_MenuItem in QFusionStyle
-    mainLayout->setContentsMargins(xOffset, 6, 6, 6);
-    mainLayout->addWidget(searchBox);
-    mainLayout->addWidget(listView);
-    setLayout(mainLayout);
-}
 
 //-----------------------------------------------------------------------------
 // FilterHeaderView
@@ -143,20 +43,25 @@ FilterHeaderView::FilterHeaderView(Qt::Orientation orientation, QWidget *parent)
 {
     const QIcon sortAscendingIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_HeaderSortAscending));
     const QIcon sortDescendingIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_HeaderSortDescending));
-    //const QIcon deleteFilterIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_HeaderDeleteFilter));
-    //const QIcon editFilterIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_HeaderEditFilter));
+    const QIcon deleteFilterIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_HeaderDeleteFilter));
 
-    sortAscendingAct = new QAction(sortAscendingIcon, tr("Sort A to Z"), this);
-    sortDescendingAct = new QAction(sortDescendingIcon, tr("Sort Z to A"), this);
-    //clearFilterAct = new QAction(deleteFilterIcon, tr("Clear Filter"), this);
-    //editFilterAct = new QAction(editFilterIcon, tr("Edit Filter..."), this);
+    actSortAscending = new QAction(sortAscendingIcon, tr("Sort A to Z"), this);
+    actSortDescending = new QAction(sortDescendingIcon, tr("Sort Z to A"), this);
+    actClearFilter = new QAction(deleteFilterIcon, tr("Clear Filter"), this);
 
-    //clearFilterAct->setDisabled(true);
-    //editFilterAct->setDisabled(true);
+    filterMenu = new QMenu(this);
 
-    //filterEditor = new FilterEditor;
-    //filterAction = new QWidgetAction(nullptr);
-    //filterAction->setDefaultWidget(filterEditor);
+    filterEditor = new FilterEditor;
+    filterEditor->setMouseTracking(true); // QMenu Fix
+
+    actEditFilter = new QWidgetAction(filterMenu);
+    actEditFilter->setDefaultWidget(filterEditor);
+
+    filterMenu->addAction(actSortAscending);
+    filterMenu->addAction(actSortDescending);
+    filterMenu->addSeparator();
+    filterMenu->addAction(actClearFilter);
+    filterMenu->addAction(actEditFilter);
 }
 
 void FilterHeaderView::setAutoFilterEnabled(bool enabled)
@@ -187,34 +92,56 @@ bool FilterHeaderView::autoFilterEnabled() const
 
 void FilterHeaderView::showAutoFilter(int section)
 {
-    QMenu filterMenu;
-    filterMenu.addAction(sortAscendingAct);
-    filterMenu.addAction(sortDescendingAct);
-    //filterMenu.addSeparator();
-    //filterMenu.addAction(clearFilterAct);
-    //filterMenu.addAction(editFilterAct);
-    //filterMenu.addSeparator();
-    //filterMenu.addAction(filterAction);
-
     // Align with the right edge of the column.
-    int width = filterMenu.sizeHint().width();
+    int width = filterMenu->sizeHint().width();
     int x = sectionViewportPosition(section) + sectionSize(section) - width;
     int y = viewport()->height();
     QPoint pos = QPoint(x, y);
     QPoint globalPos = viewport()->mapToGlobal(pos);
 
-    QAction *selected = filterMenu.exec(globalPos);
+    // Use the source model for filter queries.
+    QSortFilterProxyModel *proxyModel = qobject_cast<QSortFilterProxyModel *>(model());
+    QAbstractItemModel *sourceModel = proxyModel ? proxyModel->sourceModel() : model();
 
-    if (selected == sortAscendingAct) {
-        columnStateMap[section] = SortFilterState::SortAscending;
+    // Set the current column.
+    filterEditor->clearSearchText();
+    filterEditor->setSourceModel(sourceModel);
+    filterEditor->setFilterKeyColumn(section);
+    filterEditor->updateCheckState();
+
+    bool changed = false;
+    connect(filterEditor, &FilterEditor::filterChanged, [&]{
+        changed = true;
+    });
+
+    QAction *selected = filterMenu->exec(globalPos);
+
+    if (selected == actSortAscending) {
+        columnFlags[section].setFlag(SortAscending).setFlag(SortDescending, false);
         setSortIndicator(section, Qt::AscendingOrder);
     }
-    else if (selected == sortDescendingAct) {
-        columnStateMap[section] = SortFilterState::SortDescending;
+    else if (selected == actSortDescending) {
+        columnFlags[section].setFlag(SortDescending).setFlag(SortAscending, false);
         setSortIndicator(section, Qt::DescendingOrder);
+    }
+    else if (selected == actClearFilter) {
+        columnFlags[section].setFlag(Filter, false);
+        filterEditor->clearFilter(section);
+        emit filterStateChanged();
+        this->viewport()->update();
+    }
+    else if (changed) {
+        columnFlags[section].setFlag(Filter, true);
+        emit filterStateChanged();
+        this->viewport()->update();
     }
 
     return;
+}
+
+std::set<int> FilterHeaderView::filteredRows() const
+{
+    return filterEditor->proxyModel()->filteredRows();
 }
 
 void FilterHeaderView::leaveEvent(QEvent *e)
@@ -288,7 +215,7 @@ bool FilterHeaderView::isPointOnIcon(int section, const QPoint& pos) const
     return iconRect.contains(pos);
 }
 
-void FilterHeaderView::paintIndicator(QPainter *painter, const QRect &rect, FilterHeaderView::SortFilterState state) const
+void FilterHeaderView::paintIndicator(QPainter *painter, const QRect &rect, SortFilterFlags flags) const
 {
     static const QPointF filter[6] = {
         QPointF(0.7500, 0.2500),
@@ -370,28 +297,28 @@ void FilterHeaderView::paintIndicator(QPainter *painter, const QRect &rect, Filt
     painter->scale(side, side);
     painter->setPen(Qt::NoPen);
 
-    switch (state) {
-    case SortFilterState::SortAscending:
+    switch (flags) {
+    case SortAscending:
         painter->setBrush(arrowBrush);
         painter->drawPolygon(arrowUp, sizeof arrowUp / sizeof arrowUp[0]);
         break;
-    case SortFilterState::SortAscendingFilter:
+    case SortAscendingFilter:
         painter->setBrush(arrowBrush);
         painter->drawPolygon(overlayArrowUp, sizeof overlayArrowUp / sizeof overlayArrowUp[0]);
         painter->setBrush(filterBrush);
         painter->drawPolygon(overlayFilter, sizeof overlayFilter / sizeof overlayFilter[0]);
         break;
-    case SortFilterState::SortDescending:
+    case SortDescending:
         painter->setBrush(arrowBrush);
         painter->drawPolygon(arrowDown, sizeof arrowDown / sizeof arrowDown[0]);
         break;
-    case SortFilterState::SortDescendingFilter:
+    case SortDescendingFilter:
         painter->setBrush(arrowBrush);
         painter->drawPolygon(overlayArrowDown, sizeof overlayArrowDown / sizeof overlayArrowDown[0]);
         painter->setBrush(filterBrush);
         painter->drawPolygon(overlayFilter, sizeof overlayFilter / sizeof overlayFilter[0]);
         break;
-    case SortFilterState::Filter:
+    case Filter:
         painter->setBrush(filterBrush);
         painter->drawPolygon(filter, sizeof filter / sizeof filter[0]);
         break;
@@ -431,9 +358,12 @@ void FilterHeaderView::paintSection(QPainter *painter, const QRect &rect, int se
     //int pm = style()->pixelMetric(QStyle::PM_ToolBarIconSize, nullptr, this);
     //int margin = style()->pixelMetric(QStyle::PM_HeaderMargin, nullptr, this);
 
-    // Draw sort or hover indicators?
-    bool drawIndicator = (isSortIndicatorShown() && sortIndicatorSection() == section);
-    bool drawIcon = (section == hoverSection || drawIndicator);
+    // Draw sort, filter or hover indicators?
+    bool filterIndicator = false;
+    if (columnFlags.find(section) != columnFlags.end())
+        filterIndicator = columnFlags.at(section).testFlag(Filter);
+    bool sortIndicator = (isSortIndicatorShown() && sortIndicatorSection() == section);
+    bool drawIcon = (section == hoverSection || sortIndicator || filterIndicator);
 
     // Set the header text and elide if necessary.
     QAbstractItemModel *m = model();
@@ -461,13 +391,17 @@ void FilterHeaderView::paintSection(QPainter *painter, const QRect &rect, int se
         }
     }
 
-    // FIXME: allow multiple sorts; use column state map instead of sortIndicatorSection.
     if (drawIcon) {
-        if (drawIndicator && sortIndicatorOrder() == Qt::AscendingOrder)
-            paintIndicator(painter, iconRect, SortFilterState::SortAscending);
-        else if (drawIndicator && sortIndicatorOrder() == Qt::DescendingOrder)
-            paintIndicator(painter, iconRect, SortFilterState::SortDescending);
-        else
-            paintIndicator(painter, iconRect, SortFilterState::Filter);
+        if (sortIndicator) {
+            SortFilterFlags flags = filterIndicator ? Filter : NoSortFilter;
+            if (sortIndicatorOrder() == Qt::AscendingOrder)
+                flags |= SortAscending;
+            else if (sortIndicatorOrder() == Qt::DescendingOrder)
+                flags |= SortDescending;
+            paintIndicator(painter, iconRect, flags);
+        }
+        else {
+            paintIndicator(painter, iconRect, Filter);
+        }
     }
 }

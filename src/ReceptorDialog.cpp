@@ -25,7 +25,7 @@
 #include "AppStyle.h"
 #include "ReceptorDialog.h"
 #include "ReceptorEditor.h"
-#include "Scenario.h"
+#include "core/Scenario.h"
 
 //-----------------------------------------------------------------------------
 // ReceptorDialog

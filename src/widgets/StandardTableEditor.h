@@ -17,9 +17,16 @@
 
 #include <QBoxLayout>
 #include <QFlags>
-#include <QPushButton>
+#include <QString>
+#include <QWidget>
 
-#include "StandardTableView.h"
+class StandardTableView;
+
+QT_BEGIN_NAMESPACE
+class QItemSelection;
+class QModelIndex;
+class QAbstractButton;
+QT_END_NAMESPACE
 
 class StandardTableEditor : public QWidget
 {
@@ -38,22 +45,25 @@ public:
         All       = 0xff
     };
 
+    enum ButtonRole {
+        AddRole,
+        RemoveRole,
+        RenameRole,
+        MoveUpRole,
+        MoveDownRole,
+        EditRole,
+        ImportRole
+    };
+
     Q_DECLARE_FLAGS(StandardButtons, StandardButton)
 
     StandardTableEditor(Qt::Orientation orientation = Qt::Vertical,
         StandardButtons buttons = AddRemove, QWidget *parent = nullptr);
 
-    void init(StandardTableView *standardTableView);
+    void setView(StandardTableView *view);
     void setImportFilter(const QString& filter);
-    void setImportCaption(const QString& caption);
-
-    QPushButton *btnAdd = nullptr;
-    QPushButton *btnRemove = nullptr;
-    QPushButton *btnRename = nullptr;
-    QPushButton *btnMoveUp = nullptr;
-    QPushButton *btnMoveDown = nullptr;
-    QPushButton *btnEdit = nullptr;
-    QPushButton *btnImport = nullptr;
+    void setImportCaption(const QString& caption_);
+    QAbstractButton * button(ButtonRole role);
 
 signals:
     void moveRequested(const QModelIndex &sourceParent, int sourceRow, int count,
@@ -65,15 +75,28 @@ public slots:
     void onAddItemClicked();
     void onRemoveItemClicked();
     void onRenameItemClicked();
-    void onMoveRequested();
+    void onMoveUpClicked();
+    void onMoveDownClicked();
     void onEditItemClicked();
     void onImportClicked();
-    void onSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
+    void onSelectionChanged(const QItemSelection&, const QItemSelection&);
+    void onRowsMoved(const QModelIndex&, int sourceFirst, int sourceLast,
+                     const QModelIndex&, int destinationFirst);
 
 private:
-    StandardTableView *m_standardTableView;
-    QString m_importFilter;
-    QString m_importCaption;
+    void checkSelection();
+
+    StandardTableView *view_;
+    QString filter_;
+    QString caption_;
+
+    QAbstractButton *btnAdd = nullptr;
+    QAbstractButton *btnRemove = nullptr;
+    QAbstractButton *btnRename = nullptr;
+    QAbstractButton *btnMoveUp = nullptr;
+    QAbstractButton *btnMoveDown = nullptr;
+    QAbstractButton *btnEdit = nullptr;
+    QAbstractButton *btnImport = nullptr;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(StandardTableEditor::StandardButtons)

@@ -27,7 +27,7 @@
 #include <QString>
 #include <QStyledItemDelegate>
 
-#include "Receptor.h"
+#include "core/Receptor.h"
 
 //-----------------------------------------------------------------------------
 // ReceptorGridDelegate

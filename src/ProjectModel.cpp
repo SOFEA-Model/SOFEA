@@ -14,7 +14,7 @@
 //
 
 #include "ProjectModel.h"
-#include "Project.h"
+#include "core/Project.h"
 
 #include <algorithm>
 #include <iterator>
@@ -260,7 +260,7 @@ bool ProjectModel::insertRows(int row, int count, const QModelIndex &parent)
         insertRange(project_->scenarios, row, count);
         break;
     case ItemType::Meteorology:
-        insertRange(project_->meteorology, row, count);
+        //insertRange(project_->meteorology, row, count);
         break;
     case ItemType::FluxProfiles:
         insertRange(project_->fluxProfiles, row, count);

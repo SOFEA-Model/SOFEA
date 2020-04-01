@@ -19,7 +19,7 @@
 
 #include "AppStyle.h"
 #include "ScenarioProperties.h"
-#include "Scenario.h"
+#include "core/Scenario.h"
 
 ScenarioProperties::ScenarioProperties(Scenario *s, QWidget *parent)
     : SettingsDialog(parent), sPtr(s)

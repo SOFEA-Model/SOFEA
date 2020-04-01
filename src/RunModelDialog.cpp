@@ -14,12 +14,13 @@
 //
 
 #include <QtWidgets>
+#include <QDesktopServices>
+#include <QSettings>
 
 #include "AppStyle.h"
 #include "RunModelDialog.h"
+#include "core/Common.h"
 #include "delegate/ProgressBarDelegate.h"
-
-const QString AERMODEXE = "sofea_aermod.exe";
 
 RunModelDialog::RunModelDialog(QWidget *parent) : QDialog(parent)
 {
@@ -35,6 +36,9 @@ RunModelDialog::RunModelDialog(QWidget *parent) : QDialog(parent)
 
     leWorkingDir = new QLineEdit;
     leWorkingDir->setReadOnly(true);
+    btnWorkingDir = new QToolButton;
+    btnWorkingDir->setText("...");
+
     lblThreads = new QLabel(QString("Available processor cores: %1").arg(maxThreads));
     btnSelectAll = new QPushButton("Select All");
     btnDeselectAll = new QPushButton("Deselect All");
@@ -52,6 +56,7 @@ RunModelDialog::RunModelDialog(QWidget *parent) : QDialog(parent)
     runTable->setSelectionMode(QAbstractItemView::ExtendedSelection);
     runTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     runTable->setItemDelegateForColumn(4, new ProgressBarDelegate);
+    runTable->setContextMenuPolicy(Qt::CustomContextMenu);
 
     int startingWidth = runTable->font().pointSize();
     runTable->setColumnWidth(0, startingWidth * 12);
@@ -61,12 +66,17 @@ RunModelDialog::RunModelDialog(QWidget *parent) : QDialog(parent)
     runTable->setColumnWidth(4, startingWidth * 20);
     runTable->setMinimumWidth(startingWidth * 100);
 
+    // Context Menu Actions
+    QIcon openFolderIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_OpenFolder));
+    openFolderAction = new QAction(openFolderIcon, tr("Open Folder"), this);
+
 	// Button Box
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Close);
 
     QHBoxLayout *layout1 = new QHBoxLayout;
     layout1->addWidget(new QLabel("Output directory: "), 0);
     layout1->addWidget(leWorkingDir, 1);
+    layout1->addWidget(btnWorkingDir, 0);
 
     // Controls Layout
     QHBoxLayout *controlsLayout = new QHBoxLayout;
@@ -95,15 +105,29 @@ RunModelDialog::RunModelDialog(QWidget *parent) : QDialog(parent)
 
 void RunModelDialog::setupConnections()
 {
+    connect(runTable, &QTableView::customContextMenuRequested,
+            this, &RunModelDialog::contextMenuRequested);
+
     // UI Signals
+    connect(btnWorkingDir, &QToolButton::clicked, this, [=]{
+        QSettings settings;
+        QString defaultDir = settings.value("DefaultDirectory", QDir::currentPath()).toString();
+        QString selectedDir = QFileDialog::getExistingDirectory(
+            this, tr("Select Working Directory"), defaultDir, QFileDialog::ShowDirsOnly);
+        if (!selectedDir.isEmpty())
+            setWorkingDirectory(selectedDir);
+    });
+
     connect(btnSelectAll, &QPushButton::clicked, this, [=]{
         runTable->selectAll();
         runTable->setFocus();
     });
+
     connect(btnDeselectAll, &QPushButton::clicked, this, [=]{
         runTable->clearSelection();
         runTable->setFocus();
     });
+
     connect(btnRun, &QPushButton::clicked, this, &RunModelDialog::runSelected);
     connect(btnStop, &QPushButton::clicked, this, &RunModelDialog::stopSelected);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &RunModelDialog::reject);
@@ -170,7 +194,7 @@ void RunModelDialog::executeJob(int i)
 
     QDateTime timestamp = QDateTime::currentDateTime();
 
-    runModel->item(i, 1)->setText("Processing");
+    runModel->item(i, 1)->setText("Initializing");
     runModel->item(i, 2)->setText(timestamp.toString("yyyy-MM-dd hh:mm:ss"));
     runModel->item(i, 3)->setText("00:00:00");
     runModel->item(i, 4)->setData(0, Qt::DisplayRole); // 0% complete
@@ -200,7 +224,7 @@ void RunModelDialog::executeJob(int i)
     jobs[i]->scenario->writeInputFile(inputPath.toStdString());
 
     // Create the process.
-    QString exePath = qApp->applicationDirPath() + QDir::separator() + AERMODEXE;
+    QString exePath = QDir::cleanPath(qApp->applicationDirPath() + QDir::separator() + AERMOD_EXE);
     jobs[i]->process = new QProcess(this);
     jobs[i]->process->setProgram(exePath);
     jobs[i]->process->setWorkingDirectory(jobs[i]->path);
@@ -328,9 +352,9 @@ void RunModelDialog::updateProgress(quint32 pid, quint32 msg)
 
     if (pidToJob.contains(pid)) {
         Job *job = pidToJob.value(pid);
-        int nrec = job->scenario->sfInfo.nrec;
 
-        // Skip update if nrec has not been calculated.
+        // Skip update if no records in surface file.
+        int nrec = job->scenario->sfInfo.nrec;
         if (nrec == 0)
             return;
 
@@ -403,6 +427,29 @@ bool RunModelDialog::eventFilter(QObject *obj, QEvent *event)
     }
 
     return QObject::eventFilter(obj, event);
+}
+
+void RunModelDialog::contextMenuRequested(const QPoint &pos)
+{
+    QPoint globalPos = runTable->viewport()->mapToGlobal(pos);
+    QModelIndex index = runTable->indexAt(pos);
+    if (!index.isValid())
+        return;
+
+    int i = index.row();
+    if (i < 0 || i >= jobs.size())
+        return;
+
+    QDir dir(jobs[i]->path);
+    openFolderAction->setEnabled(!jobs[i]->subDir.isEmpty() && dir.exists());
+
+    QMenu contextMenu;
+    contextMenu.addAction(openFolderAction);
+
+    QAction *selectedAction = contextMenu.exec(globalPos);
+    if (selectedAction == openFolderAction) {
+        QDesktopServices::openUrl(QUrl(dir.path()));
+    }
 }
 
 /****************************************************************************

@@ -40,12 +40,15 @@ class StandardPlot : public QwtPlot
 
 public:
     explicit StandardPlot(QWidget *parent = nullptr);
-    ~StandardPlot();
 
     void setXAxisTitle(const QString&);
     void setYAxisTitle(const QString&);
     void setXAxisScale(double min, double max, double step);
     void setYAxisScale(double min, double max, double step);
+    void setXAxisScaleFormat(char format);
+    void setXAxisScalePrecision(int precision);
+    void setYAxisScaleFormat(char format);
+    void setYAxisScalePrecision(int precision);
     void clear();
     void setPanZoomMode(bool);
     void setCurveTracker(bool);

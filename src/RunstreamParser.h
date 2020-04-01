@@ -21,7 +21,7 @@
 #include <QString>
 #include <QPolygonF>
 
-#include "SourceGroup.h"
+#include "core/SourceGroup.h"
 
 class RunstreamParser
 {

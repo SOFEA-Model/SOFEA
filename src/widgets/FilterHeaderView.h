@@ -13,68 +13,54 @@
 // limitations under the License.
 //
 
-#ifndef FILTERHEADERVIEW_H
-#define FILTERHEADERVIEW_H
+#pragma once
 
+#include <QFlags>
 #include <QHeaderView>
-#include <QHash>
-#include <QSortFilterProxyModel>
-#include <QWidget>
+
+class FilterEditor;
 
 QT_BEGIN_NAMESPACE
 class QAction;
 class QEvent;
+class QMenu;
 class QMouseEvent;
 class QPainter;
-class QLineEdit;
-class QListView;
 class QWidgetAction;
 QT_END_NAMESPACE
 
-class FilterEditorProxyModel : public QSortFilterProxyModel
-{
-    Q_OBJECT
+#include <map>
+#include <set>
 
-public:
-    explicit FilterEditorProxyModel(QObject *parent = nullptr);
-
-    QVariant data(const QModelIndex& index, int role) const override;
-    bool setData(const QModelIndex& index, const QVariant& value, int role) override;
-    Qt::ItemFlags flags(const QModelIndex& index) const override;
-    void setFilterWildcard(const QString& pattern);
-
-protected:
-    bool filterAcceptsRow(int sourceRow, const QModelIndex& sourceParent) const override;
-
-private:
-    mutable QHash<QString, Qt::CheckState> checkStateMap;
-};
-
-class FilterEditor : public QWidget
-{
-    Q_OBJECT
-
-public:
-    explicit FilterEditor(QWidget *parent = nullptr);
-    //void setSourceModel(QAbstractItemModel *sourceModel);
-    //void setFilterKeyColumn(int column);
-    //bool filterAcceptsRow(int sourceRow, const QModelIndex& sourceParent) const;
-
-private:
-    QLineEdit *searchBox;
-    QListView *listView;
-    FilterEditorProxyModel *proxyModel;
-};
+//-----------------------------------------------------------------------------
+// FilterHeaderView
+//-----------------------------------------------------------------------------
 
 class FilterHeaderView : public QHeaderView
 {
     Q_OBJECT
 
 public:
+    enum SortFilterFlag
+    {
+        NoSortFilter = 0x00,         // 0000
+        SortAscending = 0x01,        // 0001
+        SortDescending = 0x02,       // 0010
+        Filter = 0x04,               // 0100
+        SortAscendingFilter = 0x05,  // 0101
+        SortDescendingFilter = 0x06  // 0110
+    };
+
+    Q_DECLARE_FLAGS(SortFilterFlags, SortFilterFlag)
+
     FilterHeaderView(Qt::Orientation orientation, QWidget *parent = nullptr);
+
     void setAutoFilterEnabled(bool enabled);
     bool autoFilterEnabled() const;
-    //void setSourceModel(QAbstractItemModel *sourceModel);
+    std::set<int> filteredRows() const;
+
+signals:
+    void filterStateChanged();
 
 private slots:
     void showAutoFilter(int section);
@@ -86,30 +72,21 @@ protected:
     virtual void mouseReleaseEvent(QMouseEvent *e) override;
     void paintSection(QPainter *painter, const QRect &rect, int section) const override;
 
-private:
-    enum class SortFilterState
-    {
-        None,
-        SortAscending,
-        SortAscendingFilter,
-        SortDescending,
-        SortDescendingFilter,
-        Filter
-    };
-
+private:    
     bool isPointOnIcon(int section, const QPoint& pos) const;
-    void paintIndicator(QPainter *painter, const QRect &rect, SortFilterState state) const;
+    void paintIndicator(QPainter *painter, const QRect &rect, SortFilterFlags flags) const;
 
-    QAction *sortAscendingAct;
-    QAction *sortDescendingAct;
-    //QAction *clearFilterAct;
-    //QAction *editFilterAct;
-    //FilterEditor *filterEditor;
-    //QWidgetAction *filterAction;
+    QAction *actSortAscending;
+    QAction *actSortDescending;
+    QAction *actClearFilter;
+    FilterEditor *filterEditor;
+    QWidgetAction *actEditFilter;
+    QMenu *filterMenu;
 
     bool autoFilter = false;
     int hoverSection = -1;
-    std::map<int, SortFilterState> columnStateMap;
+    std::map<int, SortFilterFlags> columnFlags;
 };
 
-#endif // FILTERHEADERVIEW_H
+Q_DECLARE_OPERATORS_FOR_FLAGS(FilterHeaderView::SortFilterFlags)
+

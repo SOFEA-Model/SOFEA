@@ -23,7 +23,9 @@ class DateTimeEditDelegate : public QStyledItemDelegate
     Q_OBJECT
 
 public:
-    DateTimeEditDelegate(QDateTime min, QDateTime max, QObject *parent = nullptr);
+    DateTimeEditDelegate(QDateTime min = QDateTime(QDate(1800, 1, 1), QTime(0, 0, 0, 0)),
+                         QDateTime max = QDateTime(QDate(2100, 12, 31), QTime(23, 59, 59, 999)),
+                         QObject *parent = nullptr);
     
     QWidget *createEditor(QWidget *parent,
         const QStyleOptionViewItem &, const QModelIndex &) const override;

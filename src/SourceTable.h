@@ -16,19 +16,20 @@
 #ifndef SOURCETABLE_H
 #define SOURCETABLE_H
 
-#include "Scenario.h"
-#include "SourceGroup.h"
-#include "SourceEditor.h"
-#include "SourceModel.h"
-#include "FluxProfileModel.h"
-#include "widgets/StandardTableView.h"
+#include "core/Scenario.h"
+#include "core/SourceGroup.h"
+
+class FilterProxyModel;
+class FluxProfileModel;
+class SourceEditor;
+class SourceModel;
+class StandardTableView;
 
 #include <QAction>
 #include <QColor>
 #include <QItemSelection>
 #include <QLabel>
 #include <QModelIndex>
-#include <QSortFilterProxyModel>
 #include <QVector>
 
 class SourceTable : public QWidget
@@ -68,7 +69,7 @@ private:
     StandardTableView *table;
     SourceModel *model;
     SourceEditor *sourceEditor;
-    QSortFilterProxyModel *proxyModel;
+    FilterProxyModel *proxyModel;
     FluxProfileModel *fpEditorModel;
 
     // Table Actions

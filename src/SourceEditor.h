@@ -20,25 +20,26 @@
 
 #include <QWidget>
 
-#include "SourceGroup.h"
-#include "delegate/VertexEditorDelegate.h"
+#include "core/SourceGroup.h"
+
+class AreaSourceEditor;
+class AreaCircSourceEditor;
+class DoubleLineEdit;
+class VertexEditor;
+class VertexEditorDelegate;
 
 QT_BEGIN_NAMESPACE
 class QAbstractItemModel;
+class QDataWidgetMapper;
+class QDateTimeEdit;
+class QDoubleSpinBox;
 class QLabel;
 class QLineEdit;
-class QSpinBox;
-class QDataWidgetMapper;
-class QDoubleSpinBox;
 class QPolygonF;
 class QPushButton;
+class QSpinBox;
 class QStackedLayout;
 QT_END_NAMESPACE
-
-class SourceEditor;
-class AreaSourceEditor;
-class AreaCircSourceEditor;
-class AreaPolySourceEditor;
 
 class SourceEditor : public QWidget
 {
@@ -57,15 +58,25 @@ private:
     AreaCircSourceEditor *areaCircEditor;
     VertexEditorDelegate *areaPolyEditorDelegate;
     VertexEditor *areaPolyEditor;
+    QPushButton *btnUpdate;
+
+    //QDateTimeEdit *deAppStart;
+    //DoubleLineEdit *leAppRate;
+    //DoubleLineEdit *leIncorpDepth;
+
+    //DoubleLineEdit *leAirDiffusion;
+    //DoubleLineEdit *leWaterDiffusion;
+    //DoubleLineEdit *leCuticularResistance;
+    //DoubleLineEdit *leHenryConstant;
+
     QDataWidgetMapper *mapper;
     QAbstractItemModel *sourceModel = nullptr;
-    QStackedLayout *stack;
-    QPushButton *btnUpdate;
+    QStackedLayout *geometryStack;
 };
 
-/****************************************************************************
-** AREA
-****************************************************************************/
+//-----------------------------------------------------------------------------
+// AreaSourceEditor
+//-----------------------------------------------------------------------------
 
 class AreaSourceEditor : public QWidget
 {
@@ -84,9 +95,9 @@ private:
     QDoubleSpinBox *sbAngle;
 };
 
-/****************************************************************************
-** AREACIRC
-****************************************************************************/
+//-----------------------------------------------------------------------------
+// AreaCircSourceEditor
+//-----------------------------------------------------------------------------
 
 class AreaCircSourceEditor : public QWidget
 {

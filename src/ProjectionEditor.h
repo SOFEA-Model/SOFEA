@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "Projection.h"
+#include "core/Projection.h"
 
 #include <QWidget>
 #include <string>

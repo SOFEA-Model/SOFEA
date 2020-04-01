@@ -16,6 +16,7 @@
 #include <QAbstractItemModel>
 #include <QBoxLayout>
 #include <QDataWidgetMapper>
+#include <QDateTimeEdit>
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
@@ -27,14 +28,16 @@
 
 #include "SourceEditor.h"
 #include "SourceModel.h"
+#include "widgets/VertexEditor.h"
+#include "delegate/VertexEditorDelegate.h"
 
-#include <ctk/ctkCollapsibleGroupBox.h>
+#include "ctk/ctkCollapsibleGroupBox.h"
 
 SourceEditor::SourceEditor(QWidget *parent) : QWidget(parent)
 {
     statusLabel = new QLabel;
     statusLabel->setText("No sources selected.");
-    statusLabel->setAlignment(Qt::AlignHCenter | Qt::AlignBaseline);
+    statusLabel->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 
     areaPolyEditorDelegate = new VertexEditorDelegate(this);
 
@@ -43,45 +46,97 @@ SourceEditor::SourceEditor(QWidget *parent) : QWidget(parent)
     areaPolyEditor = qobject_cast<VertexEditor *>(
         areaPolyEditorDelegate->createEditor(nullptr, QStyleOptionViewItem(), QModelIndex()));
 
+    btnUpdate = new QPushButton(tr("Update"));
+    QSizePolicy btnUpdateSizePolicy = btnUpdate->sizePolicy();
+    btnUpdateSizePolicy.setRetainSizeWhenHidden(true);
+    btnUpdate->setSizePolicy(btnUpdateSizePolicy);
+    btnUpdate->setAutoDefault(true);
+
+    //deAppStart = new QDateTimeEdit;
+    //deAppStart->setTimeSpec(Qt::UTC);
+    //deAppStart->setDisplayFormat("yyyy-MM-dd HH:mm");
+
+    //sbAppRate = new DoubleLineEdit;
+    //sbAppRate->setRange(0, 10000000);
+    //sbAppRate->setDecimals(2);
+
+    //sbIncorpDepth = new DoubleLineEdit;
+    //sbIncorpDepth->setRange(0, 100);
+    //sbIncorpDepth->setDecimals(2);
+
+    //leAirDiffusion = new DoubleLineEdit;
+    //leAirDiffusion->setRange(0.000001, 0.5);
+    //leAirDiffusion->setDecimals(8);
+
+    //leWaterDiffusion = new DoubleLineEdit;
+    //leWaterDiffusion->setRange(0.000001, 0.5);
+    //leWaterDiffusion->setDecimals(8);
+
+    //leCuticularResistance = new DoubleLineEdit;
+    //leCuticularResistance->setRange(0, 1000000);
+    //leCuticularResistance->setDecimals(8);
+
+    //leHenryConstant = new DoubleLineEdit;
+    //leHenryConstant->setRange(0, 10000);
+    //leHenryConstant->setDecimals(8);
+
     mapper = new QDataWidgetMapper(this);
     mapper->setOrientation(Qt::Horizontal);
     mapper->setSubmitPolicy(QDataWidgetMapper::ManualSubmit);
 
-    stack = new QStackedLayout;
-    stack->setContentsMargins(0, 0, 0, 0);
-    stack->addWidget(statusLabel);
-    stack->addWidget(areaEditor);
-    stack->addWidget(areaCircEditor);
-    stack->addWidget(areaPolyEditor);
-
-    btnUpdate = new QPushButton(tr("Update"));
-    btnUpdate->setAutoDefault(true);
-    btnUpdate->setDisabled(true);
+    // Layout
+    geometryStack = new QStackedLayout;
+    geometryStack->setContentsMargins(0, 0, 0, 0);
+    geometryStack->addWidget(statusLabel);
+    geometryStack->addWidget(areaEditor);
+    geometryStack->addWidget(areaCircEditor);
+    geometryStack->addWidget(areaPolyEditor);
 
     QHBoxLayout *buttonBox = new QHBoxLayout;
     buttonBox->setContentsMargins(0, 0, 0, 0);
     buttonBox->addStretch(1);
     buttonBox->addWidget(btnUpdate);
 
-    QVBoxLayout *controlsLayout = new QVBoxLayout;
-    controlsLayout->setContentsMargins(24, 16, 24, 16);
-    controlsLayout->addLayout(stack);
-    controlsLayout->addSpacing(5);
-    controlsLayout->addLayout(buttonBox);
+    QVBoxLayout *geometryLayout = new QVBoxLayout;
+    geometryLayout->setContentsMargins(24, 16, 24, 16);
+    geometryLayout->addLayout(geometryStack);
+    geometryLayout->addSpacing(5);
+    geometryLayout->addLayout(buttonBox);
+
+    //QGridLayout *applicationLayout = new QGridLayout;
+    //applicationLayout->setColumnMinimumWidth(0, 225);
+    //applicationLayout->setColumnStretch(0, 1);
+    //applicationLayout->setColumnStretch(1, 2);
+    //applicationLayout->setContentsMargins(24, 16, 24, 16);
+    //applicationLayout->addWidget(deAppStart, 0, 1);
+    //applicationLayout->addWidget(sbAppRate, 0, 1);
+    //applicationLayout->addWidget(sbIncorpDepth, 0, 1);
+
+    //QGridLayout *depositionLayout = new QGridLayout;
+    //depositionLayout->setColumnMinimumWidth(0, 225);
+    //depositionLayout->setColumnStretch(0, 1);
+    //depositionLayout->setColumnStretch(1, 2);
+    //depositionLayout->setContentsMargins(24, 16, 24, 16);
 
     ctkCollapsibleGroupBox *gbGeometry = new ctkCollapsibleGroupBox(tr("Geometry"));
-    gbGeometry->setLayout(controlsLayout);
+    gbGeometry->setLayout(geometryLayout);
     gbGeometry->setFlat(true);
+
+    //ctkCollapsibleGroupBox *gbApplication = new ctkCollapsibleGroupBox(tr("Application"));
+    //gbApplication->setLayout(applicationLayout);
+    //gbApplication->setFlat(true);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(gbGeometry);
+    //mainLayout->addWidget(gbApplication);
     mainLayout->addStretch(1);
 
-    stack->setCurrentIndex(0);
+    geometryStack->setCurrentIndex(0);
 
     connect(btnUpdate, &QPushButton::pressed, mapper, &QDataWidgetMapper::submit);
 
     setLayout(mainLayout);
+    btnUpdate->setVisible(false);
 }
 
 void SourceEditor::setModel(QAbstractItemModel *model)
@@ -111,7 +166,7 @@ void SourceEditor::setCurrentModelIndex(const QModelIndex& index)
         return;
     }
 
-    int prevStackIndex = stack->currentIndex();
+    int prevStackIndex = geometryStack->currentIndex();
 
     SourceType sourceType = qvariant_cast<SourceType>(sourceTypeVar);
     switch (sourceType) {
@@ -125,9 +180,9 @@ void SourceEditor::setCurrentModelIndex(const QModelIndex& index)
             mapper->addMapping(areaEditor->sbAngle, SourceModel::Column::Angle);
             mapper->toFirst();
         }
-        stack->setCurrentIndex(1);
+        geometryStack->setCurrentIndex(1);
         mapper->setCurrentIndex(index.row());
-        btnUpdate->setDisabled(false);
+        btnUpdate->setVisible(true);
         break;
     case SourceType::AREACIRC:
         if (prevStackIndex != 2) {
@@ -138,9 +193,9 @@ void SourceEditor::setCurrentModelIndex(const QModelIndex& index)
             mapper->addMapping(areaCircEditor->sbVertexCount, SourceModel::Column::VertexCount);
             mapper->toFirst();
         }
-        stack->setCurrentIndex(2);
+        geometryStack->setCurrentIndex(2);
         mapper->setCurrentIndex(index.row());
-        btnUpdate->setDisabled(false);
+        btnUpdate->setVisible(true);
         break;
     case SourceType::AREAPOLY:
         if (prevStackIndex != 3) {
@@ -149,9 +204,36 @@ void SourceEditor::setCurrentModelIndex(const QModelIndex& index)
             mapper->setItemDelegate(areaPolyEditorDelegate);
             mapper->toFirst();
         }
-        stack->setCurrentIndex(3);
+        geometryStack->setCurrentIndex(3);
         mapper->setCurrentIndex(index.row());
-        btnUpdate->setDisabled(false);
+        btnUpdate->setVisible(true);
+        break;
+    case SourceType::POINT:
+        setStatusText("Unsupported source type (POINT).");
+        break;
+    case SourceType::POINTCAP:
+        setStatusText("Unsupported source type (POINTCAP).");
+        break;
+    case SourceType::POINTHOR:
+        setStatusText("Unsupported source type (POINTHOR).");
+        break;
+    case SourceType::VOLUME:
+        setStatusText("Unsupported source type (VOLUME).");
+        break;
+    case SourceType::OPENPIT:
+        setStatusText("Unsupported source type (OPENPIT).");
+        break;
+    case SourceType::LINE:
+        setStatusText("Unsupported source type (LINE).");
+        break;
+    case SourceType::BUOYLINE:
+        setStatusText("Unsupported source type (BUOYLINE).");
+        break;
+    case SourceType::RLINE:
+        setStatusText("Unsupported source type (RLINE).");
+        break;
+    case SourceType::RLINEXT:
+        setStatusText("Unsupported source type (RLINEXT).");
         break;
     default:
         setStatusText("Unsupported source type.");
@@ -162,14 +244,14 @@ void SourceEditor::setCurrentModelIndex(const QModelIndex& index)
 void SourceEditor::setStatusText(const QString& text)
 {
     statusLabel->setText(text);
-    btnUpdate->setDisabled(true);
+    btnUpdate->setVisible(false);
     mapper->clearMapping();
-    stack->setCurrentIndex(0);
+    geometryStack->setCurrentIndex(0);
 }
 
-/****************************************************************************
-** AREA
-****************************************************************************/
+//-----------------------------------------------------------------------------
+// AreaSourceEditor
+//-----------------------------------------------------------------------------
 
 AreaSourceEditor::AreaSourceEditor(QWidget *parent) : QWidget(parent)
 {
@@ -221,9 +303,9 @@ AreaSourceEditor::AreaSourceEditor(QWidget *parent) : QWidget(parent)
     setLayout(mainLayout);
 }
 
-/****************************************************************************
-** AREACIRC
-****************************************************************************/
+//-----------------------------------------------------------------------------
+// AreaCircSourceEditor
+//-----------------------------------------------------------------------------
 
 AreaCircSourceEditor::AreaCircSourceEditor(QWidget *parent) : QWidget(parent)
 {

@@ -18,17 +18,17 @@
 
 #include <QWidget>
 
-#include "BufferZoneModel.h"
-#include "FluxProfileModel.h"
-#include "SamplingDistributionEditor.h"
-#include "MonteCarloLineEdit.h"
-#include "MonteCarloDateTimeEdit.h"
-#include "widgets/StandardTableEditor.h"
-#include "widgets/StandardTableView.h"
-#include "widgets/StatusLabel.h"
+#include "core/Scenario.h"
+#include "core/SourceGroup.h"
 
-#include "Scenario.h"
-#include "SourceGroup.h"
+class BufferZoneModel;
+class BufferZoneEditor;
+class FluxProfileModel;
+class MonteCarloLineEdit;
+class MonteCarloDateTimeEdit;
+class SamplingDistributionEditor;
+class StandardTableView;
+class StatusLabel;
 
 QT_BEGIN_NAMESPACE
 class QAction;
@@ -139,21 +139,11 @@ public:
     void save();
     void load();
 
-private slots:
-    void onAddZoneClicked();
-    void onRemoveZoneClicked();
-    void importBufferZoneTable(const QString& filename);
-
 private:
     SourceGroup *sgPtr;
 
-    QCheckBox *chkEnable;
-    QDoubleSpinBox *sbAreaThreshold;
-    QDoubleSpinBox *sbAppRateThreshold;
-    BufferZoneModel *zoneModel;
-    StandardTableView *zoneTable;
-    StandardTableEditor *zoneEditor;
-    StatusLabel *lblThresholdInfo;
+    BufferZoneModel *model;
+    BufferZoneEditor *editor;
 };
 
 #endif // SOURCEGROUPPAGES_H

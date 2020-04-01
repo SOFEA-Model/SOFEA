@@ -39,12 +39,12 @@
 
 #include "AppStyle.h"
 #include "MainWindow.h"
-#include "Common.h"
 //#include "RibbonDefinition.h"
 #include "ReceptorDialog.h"
 #include "RunModelDialog.h"
-#include "Serialization.h"
-#include "Validation.h"
+#include "core/Serialization.h"
+#include "core/Validation.h"
+#include "core/Common.h"
 
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/smart_ptr/make_shared_object.hpp>
@@ -274,28 +274,28 @@ void MainWindow::createPanels()
     addDockWidget(Qt::LeftDockWidgetArea, dwProjectTree);
 
     // Validation LogWidget
-    dwMessages = new QDockWidget(tr("Validation"), this);
-    dwMessages->setObjectName("Validation");
-    dwMessages->setAllowedAreas(Qt::BottomDockWidgetArea);
-    lwMessages = new LogWidget(dwMessages);
-    dwMessages->setWidget(lwMessages);
-    addDockWidget(Qt::BottomDockWidgetArea, dwMessages);
+    dwValidation = new QDockWidget(tr("Validation"), this);
+    dwValidation->setObjectName("Validation");
+    dwValidation->setAllowedAreas(Qt::BottomDockWidgetArea);
+    lwValidation = new LogWidget(dwValidation);
+    dwValidation->setWidget(lwValidation);
+    addDockWidget(Qt::BottomDockWidgetArea, dwValidation);
 
     // Model Output LogWidget
     dwOutput = new QDockWidget(tr("Model Output"), this);
-    dwMessages->setObjectName("Model Output");
-    dwMessages->setAllowedAreas(Qt::BottomDockWidgetArea);
+    dwValidation->setObjectName("Model Output");
+    dwValidation->setAllowedAreas(Qt::BottomDockWidgetArea);
     lwOutput = new LogWidget(dwOutput);
     dwOutput->setWidget(lwOutput);
     addDockWidget(Qt::BottomDockWidgetArea, dwOutput);
 
     viewMenu->addAction(dwProjectTree->toggleViewAction());
-    viewMenu->addAction(dwMessages->toggleViewAction());
+    viewMenu->addAction(dwValidation->toggleViewAction());
     viewMenu->addAction(dwOutput->toggleViewAction());
 
     // Tabify LogWidgets
-    tabifyDockWidget(dwMessages, dwOutput);
-    dwMessages->raise();
+    tabifyDockWidget(dwValidation, dwOutput);
+    dwValidation->raise();
 }
 
 void MainWindow::setupConnections()
@@ -340,10 +340,10 @@ void MainWindow::setupLogging()
     int maxCharWidth = fm.horizontalAdvance(QChar('W'));
     int avgCharWidth = fm.averageCharWidth();
 
-    lwMessages->setColumn(0, "Message", "", 0);
-    lwMessages->setColumn(1, "Source", "Source", avgCharWidth * 50);
-    lwMessages->setFilterKeyColumn(1);
-    lwMessages->setFilterValues(QStringList{"Distribution", "Geometry", "Import", "Export", "Model", "Analysis"});
+    lwValidation->setColumn(0, "Message", "", 0);
+    lwValidation->setColumn(1, "Source", "Source", avgCharWidth * 50);
+    lwValidation->setFilterKeyColumn(1);
+    lwValidation->setFilterValues(QStringList{"Distribution", "Geometry", "Import", "Export", "Model", "Analysis", "General"});
 
     lwOutput->setColumn(0, "Message", "", 0);
     lwOutput->setColumn(1, "PW", "Pathway", maxCharWidth * 2);
@@ -367,7 +367,7 @@ void MainWindow::setupLogging()
     // The Dir attribute should be present for all model output messages.
     typedef boost::log::sinks::synchronous_sink<LogWidgetBackend> sink_t;
 
-    auto messageBackend = boost::make_shared<LogWidgetBackend>(lwMessages);
+    auto messageBackend = boost::make_shared<LogWidgetBackend>(lwValidation);
     messageBackend->setKeywords(QStringList{"Source"});
     auto messageSink = boost::make_shared<sink_t>(messageBackend);
     messageSink->set_filter(!boost::log::expressions::has_attr("Dir"));
@@ -470,7 +470,7 @@ void MainWindow::onCommandToggled(int commandId, bool checked)
         dwProjectTree->setVisible(checked);
         break;
     case IDC_SHOWVALIDATION:
-        dwMessages->setVisible(checked);
+        dwValidation->setVisible(checked);
         break;
     case IDC_SHOWMODELOUTPUT:
         dwOutput->setVisible(checked);
@@ -534,7 +534,7 @@ void MainWindow::onItemChanged(QTreeWidgetItem *item, int)
     }
 }
 
-void MainWindow::contextMenuRequested(QPoint const& pos)
+void MainWindow::contextMenuRequested(const QPoint& pos)
 {
     QPoint globalPos = projectTree->viewport()->mapToGlobal(pos);
     QMenu contextMenu;
@@ -663,7 +663,7 @@ void MainWindow::openProject()
 {
     QSettings settings;
     QString openFile;
-    QString examplesDir = qApp->applicationDirPath() + QDir::separator() + "examples";
+    QString examplesDir = QDir::cleanPath(qApp->applicationDirPath() + QDir::separator() + "examples");
     QString currentDir = settings.value("DefaultDirectory", examplesDir).toString();
     openFile = QFileDialog::getOpenFileName(this,
                                             tr("Open Project"),
@@ -715,7 +715,7 @@ void MainWindow::openProjectFile(const QString& openFile)
 
     // Update project file and working directory.
     projectFile = openFile;
-    projectDir = fi.canonicalPath();
+    QString projectDir = fi.canonicalPath();
 
     QSettings settings;
     settings.setValue("DefaultDirectory", projectDir);
@@ -742,12 +742,6 @@ void MainWindow::saveProject()
 
         if (saveFile.isEmpty())
             return;
-
-        // Update project file and working directory.
-        projectFile = saveFile;
-        QFileInfo fi(saveFile);
-        projectDir = fi.canonicalPath();
-        settings.setValue("DefaultDirectory", projectDir);
     }
 
     saveProjectFile(projectFile);
@@ -770,6 +764,14 @@ void MainWindow::saveProjectFile(const QString& saveFile)
         return;
     }
 
+    // Update project file and working directory.
+    projectFile = saveFile;
+    QFileInfo fi(saveFile);
+    QString projectDir = fi.canonicalPath();
+
+    QSettings settings;
+    settings.setValue("DefaultDirectory", projectDir);
+
     projectModified = false;
 }
 
@@ -791,16 +793,16 @@ void MainWindow::closeProject()
             return;
     }
 
-    // Clear project data.
-    projectFile.clear();
-    projectDir.clear();
-
     // Clear messages.
-    lwMessages->clear();
+    lwValidation->clear();
+    lwOutput->clear();
 
     // Remove all scenarios.
     for (auto it = scenarios.rbegin(); it != scenarios.rend(); ++it)
         removeScenario(&(*it));
+
+    // Clear project data.
+    projectFile.clear();
 
     projectModified = false;
 }
@@ -831,7 +833,7 @@ void MainWindow::importValidationData(Scenario *s)
 
     QSettings settings;
     QString csvfile;
-    QString examplesDir = qApp->applicationDirPath() + QDir::separator() + "examples";
+    QString examplesDir = QDir::cleanPath(qApp->applicationDirPath() + QDir::separator() + "examples");
     QString currentDir = settings.value("DefaultDirectory", examplesDir).toString();
     csvfile = QFileDialog::getOpenFileName(this,
                                            tr("Import Retrospective Data"),
@@ -1136,8 +1138,8 @@ void MainWindow::deleteTab(int index)
 
 void MainWindow::validate()
 {
-    lwMessages->clear();
-    dwMessages->raise();
+    lwValidation->clear();
+    dwValidation->raise();
 
     for (Scenario &s : scenarios) {
         auto res = Validation::ValidateScenario(s);
@@ -1146,23 +1148,11 @@ void MainWindow::validate()
 
 void MainWindow::runModel()
 {
-    if (projectDir.isEmpty() || !QDir(projectDir).exists())
-    {
-        QSettings settings;
-        QString currentDir = settings.value("DefaultDirectory", QDir::currentPath()).toString();
-        QString selectedDir = QFileDialog::getExistingDirectory(this, tr("Select Working Directory"),
-                                                                currentDir,
-                                                                QFileDialog::ShowDirsOnly);
-
-        if (selectedDir.isEmpty())
-            return;
-
-        projectDir = selectedDir;
-        settings.setValue("DefaultDirectory", projectDir);
-    }
-
     RunModelDialog *dialog = new RunModelDialog(this);
-    dialog->setWorkingDirectory(projectDir); // TODO: use project class
+
+    QSettings settings;
+    QString defaultDir = settings.value("DefaultDirectory", QDir::currentPath()).toString();
+    dialog->setWorkingDirectory(defaultDir);
 
     for (Scenario &s : scenarios) {
         dialog->addScenario(&s);
@@ -1197,7 +1187,7 @@ void MainWindow::analyzeOutput()
 
 void MainWindow::showHelp()
 {
-    QDesktopServices::openUrl(QUrl("https://sofea-model.github.io/user-guide/index.html"));
+    QDesktopServices::openUrl(QUrl(SOFEA_DOCUMENTATION_URL));
 }
 
 void MainWindow::about()

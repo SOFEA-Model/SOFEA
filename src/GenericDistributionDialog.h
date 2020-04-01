@@ -18,7 +18,7 @@
 
 #include <QDialog>
 
-#include "GenericDistribution.h"
+#include "core/GenericDistribution.h"
 #include "StandardPlot.h"
 
 QT_BEGIN_NAMESPACE

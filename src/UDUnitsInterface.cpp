@@ -14,6 +14,7 @@
 //
 
 #include "UDUnitsInterface.h"
+#include "core/Common.h"
 
 #include <cstdio>
 #include <mutex>
@@ -25,6 +26,8 @@
 #include <QStringList>
 
 #include <boost/log/trivial.hpp>
+#include <boost/log/attributes/scoped_attribute.hpp>
+
 #include <udunits2/udunits2.h>
 
 namespace UDUnits {
@@ -56,6 +59,8 @@ static QString statusText(ut_status status_code)
 // Custom error handler to replace ut_write_to_stderr
 static int errorHandler(const char* fmt, va_list args)
 {
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "General")
+
     char buf[1024] = { '\0' };
     int nbytes = vsnprintf(buf, 1024, fmt, args);
 
@@ -95,10 +100,10 @@ static int errorHandler(const char* fmt, va_list args)
 // UDUnits::UnitSystem
 //-----------------------------------------------------------------------------
 
-ut_system* UnitSystem::get()
+ut_system* UnitSystem::instance()
 {
     static QString xmlPath = QDir::cleanPath(QCoreApplication::applicationDirPath()
-        + QDir::separator() + "share/udunits/udunits2.xml");
+        + QDir::separator() + SOFEA_UDUNITS_XML_PATH);
 
     std::once_flag once;
     std::call_once(once, ut_set_error_message_handler, &errorHandler);
@@ -116,7 +121,7 @@ ut_system* UnitSystem::get()
 
 Unit::Unit(const QString& unit)
 {
-    ut_system *us = UnitSystem::get();
+    ut_system *us = UnitSystem::instance();
     if (us == nullptr)
         return;
 

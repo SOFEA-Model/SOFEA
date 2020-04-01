@@ -17,6 +17,59 @@ cmake_minimum_required(VERSION 3.15)
 
 project(sofea)
 
+# High-Level Dependency Tree:
+#
+# SOFEA
+# ├── boost                         [static]
+# ├── qt5-base                      [dynamic]
+# │   ├── sqlite3                   [static]
+# │   └── openssl                   [dynamic]
+# ├── qt5-winextras                 [dynamic]
+# │   └── qt5-multimedia            [dynamic]
+# │       └── qt5-declarative       [dynamic]
+# │           ├── qt5-imageformats  [dynamic]
+# │           │   ├── tiff          [dynamic]
+# │           │   ├── libwebp       [dynamic]
+# │           │   └── jasper        [dynamic]
+# │           └── qt5-svg           [dynamic]
+# ├── netcdf                        [dynamic]
+# │   ├── hdf5                      [static]
+# │   │   ├── zlib                  [static]
+# │   │   ├── szip                  [static]
+# │   │   └── msmpi                 [dynamic]
+# │   └── curl                      [dynamic]
+# ├── geos                          [dynamic]
+# ├── qwt                           [static]
+# ├── qwtpolar                      [static]
+# ├── scintilla                     [static]
+# ├── shapelib                      [static]
+# ├── udunits2                      [static]
+# │   └── expat                     [static]
+# ├── curl                          [dynamic]
+# │   └── zlib                      [static]
+# ├── proj                          [static]
+# │   ├── curl                      [dynamic]
+# │   ├── tiff                      [dynamic]
+# │   └── sqlite3                   [static]
+# └── gdal                          [dynamic]
+#     ├── curl                      [dynamic]
+#     ├── proj                      [static]
+#     ├── expat                     [static]
+#     ├── sqlite3                   [static]
+#     └── zlib                      [static]
+#
+# qt5-imageformats must be dynamically linked to tiff, libwebp, jasper.
+#
+# The default vcpkg triplet is configured as follows:
+#
+# set(VCPKG_TARGET_ARCHITECTURE x64)
+# set(VCPKG_CRT_LINKAGE dynamic)
+# set(VCPKG_LIBRARY_LINKAGE static)
+# if(PORT MATCHES "netcdf-c|qt5-|geos|tiff|libwebp|jasper|curl")
+#   set(VCPKG_LIBRARY_LINKAGE dynamic)
+# endif()
+#
+
 if(DEFINED ENV{VCPKG_DEFAULT_TRIPLET} AND NOT DEFINED VCPKG_TARGET_TRIPLET)
   set(VCPKG_TARGET_TRIPLET "$ENV{VCPKG_DEFAULT_TRIPLET}" CACHE STRING "")
 endif()
@@ -57,45 +110,45 @@ option(SOFEA_DEBUG "Enable verbose logging" OFF)
 # External Libraries
 #############################
 
+#find_package(OpenMP)
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+
 set(Boost_DEBUG OFF)
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 set(Boost_ALL_DYN_LINK OFF)
 
-#find_package(OpenMP)
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-
-# Dependencies:
-# hdf5: zlib
-# netcdf: hdf5
-# curl: zlib
-# proj: sqlite3
-# udunits2: expat
-
 find_package(Boost REQUIRED COMPONENTS THREAD LOG DATE_TIME)
 find_package(Qt5Core CONFIG REQUIRED)
 find_package(Qt5Widgets CONFIG REQUIRED)
 find_package(Qt5Network CONFIG REQUIRED)
 find_package(Qt5WinExtras CONFIG REQUIRED)
-find_package(ZLIB REQUIRED)
-find_package(EXPAT REQUIRED)
-find_package(CURL REQUIRED)
-find_package(PROJ4 REQUIRED)
-find_package(geos CONFIG REQUIRED)
-find_package(date CONFIG REQUIRED)
-find_package(fmt CONFIG REQUIRED)
-find_package(cereal CONFIG REQUIRED)
+find_package(Qt5Sql CONFIG REQUIRED)
+find_package(ZLIB REQUIRED QUIET)
+find_package(EXPAT REQUIRED QUIET)
+find_package(CURL REQUIRED QUIET)
+find_package(date CONFIG REQUIRED QUIET)
+find_package(fmt CONFIG REQUIRED QUIET)
+find_package(cereal CONFIG REQUIRED QUIET)
+find_package(netCDF CONFIG REQUIRED QUIET)
 
 ### Custom Builds
+# - geos
+# - proj
+# - qwt
+# - qwtpolar
+# - shapelib
+# - scintilla
+#   - patched qt\ScintillaEditBase\ScintillaEditBase.h to remove DLL exports
+#   - updated ScintillaEditBase.pro with CONFIG += static
+# - udunits2
+#   - changed DEFAULT_UDUNITS2_XML_PATH
+#   - add #ifndef _USE_MATH_DEFINES to udunits2.h
 
-#set(GEOS_DIR "../external/geos-3.8.0dev/lib/cmake/GEOS")
-#set(EXPAT_DIR "../external/expat-2.2.8/lib/cmake/expat-2.2.8")
-#set(PROJ4_DIR "../external/proj-6.2.0/lib/cmake/proj4")
-#set(GDAL_DIR "../external/gdal-dev")
+find_package(geos PATHS "../external/geos-3.8.0dev/lib/cmake/GEOS" NO_DEFAULT_PATH CONFIG REQUIRED)
 
-set(NETCDF_DIR "../external/netcdf-c-4.7.1/lib/cmake/netCDF")
-find_package(NETCDF CONFIG REQUIRED)
+find_package(PROJ PATHS "../external/proj-7.0.0/lib/cmake/proj" NO_DEFAULT_PATH CONFIG REQUIRED)
 
 set(QWT_INCLUDE_DIR "../external/qwt-6.1.4/include")
 set(QWT_LIBRARY_DIR "../external/qwt-6.1.4/lib")
@@ -127,10 +180,12 @@ set(CSV_INCLUDE_DIR "../external/fast-cpp-csv-parser/include")
 
 set(NCPP_INCLUDE_DIR "../ncpp/include")
 
-message("-- Qt Version: ${Qt5Core_VERSION}")
-message("-- NetCDF Version: ${NetCDFVersion}")
-message("-- Proj Version: ${PROJ4_VERSION}")
-message("-- GEOS Version: ${geos_VERSION}")
+message("-- Qt version: ${Qt5Core_VERSION}")
+message("-- HDF5 version: ${HDF5_VERSION}")
+message("-- netCDF version: ${netCDF_VERSION}")
+message("-- curl version: ${CURL_VERSION_STRING}")
+message("-- Proj version: ${PROJ_VERSION}")
+message("-- GEOS version: ${geos_VERSION}")
 
 #############################
 # Sources
@@ -140,24 +195,28 @@ set(SOURCES
     main.cpp
     AnalysisWindow.cpp
     AppStyle.cpp
+    BufferZoneEditor.cpp
     BufferZoneModel.cpp
     DateTimeDistributionDialog.cpp
     FluxProfileDialog.cpp
     FluxProfileModel.cpp
     FluxProfilePlot.cpp
-    GenericDistribution.cpp
     GenericDistributionDialog.cpp
     GeometryOp.cpp
     GeosOp.cpp
     InputViewer.cpp
-    #InputWriter.cpp
     IPCServer.cpp
+    LogFilterProxyModel.cpp
     LogWidget.cpp
     MagneticDeclinationDialog.cpp
     MainWindow.cpp
     MetFileInfoDialog.cpp
     MetFileParser.cpp
+    MeteorologyEditor.cpp
+    MeteorologyFileDialog.cpp
     MeteorologyModel.cpp
+    MeteorologyStationData.cpp
+    MeteorologyTableView.cpp
     MonteCarloDateTimeEdit.cpp
     MonteCarloLineEdit.cpp
     PixmapUtilities.cpp
@@ -166,9 +225,7 @@ set(SOURCES
     ProjectModel.cpp
     ProjectOptionsDialog.cpp
     ProjectTreeView.cpp
-    Projection.cpp
     ProjectionEditor.cpp
-    Receptor.cpp
     ReceptorDialog.cpp
     ReceptorEditor.cpp
     ReceptorModel.cpp
@@ -177,15 +234,12 @@ set(SOURCES
     RunstreamParser.cpp
     SamplingDistributionEditor.cpp
     SamplingProxyModel.cpp
-    Scenario.cpp
     ScenarioPages.cpp
     ScenarioProperties.cpp
     SettingsDialog.cpp
     ShapefileAttributeDialog.cpp
     ShapefileParser.cpp
-    Source.cpp
     SourceEditor.cpp
-    SourceGroup.cpp
     SourceGroupPages.cpp
     SourceGroupProperties.cpp
     SourceModel.cpp
@@ -193,11 +247,21 @@ set(SOURCES
     StandardPlot.cpp
     UDUnitsInterface.cpp
     UDUnitsLineEdit.cpp
-    Validation.cpp
+    analysis/Analysis.cpp
+    core/GenericDistribution.cpp
+    core/InputWriter.cpp
+    core/Meteorology.cpp
+    core/Projection.cpp
+    core/Receptor.cpp
+    core/Scenario.cpp
+    core/Source.cpp
+    core/SourceGroup.cpp
+    core/TerrainProcessor.cpp
+    core/Validation.cpp
     ctk/ctkCollapsibleGroupBox.cpp
+    ctk/ctkMenuButton.cpp
     ctk/ctkProxyStyle.cpp
     ctk/ctkRangeSlider.cpp
-    analysis/Analysis.cpp
     delegate/ColorIntervalDelegate.cpp
     delegate/ColorPickerDelegate.cpp
     delegate/ComboBoxDelegate.cpp
@@ -210,22 +274,30 @@ set(SOURCES
     delegate/ProgressBarDelegate.cpp
     delegate/SpinBoxDelegate.cpp
     delegate/VertexEditorDelegate.cpp
+    qtcurl/CurlEasy.cpp
+    qtcurl/CurlMulti.cpp
     #ribbon/CRibbon.cpp
     #ribbon/RibbonWindow.cpp
     widgets/BackgroundFrame.cpp
+    widgets/ButtonLineEdit.cpp
     widgets/DoubleLineEdit.cpp
     widgets/ExtendedComboBox.cpp
+    widgets/FilterEditor.cpp
     widgets/FilterHeaderView.cpp
+    widgets/FilterProxyModel.cpp
     widgets/GridLayout.cpp
     widgets/GridLineFrame.cpp
     widgets/ListEditor.cpp
+    widgets/MenuLineEdit.cpp
     widgets/NavButton.cpp
+    widgets/PathEdit.cpp
     widgets/PlainTextEdit.cpp
     widgets/ReadOnlyLineEdit.cpp
     widgets/ReadOnlyTextEdit.cpp
     widgets/StandardTableEditor.cpp
     widgets/StandardTableView.cpp
     widgets/StatusLabel.cpp
+    widgets/VertexEditor.cpp
     sofea.qrc
     sofea.rc
 )
@@ -235,31 +307,29 @@ set(SOURCES
 #############################
 
 set(HEADERS
-    Common.h
     AnalysisWindow.h
     AppStyle.h
-    BufferZone.h
+    BufferZoneEditor.h
     BufferZoneModel.h
-    FluxProfile.h
     FluxProfileDialog.h
     FluxProfileModel.h
     FluxProfilePlot.h
-    DateTimeDistribution.h
     DateTimeDistributionDialog.h
-    GenericDistribution.h
     GenericDistributionDialog.h
     GeometryOp.h
     GeosOp.h
-    InputFormat.h
     InputViewer.h
-    #InputWriter.h
     IPCMessage.h
     IPCServer.h
+    LogFilterProxyModel.h
     LogWidget.h
     MagneticDeclinationDialog.h
     MainWindow.h
-    Meteorology.h
+    MeteorologyEditor.h
+    MeteorologyFileDialog.h
     MeteorologyModel.h
+    MeteorologyStationData.h
+    MeteorologyTableView.h
     MetFileInfoDialog.h
     MetFileParser.h
     MonteCarloDateTimeEdit.h
@@ -267,13 +337,10 @@ set(HEADERS
     PixmapUtilities.h
     PlotCurveTracker.h
     PlotItemTitleTracker.h
-    Project.h
     ProjectModel.h
     ProjectOptionsDialog.h
     ProjectTreeView.h
-    Projection.h
     ProjectionEditor.h
-    Receptor.h
     ReceptorDelegate.h
     ReceptorDialog.h
     ReceptorEditor.h
@@ -286,17 +353,13 @@ set(HEADERS
     SamplingDistribution.h
     SamplingDistributionEditor.h
     SamplingProxyModel.h
-    Scenario.h
     ScenarioPages.h
     ScenarioProperties.h
-    Serialization.h
     SettingsDialog.h
     ShapefileAttributeDialog.h
     ShapefileAttributeInfo.h
     ShapefileParser.h
-    Source.h
     SourceEditor.h
-    SourceGroup.h
     SourceGroupPages.h
     SourceGroupProperties.h
     SourceModel.h
@@ -304,12 +367,30 @@ set(HEADERS
     StandardPlot.h
     UDUnitsInterface.h
     UDUnitsLineEdit.h
-    Validation.h
-    ctk/ctkCollapsibleGroupBox.h
-    ctk/ctkProxyStyle.h
-    ctk/ctkRangeSlider.h
     analysis/Analysis.h
     analysis/AnalysisOptions.h
+    core/BufferZone.h
+    core/Common.h
+    core/DateTimeConversion.h
+    core/DateTimeDistribution.h
+    core/FluxProfile.h
+    core/GenericDistribution.h
+    core/InputFormat.h
+    core/InputWriter.h
+    core/Meteorology.h
+    core/Project.h
+    core/Projection.h
+    core/Receptor.h
+    core/Scenario.h
+    core/Serialization.h
+    core/Source.h
+    core/SourceGroup.h
+    core/TerrainProcessor.h
+    core/Validation.h
+    ctk/ctkCollapsibleGroupBox.h
+    ctk/ctkMenuButton.h
+    ctk/ctkProxyStyle.h
+    ctk/ctkRangeSlider.h
     delegate/ColorIntervalDelegate.h
     delegate/ColorPickerDelegate.h
     delegate/ComboBoxDelegate.h
@@ -322,22 +403,30 @@ set(HEADERS
     delegate/ProgressBarDelegate.h
     delegate/SpinBoxDelegate.h
     delegate/VertexEditorDelegate.h
+    qtcurl/CurlEasy.h
+    qtcurl/CurlMulti.h
     #ribbon/CRibbon.h
     #ribbon/RibbonWindow.h
     widgets/BackgroundFrame.h
+    widgets/ButtonLineEdit.h
     widgets/DoubleLineEdit.h
     widgets/ExtendedComboBox.h
+    widgets/FilterEditor.h
     widgets/FilterHeaderView.h
+    widgets/FilterProxyModel.h
     widgets/GridLayout.h
     widgets/GridLineFrame.h
     widgets/ListEditor.h
+    widgets/MenuLineEdit.h
     widgets/NavButton.h
+    widgets/PathEdit.h
     widgets/PlainTextEdit.h
     widgets/ReadOnlyLineEdit.h
     widgets/ReadOnlyTextEdit.h
     widgets/StandardTableEditor.h
     widgets/StandardTableView.h
     widgets/StatusLabel.h
+    widgets/VertexEditor.h
 )
 
 #############################
@@ -407,7 +496,6 @@ endif()
 
 target_include_directories(main PRIVATE
     ${CURL_INCLUDE_DIRS}
-    ${NETCDF_INCLUDE_DIR}
     ${QWT_INCLUDE_DIR}
     ${QWTPOLAR_INCLUDE_DIR}
     ${QTPROPERTYBROWSER_INCLUDE_DIR}
@@ -422,26 +510,26 @@ target_include_directories(main PRIVATE
 )
 
 target_link_directories(main PRIVATE
-    ${NETCDF_LIBRARY}
     ${QWT_LIBRARY_DIR}
     ${QWTPOLAR_LIBRARY_DIR}
     ${QTPROPERTYBROWSER_LIBRARY_DIR}
     ${SHAPELIB_LIBRARY_DIR}
     ${SCINTILLA_LIBRARY_DIR}
     ${UDUNITS2_LIBRARY_DIR}
+    ${netCDF_LIB_DIR}
 )
 
 # Qt Libraries
-target_link_libraries(main PUBLIC Qt5::Core Qt5::WinMain Qt5::Widgets Qt5::Network Qt5::WinExtras)
+target_link_libraries(main PRIVATE Qt5::Core Qt5::WinMain Qt5::Widgets Qt5::Network Qt5::Sql Qt5::WinExtras)
 
 # Win32 Libraries
 #target_link_libraries(main PRIVATE user32 gdi32 ole32 shlwapi propsys)
 
 target_link_libraries(main PRIVATE ${Boost_LIBRARIES})
 target_link_libraries(main PRIVATE ${CURL_LIBRARIES})
-target_link_libraries(main PUBLIC netcdf)
-target_link_libraries(main PUBLIC GEOS::geos_c)
-target_link_libraries(main PRIVATE PROJ4::proj)
+target_link_libraries(main PRIVATE netcdf)
+target_link_libraries(main PRIVATE GEOS::geos_c)
+target_link_libraries(main PRIVATE PROJ::proj)
 target_link_libraries(main PRIVATE EXPAT::EXPAT)
 target_link_libraries(main PRIVATE date::date date::tz)
 target_link_libraries(main PRIVATE fmt::fmt-header-only)

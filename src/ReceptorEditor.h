@@ -22,7 +22,7 @@
 #include <memory>
 #include <vector>
 
-#include "Scenario.h"
+#include "core/Scenario.h"
 #include "ReceptorModel.h"
 #include "ReceptorTreeView.h"
 #include "StandardPlot.h"

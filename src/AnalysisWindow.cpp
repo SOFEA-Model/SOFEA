@@ -18,6 +18,13 @@
 
 #include "AppStyle.h"
 #include "AnalysisWindow.h"
+#include "UDUnitsLineEdit.h"
+#include "widgets/FilterHeaderView.h"
+#include "widgets/FilterProxyModel.h"
+#include "widgets/ListEditor.h"
+#include "widgets/ReadOnlyLineEdit.h"
+#include "widgets/StandardTableView.h"
+#include "widgets/StatusLabel.h"
 
 /****************************************************************************
 ** ExportTool
@@ -180,6 +187,9 @@ ReceptorAnalysisTool::ReceptorAnalysisTool(QWidget *parent)
 
     hideWarning();
 }
+
+void ReceptorAnalysisTool::hideWarning() { lblWarning->setVisible(false); }
+void ReceptorAnalysisTool::showWarning() { lblWarning->setVisible(true); }
 
 ncpost::options::statistics ReceptorAnalysisTool::analysisOpts() const
 {
@@ -688,15 +698,15 @@ void AnalysisWindow::setCurrentFile()
     try
     {
         ncpost::analysis analysis(filename.toStdString());
-        auto metadata = analysis.metadata();
-        int nr = static_cast<int>(metadata.receptors.size());
-        int nt = static_cast<int>(metadata.time_steps.size());
-        std::string title = metadata.title;
-        std::string options = metadata.model_options;
-        std::string version = metadata.model_version;
-        auto types = metadata.output_types;
-        auto periods = metadata.averaging_periods;
-        auto groups = metadata.source_groups;
+
+        int nr = static_cast<int>(analysis.receptor_count());
+        int nt = static_cast<int>(analysis.time_step_count());
+        std::string title = analysis.title();
+        std::string options = analysis.model_options();
+        std::string version = analysis.model_version();
+        auto types = analysis.output_types();
+        auto periods = analysis.averaging_periods();
+        auto groups = analysis.source_groups();
 
         fileInfoPanel->setTitle(QString::fromStdString(title).trimmed());
         fileInfoPanel->setOptions(QString::fromStdString(options));
@@ -719,7 +729,7 @@ void AnalysisWindow::setCurrentFile()
     }
     catch (const std::exception& e)
     {
-        QMessageBox::critical(this, "File Error", QString::fromLocal8Bit(e.what()));
+        QMessageBox::critical(this, "POSTFILE Error", QString::fromLocal8Bit(e.what()));
     }
 }
 
@@ -730,8 +740,20 @@ void AnalysisWindow::exportTimeSeries()
 
     try {
         ncpost::analysis analysis(filename.toStdString());
+
+        int nrecs = static_cast<int>(analysis.receptor_count());
+        QProgressDialog progress("Exporting Time Series...", "Abort", 0, nrecs);
+        progress.setWindowModality(Qt::ApplicationModal);
+        progress.setMinimumDuration(1000);
+        analysis.set_progress_function([&](std::size_t i) {
+            if (progress.wasCanceled())
+                throw std::exception("Export canceled.");
+            progress.setValue(static_cast<int>(i));
+        });
+
         analysis.export_time_series(opts, exopts);
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e) {
         QMessageBox::critical(this, "Export Error", QString::fromLocal8Bit(e.what()));
         return;
     }
@@ -748,8 +770,19 @@ void AnalysisWindow::calcReceptorStats()
 
     try {
         ncpost::analysis analysis(filename.toStdString());
+
+        int nrecs = static_cast<int>(analysis.receptor_count());
+        QProgressDialog progress("Processing...", "Abort", 0, nrecs);
+        progress.setWindowModality(Qt::ApplicationModal);
+        progress.setMinimumDuration(1000);
+        analysis.set_progress_function([&](std::size_t i) {
+            if (progress.wasCanceled())
+                throw std::exception("Analysis canceled.");
+            progress.setValue(static_cast<int>(i));
+        });
+
         analysis.calc_receptor_stats(opts, statopts, out);
-        showReceptorStats(opts, statopts, out, analysis.metadata());
+        showReceptorStats(opts, statopts, out, analysis.receptors());
     } catch (const std::exception &e) {
         QMessageBox::critical(this, "Analysis Error", QString::fromLocal8Bit(e.what()));
         return;
@@ -767,8 +800,19 @@ void AnalysisWindow::calcHistogram()
 
     try {
         ncpost::analysis analysis(filename.toStdString());
+
+        int nrecs = static_cast<int>(analysis.receptor_count());
+        QProgressDialog progress("Processing...", "Abort", 0, nrecs);
+        progress.setWindowModality(Qt::ApplicationModal);
+        progress.setMinimumDuration(1000);
+        analysis.set_progress_function([&](std::size_t i) {
+            if (progress.wasCanceled())
+                throw std::exception("Analysis canceled.");
+            progress.setValue(static_cast<int>(i));
+        });
+
         analysis.calc_histogram(opts, histopts, out);
-        showHistogram(opts, histopts, out, analysis.metadata());
+        showHistogram(opts, histopts, out);
     } catch (const std::exception &e) {
         QMessageBox::critical(this, "Analysis Error", QString::fromLocal8Bit(e.what()));
         return;
@@ -776,10 +820,10 @@ void AnalysisWindow::calcHistogram()
 }
 
 void AnalysisWindow::showReceptorStats(const ncpost::options::general& opts, const ncpost::options::statistics& statopts,
-                                       const ncpost::statistics_type& out, const ncpost::metadata_type& metadata)
+                                       const ncpost::statistics_type& out, const std::vector<ncpost::receptor_t>& recs)
 {
     QStringList headers;
-    headers << "Group" << "Receptor" << "X" << "Y" << "Z" << "Z Hill" << "Z Flag";
+    headers << "ArcID" << "NetID" << "Receptor" << "X" << "Y" << "Z" << "Z Hill" << "Z Flag";
     if (statopts.calc_avg) headers << "Mean";
     if (statopts.calc_max)  headers << "Max";
     if (statopts.calc_std) headers << "Std. Dev.";
@@ -789,39 +833,44 @@ void AnalysisWindow::showReceptorStats(const ncpost::options::general& opts, con
         headers << QString("Max[MA%1]").arg(w);
 
     StandardTableView *table = outputTable();
-    const int nrows = static_cast<int>(metadata.receptors.size());
+    const int nrows = static_cast<int>(recs.size());
     QStandardItemModel *model = new QStandardItemModel(table);
-    table->setModel(model);
     model->setRowCount(nrows);
     model->setColumnCount(headers.size());
     model->setHorizontalHeaderLabels(headers);
 
     for (int i = 0; i < nrows; ++i) {
-        int col = 0;
-        const auto& rec = metadata.receptors.at(i);
-        QString recgrp;
-        if (metadata.receptor_netid.count(rec.id))
-            recgrp = QString::fromStdString(metadata.receptor_netid.at(rec.id));
-        else if (metadata.receptor_arcid.count(rec.id))
-            recgrp = QString::fromStdString(metadata.receptor_arcid.at(rec.id));
-
-        model->setData(model->index(i, col++), recgrp, Qt::DisplayRole);
-        model->setData(model->index(i, col++), rec.id, Qt::DisplayRole);
-        model->setData(model->index(i, col++), rec.x, Qt::DisplayRole);
-        model->setData(model->index(i, col++), rec.y, Qt::DisplayRole);
-        model->setData(model->index(i, col++), rec.zelev, Qt::DisplayRole);
-        model->setData(model->index(i, col++), rec.zhill, Qt::DisplayRole);
-        model->setData(model->index(i, col++), rec.zflag, Qt::DisplayRole);
+        const auto& rec = recs.at(static_cast<std::size_t>(i));
+        int j = 0;
+        model->setData(model->index(i, j++), QString::fromStdString(rec.arcid), Qt::DisplayRole);
+        model->setData(model->index(i, j++), QString::fromStdString(rec.netid), Qt::DisplayRole);
+        model->setData(model->index(i, j++), rec.id, Qt::DisplayRole);
+        model->setData(model->index(i, j++), rec.x, Qt::DisplayRole);
+        model->setData(model->index(i, j++), rec.y, Qt::DisplayRole);
+        model->setData(model->index(i, j++), rec.zelev, Qt::DisplayRole);
+        model->setData(model->index(i, j++), rec.zhill, Qt::DisplayRole);
+        model->setData(model->index(i, j++), rec.zflag, Qt::DisplayRole);
         if (statopts.calc_avg)
-            model->setData(model->index(i, col++), out.avg.at(i), Qt::DisplayRole);
+            model->setData(model->index(i, j++), out.avg.at(i), Qt::DisplayRole);
         if (statopts.calc_max)
-            model->setData(model->index(i, col++), out.max.at(i), Qt::DisplayRole);
+            model->setData(model->index(i, j++), out.max.at(i), Qt::DisplayRole);
         if (statopts.calc_std)
-            model->setData(model->index(i, col++), out.std.at(i), Qt::DisplayRole);
+            model->setData(model->index(i, j++), out.std.at(i), Qt::DisplayRole);
         for (std::vector<double> v : out.p2)
-            model->setData(model->index(i, col++), v.at(i), Qt::DisplayRole);
+            model->setData(model->index(i, j++), v.at(i), Qt::DisplayRole);
         for (std::vector<double> v : out.rm)
-            model->setData(model->index(i, col++), v.at(i), Qt::DisplayRole);
+            model->setData(model->index(i, j++), v.at(i), Qt::DisplayRole);
+    }
+
+    FilterProxyModel *proxy = new FilterProxyModel(table);
+    proxy->setSourceModel(model);
+    table->setModel(proxy);
+
+    FilterHeaderView *filterHeader = qobject_cast<FilterHeaderView *>(table->horizontalHeader());
+    if (filterHeader) {
+        connect(filterHeader, &FilterHeaderView::filterStateChanged, [=]() {
+            proxy->setFilteredRows(filterHeader->filteredRows());
+        });
     }
 
     QString title = QString("Receptors (%1/%2/%3)")
@@ -834,14 +883,13 @@ void AnalysisWindow::showReceptorStats(const ncpost::options::general& opts, con
 }
 
 void AnalysisWindow::showHistogram(const ncpost::options::general& opts, const ncpost::options::histogram& histopts,
-                                   const ncpost::histogram_type& out, const ncpost::metadata_type& metadata)
+                                   const ncpost::histogram_type& out)
 {
     if (histopts.calc_cdf)
     {
         StandardTableView *table = outputTable();
         const int nrows = static_cast<int>(out.cdf.size());
         QStandardItemModel *model = new QStandardItemModel(table);
-        table->setModel(model);
         model->setRowCount(nrows);
         model->setColumnCount(2);
         model->setHorizontalHeaderLabels(QStringList{"x", "F(x)"});
@@ -849,6 +897,17 @@ void AnalysisWindow::showHistogram(const ncpost::options::general& opts, const n
         for (int i = 0; i < nrows; ++i) {
             model->setData(model->index(i, 0), out.cdf[i].first, Qt::DisplayRole);
             model->setData(model->index(i, 1), out.cdf[i].second, Qt::DisplayRole);
+        }
+
+        FilterProxyModel *proxy = new FilterProxyModel(table);
+        proxy->setSourceModel(model);
+        table->setModel(proxy);
+
+        FilterHeaderView *filterHeader = qobject_cast<FilterHeaderView *>(table->horizontalHeader());
+        if (filterHeader) {
+            connect(filterHeader, &FilterHeaderView::filterStateChanged, [=]() {
+                proxy->setFilteredRows(filterHeader->filteredRows());
+            });
         }
 
         QString title = QString("CDF (%1/%2/%3)")
@@ -865,7 +924,6 @@ void AnalysisWindow::showHistogram(const ncpost::options::general& opts, const n
         StandardTableView *table = outputTable();
         int nrows = static_cast<int>(out.pdf.size());
         QStandardItemModel *model = new QStandardItemModel(table);
-        table->setModel(model);
         model->setRowCount(nrows);
         model->setColumnCount(2);
         model->setHorizontalHeaderLabels(QStringList{"x", "f(x)"});
@@ -873,6 +931,17 @@ void AnalysisWindow::showHistogram(const ncpost::options::general& opts, const n
         for (int i = 0; i < nrows; ++i) {
             model->setData(model->index(i, 0), out.pdf[i].first, Qt::DisplayRole);
             model->setData(model->index(i, 1), out.pdf[i].second, Qt::DisplayRole);
+        }
+
+        FilterProxyModel *proxy = new FilterProxyModel(table);
+        proxy->setSourceModel(model);
+        table->setModel(proxy);
+
+        FilterHeaderView *filterHeader = qobject_cast<FilterHeaderView *>(table->horizontalHeader());
+        if (filterHeader) {
+            connect(filterHeader, &FilterHeaderView::filterStateChanged, [=]() {
+                proxy->setFilteredRows(filterHeader->filteredRows());
+            });
         }
 
         QString title = QString("PDF (%1/%2/%3)")

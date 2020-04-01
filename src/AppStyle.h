@@ -21,10 +21,11 @@
 #include <QProxyStyle>
 
 QT_BEGIN_NAMESPACE
+class QPainter;
+class QRect;
 class QStyleOption;
 class QStyleOptionComplex;
 class QWidget;
-class QPainter;
 QT_END_NAMESPACE
 
 class AppStyle : public QProxyStyle
@@ -47,6 +48,8 @@ public:
         QPainter *painter, const QWidget *widget) const override;
     int styleHint(StyleHint hint, const QStyleOption *option = nullptr,
         const QWidget *widget = nullptr, QStyleHintReturn *returnData = nullptr) const override;
+    QRect subControlRect(QStyle::ComplexControl cc, const QStyleOptionComplex *option,
+                         QStyle::SubControl sc, const QWidget *widget = nullptr) const override;
 
     enum CustomPixmap {
         CP_NewFile = QStyle::SP_CustomBase + 1,
@@ -73,6 +76,8 @@ public:
         CP_HeaderSortDescending,
         CP_HeaderEditFilter,
         CP_HeaderDeleteFilter,
+        CP_CheckboxCheckAll,
+        CP_CheckboxClearAll,
         CP_CalculateButton,
         CP_FilterDropdownButton,
         CP_LineEditFunctionIcon,

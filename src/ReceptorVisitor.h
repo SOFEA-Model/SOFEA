@@ -23,7 +23,7 @@
 
 #include <boost/variant.hpp>
 
-#include "Receptor.h"
+#include "core/Receptor.h"
 
 struct ReceptorGroupColorVisitor
 {

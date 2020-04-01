@@ -20,9 +20,9 @@
 #include <QVariant>
 #include <QMap>
 
-#include "Scenario.h"
-#include "SourceGroup.h"
-#include "Projection.h"
+#include "core/Scenario.h"
+#include "core/SourceGroup.h"
+#include "core/Projection.h"
 
 class SourceModel : public QAbstractTableModel
 {
@@ -64,6 +64,7 @@ public:
     };
 
     SourceModel(Scenario *s, SourceGroup *sg, QObject *parent = nullptr);
+
     void reset();
     void import();
     void setProjection(const Projection::Generic& p);

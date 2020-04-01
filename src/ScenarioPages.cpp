@@ -362,7 +362,8 @@ void MetDataPage::showInfoDialog()
 {
     QString surfaceFile = leSurfaceDataFile->text();
 
-    MetFileParser parser(surfaceFile);
+    std::string path = absolutePath(surfaceFile.toStdString());
+    MetFileParser parser(path);
     std::shared_ptr<SurfaceData> sd = parser.getSurfaceData();
 
     if (sd == nullptr)
@@ -392,7 +393,8 @@ void MetDataPage::update()
 {
     QString surfaceFile = leSurfaceDataFile->text();
 
-    MetFileParser parser(surfaceFile);
+    std::string path = absolutePath(surfaceFile.toStdString());
+    MetFileParser parser(path);
     SurfaceInfo sfInfo = parser.getSurfaceInfo();
 
     leSurfaceStationId->setText(QString::fromStdString(sfInfo.sfloc));
@@ -415,7 +417,7 @@ FluxProfilesPage::FluxProfilesPage(Scenario *s, QWidget *parent)
     model = new FluxProfileModel(this);
 
     table = new StandardTableView;
-    table->setSelectionMode(QAbstractItemView::SingleSelection);
+    table->setSelectionMode(QAbstractItemView::ExtendedSelection);
     table->setModel(model);
 
     table->horizontalHeader()->setStretchLastSection(false);
@@ -429,13 +431,14 @@ FluxProfilesPage::FluxProfilesPage(Scenario *s, QWidget *parent)
     table->setColumnWidth(2, startingWidth * 18);
     table->setColumnWidth(3, startingWidth * 18);
 
-    StandardTableEditor::StandardButtons editorOpts = StandardTableEditor::All & ~StandardTableEditor::Import;
-    editor = new StandardTableEditor(Qt::Vertical, editorOpts);
-    editor->init(table);
+    StandardTableEditor::StandardButtons buttons = StandardTableEditor::All & ~StandardTableEditor::Import;
+    editor = new StandardTableEditor(Qt::Vertical, buttons);
+    editor->setView(table);
 
-    connect(editor, &StandardTableEditor::moveRequested, model, &FluxProfileModel::moveRows);
+    // Connactions
     connect(editor, &StandardTableEditor::editRequested, this, &FluxProfilesPage::editFluxProfile);
 
+    // Layout
     QHBoxLayout *mainLayout = new QHBoxLayout;
     mainLayout->addWidget(table);
     mainLayout->addWidget(editor);

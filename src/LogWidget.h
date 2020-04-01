@@ -13,57 +13,28 @@
 // limitations under the License.
 //
 
-#ifndef LOGWIDGET_H
-#define LOGWIDGET_H
+#pragma once
 
 #include <boost/log/trivial.hpp>
 #include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/sinks/basic_sink_backend.hpp>
 
-#include <QAction>
-#include <QComboBox>
 #include <QHash>
-#include <QMenu>
-#include <QPushButton>
-#include <QSortFilterProxyModel>
-#include <QStandardItemModel>
 #include <QString>
 #include <QStringList>
-#include <QToolBar>
-#include <QToolButton>
-#include <QTreeView>
+#include <QWidget>
 
+class LogFilterProxyModel;
 class LogWidgetBackend;
 
-//-----------------------------------------------------------------------------
-// LogFilterProxyModel
-//-----------------------------------------------------------------------------
-
-// Custom Filter Proxy
-class LogFilterProxyModel : public QSortFilterProxyModel
-{
-    Q_OBJECT
-
-public:
-    LogFilterProxyModel(QObject *parent = nullptr);
-    void setTagVisible(const QString& tag, bool visible);
-    void setErrorsVisible(bool visible);
-    void setWarningsVisible(bool visible);
-    void setMessagesVisible(bool visible);
-
-protected:
-    bool filterAcceptsRow(int row, const QModelIndex &parent) const override;
-
-private:
-    QHash<QString, bool> tagVisibility;
-    bool errorsVisible = true;
-    bool warningsVisible = true;
-    bool messagesVisible = true;
-};
-
-//-----------------------------------------------------------------------------
-// LogWidget
-//-----------------------------------------------------------------------------
+QT_BEGIN_NAMESPACE
+class QAction;
+class QMenu;
+class QStandardItemModel;
+class QToolBar;
+class QToolButton;
+class QTreeView;
+QT_END_NAMESPACE
 
 class LogWidget : public QWidget
 {
@@ -100,10 +71,6 @@ private:
     int messageCount = 0;
 };
 
-//-----------------------------------------------------------------------------
-// LogWidgetBackend
-//-----------------------------------------------------------------------------
-
 // Custom Backend for Boost.Log v2
 class LogWidgetBackend
     : public boost::log::sinks::basic_formatted_sink_backend<char, boost::log::sinks::synchronized_feeding>
@@ -117,5 +84,3 @@ private:
     LogWidget *m_widget;
     QStringList m_keywords;
 };
-
-#endif // LOGWIDGET_H

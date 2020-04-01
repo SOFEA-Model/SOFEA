@@ -16,7 +16,7 @@
 #ifndef SCENARIOPROPERTIES_H
 #define SCENARIOPROPERTIES_H
 
-#include "Scenario.h"
+#include "core/Scenario.h"
 #include "ScenarioPages.h"
 #include "SettingsDialog.h"
 

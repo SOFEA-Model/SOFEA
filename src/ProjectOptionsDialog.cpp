@@ -27,7 +27,7 @@
 
 #include "AppStyle.h"
 #include "ProjectOptionsDialog.h"
-#include "Project.h"
+#include "core/Project.h"
 
 ProjectOptionsDialog::ProjectOptionsDialog(QWidget *parent)
     : QDialog(parent)

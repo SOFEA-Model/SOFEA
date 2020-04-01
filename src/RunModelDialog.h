@@ -26,14 +26,16 @@
 
 #include <boost/ptr_container/ptr_vector.hpp>
 
-#include "Scenario.h"
+#include "core/Scenario.h"
 #include "IPCServer.h"
 #include "widgets/StandardTableView.h"
 
 QT_BEGIN_NAMESPACE
+class QAction;
 class QDialogButtonBox;
 class QLabel;
 class QPushButton;
+class QToolButton;
 QT_END_NAMESPACE
 
 class RunModelDialog : public QDialog
@@ -62,6 +64,9 @@ public slots:
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event);
+
+private slots:
+    void contextMenuRequested(const QPoint &pos);
 
 private:
     void executeJob(int i);
@@ -92,6 +97,7 @@ private:
     QMap<Job *, qint64> jobToPid;
 
     QLineEdit *leWorkingDir;
+    QToolButton *btnWorkingDir;
     QLabel *lblThreads;
     QPushButton *btnSelectAll;
     QPushButton *btnDeselectAll;
@@ -99,6 +105,7 @@ private:
     QPushButton *btnStop;
     QStandardItemModel *runModel;
     StandardTableView *runTable;
+    QAction *openFolderAction;
     QDialogButtonBox *buttonBox;
 };
 

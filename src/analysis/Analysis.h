@@ -19,12 +19,16 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include <boost/align/aligned_allocator.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
 #include <date/date.h>
 
+#define NCPP_USE_BOOST
 #define NCPP_USE_DATE_H
 #include <ncpp/ncpp.hpp>
 
@@ -32,39 +36,36 @@
 
 namespace ncpost {
 
-std::string library_version();
-
-struct metadata_type
-{
-    struct output_type {
-        std::string name;
-        std::string units;
-    };
-
-    struct receptor {
-        int id;
-        double x;
-        double y;
-        double zelev;
-        double zhill;
-        double zflag;
-    };
-
-    std::string model_version;
-    std::string model_options;
-    std::string title;
-    std::vector<output_type> output_types;
-    std::vector<int> averaging_periods;
-    std::vector<std::string> source_groups;
-    std::vector<receptor> receptors;
-    std::map<int, std::string> receptor_netid;
-    std::map<int, std::string> receptor_arcid;
-    std::vector<date::sys_seconds> time_steps;
+struct output_type_t {
+    std::string name;
+    std::string units;
 };
+
+struct receptor_t {
+    int id;
+    double x;
+    double y;
+    double zelev;
+    double zhill;
+    double zflag;
+    std::string arcid;
+    std::string netid;
+};
+
+struct time_step_t {
+    date::sys_seconds time;
+    unsigned char calm_missing;
+};
+
+// 64-byte alignment is preferred for MKL.
+using aligned_allocator_t = boost::alignment::aligned_allocator<double, 64>;
+
+using matrix_t = boost::numeric::ublas::matrix<double,
+    boost::numeric::ublas::column_major,
+    boost::numeric::ublas::unbounded_array<double, aligned_allocator_t>>;
 
 struct statistics_type
 {
-    int id;
     std::vector<double> avg;
     std::vector<double> max;
     std::vector<double> std;
@@ -81,21 +82,36 @@ struct histogram_type
 class analysis
 {
 public:
+    using progress_function_type = std::function<void(std::size_t)>;
+
     explicit analysis(const std::string& filepath);
 
-    metadata_type metadata() const;
+    static std::string library_version();
+    std::string model_version() const;
+    std::string model_options() const;
+    std::string title() const;
+    std::vector<output_type_t> output_types() const;
+    std::vector<int> averaging_periods() const;
+    std::vector<std::string> source_groups() const;
+    std::vector<std::string> receptor_arcids() const;
+    std::vector<std::string> receptor_netids() const;
+    std::size_t receptor_count() const;
+    std::vector<receptor_t> receptors() const;
+    std::size_t time_step_count() const;
+    std::vector<time_step_t> time_steps() const;
+
+    void set_progress_function(const progress_function_type& fn);
     void export_time_series(const options::general& opts, const options::tsexport& exopts) const;
     void calc_receptor_stats(const options::general& opts, const options::statistics& statopts, statistics_type& out) const;
     void calc_histogram(const options::general& opts, const options::histogram& histopts, histogram_type& out) const;
 
 private:
-    void read_values(const options::general& opts, std::vector<double>& values,
-                     std::size_t& ntime, std::size_t& nrec, int& minave) const;
+    matrix_t output_matrix(int ave, const std::string& grp, const std::string& var, double sf = 1.0) const;
 
-    std::string filepath_;
     ncpp::file file_;
     ncpp::dataset ds_;
-    metadata_type metadata_;
+
+    progress_function_type progressfn_;
 };
 
 } // namespace ncpost

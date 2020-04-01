@@ -22,7 +22,7 @@
 #include <QLineEdit>
 #include <QDoubleValidator>
 
-#include "GenericDistribution.h"
+#include "core/GenericDistribution.h"
 
 class MonteCarloLineEdit : public QLineEdit
 {

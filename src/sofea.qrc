@@ -291,5 +291,13 @@
         <file>res/Dow_16x.png</file>
         <file>res/Dow_32x.png</file>
         <file>res/Dow_64x.png</file>
+        <file>res/CheckboxCheckAll_16x.png</file>
+        <file>res/CheckboxCheckAll_20x.png</file>
+        <file>res/CheckboxCheckAll_24x.png</file>
+        <file>res/CheckboxCheckAll_32x.png</file>
+        <file>res/CheckboxClearAll_16x.png</file>
+        <file>res/CheckboxClearAll_20x.png</file>
+        <file>res/CheckboxClearAll_24x.png</file>
+        <file>res/CheckboxClearAll_32x.png</file>
     </qresource>
 </RCC>

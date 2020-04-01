@@ -28,9 +28,9 @@ struct general
     std::string output_type;
     int averaging_period;
     std::string source_group;
-    double scale_factor = 1;
     date::sys_seconds start_time;
     date::sys_seconds end_time;
+    double scale_factor = 1.0;
 };
 
 struct tsexport

@@ -21,12 +21,19 @@
 #include <QAbstractTableModel>
 #include <QVariant>
 
-#include "BufferZone.h"
+#include "core/BufferZone.h"
 
 class BufferZoneModel : public QAbstractTableModel
 {
 public:
     explicit BufferZoneModel(QObject *parent = nullptr);
+
+    enum Column {
+        AreaThreshold,
+        AppRateThreshold,
+        Distance,
+        Duration
+    };
 
     void save(std::set<BufferZone>& zones) const;
     void load(const std::set<BufferZone>& zones);

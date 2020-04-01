@@ -23,6 +23,8 @@
 
 #include <QDebug>
 
+#include <iterator>
+
 #include <fmt/format.h>
 
 QString dsMethodString(FluxProfile::DSMethod method)
@@ -199,10 +201,12 @@ Qt::ItemFlags FluxProfileModel::flags(const QModelIndex &index) const
     if (!index.isValid())
         return Qt::ItemIsEnabled;
 
+    Qt::ItemFlags defaultFlags = QAbstractTableModel::flags(index);
+
     // Set editable flag for name column.
     switch (index.column()) {
-        case 0:  return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
-        default: return QAbstractTableModel::flags(index);
+        case 0:  return defaultFlags | Qt::ItemIsEditable;
+        default: return defaultFlags;
     }
 }
 
@@ -213,9 +217,9 @@ bool FluxProfileModel::insertRows(int row, int count, const QModelIndex &)
     if (row < 0 || row > localData.size())
         return false;
 
-    auto it = localData.begin() + row;
     beginInsertRows(QModelIndex(), row, row + count - 1);
-    for (int i=0; i < count; ++i) {
+    auto it = std::next(localData.begin(), row);
+    for (int i = 0; i < count; ++i) {
         auto fp = std::make_shared<FluxProfile>();
         fp->name = fmt::format("Profile{:0=2}", ++seq);
         localToSource[fp] = fp;
@@ -236,11 +240,10 @@ bool FluxProfileModel::removeRows(int row, int count, const QModelIndex &)
     auto source = localToSource.at(local);
     sourceToLocal.at(source) = nullptr;
 
-    auto it = localData.begin() + row;
     beginRemoveRows(QModelIndex(), row, row + count - 1);
-    for (int i = 0; i < count; ++i) {
-        it = localData.erase(it);
-    }
+    auto it0 = std::next(localData.begin(), row);
+    auto it1 = std::next(it0, count);
+    localData.erase(it0, it1);
     endRemoveRows();
 
     return true;
@@ -255,7 +258,8 @@ bool FluxProfileModel::moveRows(const QModelIndex &, int sourceFirst, int count,
     int sourceLast = sourceFirst + count;
     int destinationLast = destinationFirst + count;
 
-    if (sourceLast > localData.size() || destinationLast > localData.size())
+    if (std::min(sourceFirst, destinationFirst) < 0 ||
+        std::max(sourceLast, destinationLast) > static_cast<int>(localData.size()))
         return false;
 
     // Get the extraction range.

@@ -21,11 +21,11 @@
 #include "analysis/Analysis.h"
 #include "analysis/AnalysisOptions.h"
 
-#include "UDUnitsLineEdit.h"
-#include "widgets/ListEditor.h"
-#include "widgets/ReadOnlyLineEdit.h"
-#include "widgets/StandardTableView.h"
-#include "widgets/StatusLabel.h"
+class ListEditor;
+class ReadOnlyLineEdit;
+class StandardTableView;
+class StatusLabel;
+class UDUnitsLineEdit;
 
 QT_BEGIN_NAMESPACE
 class QCheckBox;
@@ -86,8 +86,8 @@ signals:
     void calcRequested();
 
 public slots:
-    void hideWarning() { lblWarning->setVisible(false); }
-    void showWarning() { lblWarning->setVisible(true); }
+    void hideWarning();
+    void showWarning();
 
 private:
     StatusLabel *lblWarning;
@@ -160,7 +160,6 @@ public slots:
 private slots:
     void selectFile();
 
-
 private:
     void setupConnections();
 
@@ -224,10 +223,11 @@ private slots:
     void calcHistogram();
 
 private:
-    void showReceptorStats(const ncpost::options::general& opts, const ncpost::options::statistics& statopts,
-                           const ncpost::statistics_type& out, const ncpost::metadata_type& metadata);
-    void showHistogram(const ncpost::options::general& opts, const ncpost::options::histogram& histopts,
-                       const ncpost::histogram_type& out, const ncpost::metadata_type& metadata);
+    void showReceptorStats(const ncpost::options::general& opts,
+        const ncpost::options::statistics& statopts, const ncpost::statistics_type& out,
+        const std::vector<ncpost::receptor_t>& recs);
+    void showHistogram(const ncpost::options::general& opts,
+        const ncpost::options::histogram& histopts, const ncpost::histogram_type& out);
     void setupConnections();
 
     QString filename;

@@ -30,6 +30,7 @@ public:
     
     void setMinimum(double min);
     void setMaximum(double max);
+    void setRange(double min, double max);
     void setDecimals(int prec);
     void setNotation(QDoubleValidator::Notation notation);
     void setValue(double value);

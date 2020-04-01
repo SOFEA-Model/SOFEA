@@ -21,7 +21,7 @@
 #include <QEvent>
 #include <QKeyEvent>
 
-#include "DateTimeDistribution.h"
+#include "core/DateTimeDistribution.h"
 
 class MonteCarloDateTimeEdit : public QDateTimeEdit
 {

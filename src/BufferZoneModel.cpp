@@ -80,18 +80,18 @@ QVariant BufferZoneModel::data(const QModelIndex &index, int role) const
 
     if (role == Qt::EditRole) {
         switch (index.column()) {
-            case 2:  return z.distance;
-            case 3:  return z.duration;
+            case Column::Distance:         return z.distance;
+            case Column::Duration:         return z.duration;
             default: return QVariant();
         }
     }
 
     if (role == Qt::DisplayRole) {
         switch (index.column()) {
-            case 0:  return z.areaThreshold;
-            case 1:  return z.appRateThreshold;
-            case 2:  return z.distance;
-            case 3:  return z.duration;
+            case Column::AreaThreshold:    return z.areaThreshold;
+            case Column::AppRateThreshold: return z.appRateThreshold;
+            case Column::Distance:         return z.distance;
+            case Column::Duration:         return z.duration;
             default: return QVariant();
         }
     }
@@ -105,14 +105,14 @@ bool BufferZoneModel::setData(const QModelIndex &index, const QVariant &value, i
     {
         auto it = std::next(m_zones.begin(), index.row());
         switch (index.column()) {
-            case 2:
-                it->distance = value.toDouble();
-                break;
-            case 3:
-                it->duration = value.toInt();
-                break;
-            default:
-                return false;
+        case Column::Distance:
+            it->distance = value.toDouble();
+            break;
+        case Column::Duration:
+            it->duration = value.toInt();
+            break;
+        default:
+            return false;
         }
 
         emit dataChanged(index, index);
@@ -127,11 +127,11 @@ QVariant BufferZoneModel::headerData(int section, Qt::Orientation orientation, i
     if (role == Qt::DisplayRole) {
         if (orientation == Qt::Horizontal) {
             switch (section) {
-                case 0:  return QString("Area (ha)");
-                case 1:  return QString("App. Rate (kg/ha)");
-                case 2:  return QString("Distance (m)");
-                case 3:  return QString("Duration (hr)");
-                default: return QVariant();
+            case Column::AreaThreshold:    return QString("Area (ha)");
+            case Column::AppRateThreshold: return QString("App. Rate (kg/ha)");
+            case Column::Distance:         return QString("Distance (m)");
+            case Column::Duration:         return QString("Duration (hr)");
+            default: return QVariant();
             }
         }
     }
@@ -146,9 +146,11 @@ Qt::ItemFlags BufferZoneModel::flags(const QModelIndex &index) const
 
     // Set editable flag for name column.
     switch (index.column()) {
-        case 2:  return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
-        case 3:  return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
-        default: return QAbstractTableModel::flags(index) & (~Qt::ItemIsEditable) & (~Qt::ItemIsEnabled);
+    case Column::Distance:
+    case Column::Duration:
+        return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
+    default:
+        return QAbstractTableModel::flags(index) & (~Qt::ItemIsEditable) & (~Qt::ItemIsEnabled);
     }
 }
 

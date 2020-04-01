@@ -103,6 +103,8 @@ QIcon AppStyle::standardIcon(QStyle::StandardPixmap sp,
     static const QIcon sortDescendingIcon    = smallIconResource("SortDescending");
     static const QIcon editFilterIcon        = smallIconResource("EditFilter");
     static const QIcon deleteFilterIcon      = smallIconResource("DeleteFilter");
+    static const QIcon checkboxCheckAllIcon  = smallIconResource("CheckboxCheckAll");
+    static const QIcon checkboxClearAllIcon  = smallIconResource("CheckboxClearAll");
     // Button Icons
     static const QIcon calculateIcon         = smallIconResource("Calculator");
     static const QIcon filterDropdownIcon    = smallIconResource("FilterDropdown");
@@ -194,6 +196,10 @@ QIcon AppStyle::standardIcon(QStyle::StandardPixmap sp,
         return editFilterIcon;
     case AppStyle::CP_HeaderDeleteFilter:
         return deleteFilterIcon;
+    case AppStyle::CP_CheckboxCheckAll:
+        return checkboxCheckAllIcon;
+    case AppStyle::CP_CheckboxClearAll:
+        return checkboxClearAllIcon;
     case AppStyle::CP_CalculateButton:
         return calculateIcon;
     case AppStyle::CP_FilterDropdownButton:
@@ -319,6 +325,60 @@ void AppStyle::drawComplexControl(QStyle::ComplexControl control,
             return;
         }
         break;
+    case CC_GroupBox:
+        // Draw a custom header for QGroupBox.
+        /*
+        const QStyleOptionGroupBox *gbopt;
+        const QGroupBox *gb;
+        if ((gbopt = qstyleoption_cast<const QStyleOptionGroupBox *>(option)) &&
+           (gb = qobject_cast<const QGroupBox *>(widget)))
+        {
+            painter->save();
+            QRect textRect = proxy()->subControlRect(CC_GroupBox, gbopt, SC_GroupBoxLabel, widget);
+            QRect checkBoxRect = proxy()->subControlRect(CC_GroupBox, gbopt, SC_GroupBoxCheckBox, widget);
+
+            // Draw a custom frame.
+            const int x1 = gbopt->rect.left();
+            const int y1 = gbopt->rect.top();
+            const int x2 = gbopt->rect.right();
+            const int y2 = textRect.bottom();
+            QRect headerRect = QRect(QPoint{x1, y1}, QPoint{x2, y2});
+
+            painter->fillRect(headerRect, gbopt->palette.button());
+
+            QStyleOptionFrame fropt;
+            fropt.QStyleOption::operator=(*gbopt);
+            fropt.features = QStyleOptionFrame::Rounded;
+            fropt.lineWidth = gbopt->lineWidth;
+            fropt.midLineWidth = gbopt->midLineWidth;
+            fropt.rect = headerRect;
+
+            proxy()->drawPrimitive(PE_Frame, &fropt, painter, widget);
+
+            // Adjust the rects for the frame.
+            checkBoxRect.moveLeft(checkBoxRect.left() + 5);
+            textRect.moveLeft(textRect.left() + 5);
+
+            // Draw title.
+            if ((gbopt->subControls & QStyle::SC_GroupBoxLabel) && !gbopt->text.isEmpty()) {
+                 painter->setPen(QPen(gbopt->palette.windowText(), 1));
+                 proxy()->drawItemText(painter, textRect,  Qt::TextShowMnemonic | Qt::AlignLeft,
+                                       gbopt->palette, gbopt->state & State_Enabled, gbopt->text, QPalette::NoRole);
+            }
+
+            // Draw indicator.
+            if (gbopt->subControls & SC_GroupBoxCheckBox) {
+                QStyleOptionButton box;
+                box.QStyleOption::operator=(*gbopt);
+                box.rect = checkBoxRect;
+                proxy()->drawPrimitive(PE_IndicatorCheckBox, &box, painter, widget);
+            }
+
+            painter->restore();
+            return;
+        }
+        */
+        break;
     default:
         break;
     }
@@ -333,9 +393,9 @@ void AppStyle::drawControl(QStyle::ControlElement element,
     {
     case CE_DockWidgetTitle:
         // Customize the QDockWidget title bar.
-        const QStyleOptionDockWidget *dwOption;
+        const QStyleOptionDockWidget *dwopt;
         const QDockWidget *dw;
-        if ((dwOption = qstyleoption_cast<const QStyleOptionDockWidget *>(option)) &&
+        if ((dwopt = qstyleoption_cast<const QStyleOptionDockWidget *>(option)) &&
            (dw = qobject_cast<const QDockWidget *>(widget)) &&
            !dw->titleBarWidget())
         {
@@ -348,13 +408,13 @@ void AppStyle::drawControl(QStyle::ControlElement element,
             int titleHeight = qMax(buttonHeight + 2, titleFontMetrics.height() + 2 * titleMargin);
 
             // Draw a background rectangle for the title bar.
-            QColor fillColor = dwOption->palette.window().color().darker(106);
-            QRect titleRect = dwOption->rect;
+            QColor fillColor = dwopt->palette.window().color().darker(106);
+            QRect titleRect = dwopt->rect;
             titleRect.setHeight(titleHeight);
             painter->fillRect(titleRect, fillColor);
 
             // Add some left padding to the title text.
-            QStyleOptionDockWidget customOption = *dwOption;
+            QStyleOptionDockWidget customOption = *dwopt;
             customOption.rect.setLeft(titleMargin);
 
             QProxyStyle::drawControl(element, &customOption, painter, widget);
@@ -363,34 +423,34 @@ void AppStyle::drawControl(QStyle::ControlElement element,
         break;
     case CE_ToolBoxTab:
         // Draw the QToolBox title bar using a QTabBar frame.
-        const QStyleOptionToolBox *tbxOption;
-        if ((tbxOption = qstyleoption_cast<const QStyleOptionToolBox *>(option)))
+        const QStyleOptionToolBox *tbxopt;
+        if ((tbxopt = qstyleoption_cast<const QStyleOptionToolBox *>(option)))
         {
-            QStyleOptionTab tabOption;
-            tabOption.rect = tbxOption->rect;
-            tabOption.state = tbxOption->state;
-            tabOption.palette = tbxOption->palette;
-            tabOption.fontMetrics = tbxOption->fontMetrics;
-            tabOption.text = tbxOption->text;
-            tabOption.cornerWidgets = QStyleOptionTab::NoCornerWidgets;
-            tabOption.position = QStyleOptionTab::OnlyOneTab;
-            tabOption.selectedPosition = QStyleOptionTab::NotAdjacent;
-            tabOption.shape = QTabBar::RoundedNorth;
-            tabOption.features = QStyleOptionTab::None;
+            QStyleOptionTab tabopt;
+            tabopt.rect = tbxopt->rect;
+            tabopt.state = tbxopt->state;
+            tabopt.palette = tbxopt->palette;
+            tabopt.fontMetrics = tbxopt->fontMetrics;
+            tabopt.text = tbxopt->text;
+            tabopt.cornerWidgets = QStyleOptionTab::NoCornerWidgets;
+            tabopt.position = QStyleOptionTab::OnlyOneTab;
+            tabopt.selectedPosition = QStyleOptionTab::NotAdjacent;
+            tabopt.shape = QTabBar::RoundedNorth;
+            tabopt.features = QStyleOptionTab::None;
 
-            QProxyStyle::drawControl(CE_TabBarTabShape, &tabOption, painter, widget);
-            QProxyStyle::drawControl(CE_TabBarTabLabel, &tabOption, painter, widget);
+            QProxyStyle::drawControl(CE_TabBarTabShape, &tabopt, painter, widget);
+            QProxyStyle::drawControl(CE_TabBarTabLabel, &tabopt, painter, widget);
             return;
         }
         break;
     case CE_ItemViewItem:
         // Check whether to draw selections using active state.
         if (this->styleHint(SH_ItemView_ChangeHighlightOnFocus, option, widget) == 0) {
-            const QStyleOptionViewItem *itemOption;
-            if ((itemOption = qstyleoption_cast<const QStyleOptionViewItem *>(option)) &&
-                (itemOption->state & QStyle::State_Selected))
+            const QStyleOptionViewItem *itemopt;
+            if ((itemopt = qstyleoption_cast<const QStyleOptionViewItem *>(option)) &&
+                (itemopt->state & QStyle::State_Selected))
             {
-                QStyleOptionViewItem customOption = *itemOption;
+                QStyleOptionViewItem customOption = *itemopt;
                 customOption.state |= QStyle::State_Active | QStyle::State_HasFocus;
                 QProxyStyle::drawControl(element, &customOption, painter, widget);
                 return;
@@ -413,11 +473,11 @@ void AppStyle::drawPrimitive(QStyle::PrimitiveElement element,
     case PE_PanelItemViewRow:
         // Check whether to draw selections using active state.
         if (this->styleHint(SH_ItemView_ChangeHighlightOnFocus, option, widget) == 0) {
-            const QStyleOptionViewItem *itemOption;
-            if ((itemOption = qstyleoption_cast<const QStyleOptionViewItem *>(option)) &&
-                (itemOption->state & QStyle::State_Selected))
+            const QStyleOptionViewItem *itemopt;
+            if ((itemopt = qstyleoption_cast<const QStyleOptionViewItem *>(option)) &&
+                (itemopt->state & QStyle::State_Selected))
             {
-                QStyleOptionViewItem customOption = *itemOption;
+                QStyleOptionViewItem customOption = *itemopt;
                 customOption.state |= QStyle::State_Active | QStyle::State_HasFocus;
                 QProxyStyle::drawPrimitive(element, &customOption, painter, widget);
                 return;
@@ -441,7 +501,7 @@ int AppStyle::styleHint(StyleHint hint, const QStyleOption *option,
         return 0;
     case SH_ItemView_ChangeHighlightOnFocus:
         // Keep QTreeView items highlighted when losing focus.
-        if (const QTreeView *treeView = qobject_cast<const QTreeView *>(widget))
+        if (const QTreeView *treeview = qobject_cast<const QTreeView *>(widget))
             return 0;
         else
             return 1;
@@ -450,8 +510,8 @@ int AppStyle::styleHint(StyleHint hint, const QStyleOption *option,
     }
 }
 
-//QRect AppStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *option,
-//    QStyle::SubControl sc, const QWidget *widget) const
-//{
-//    return QProxyStyle::subControlRect(cc, option, sc, widget);
-//}
+QRect AppStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *option,
+    QStyle::SubControl sc, const QWidget *widget) const
+{
+    return QProxyStyle::subControlRect(cc, option, sc, widget);
+}

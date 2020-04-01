@@ -21,9 +21,12 @@
 #include <vector>
 
 #include <QAbstractTableModel>
+#include <QList>
+#include <QMap>
+#include <QUrl>
 #include <QVariant>
 
-#include "Meteorology.h"
+#include "core/Meteorology.h"
 
 class MeteorologyModel : public QAbstractTableModel
 {
@@ -32,29 +35,40 @@ class MeteorologyModel : public QAbstractTableModel
 public:
     enum Column {
         Name,
-        SurfaceFile,
-        UpperAirFile,
-        AnemometerHeight,
-        WindRotation,
-        StartTime,
-        EndTime,
         SurfaceStation,
         UpperAirStation,
-        OnSiteStation
+        OnSiteStation,
+        StartTime,
+        EndTime,
+        TerrainElevation,
+        AnemometerHeight,
+        WindRotation,
+        SurfaceFile,
+        UpperAirFile,
     };
 
     MeteorologyModel(QObject *parent = nullptr);
 
+    void appendRow(const Meteorology& item);
+    void addUrls(const QList<QUrl>& urls);
+    void initFromDb(Meteorology& item);
+
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
-    QVariant data(const QModelIndex &index, int role) const override;
-    bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
+    QModelIndex index(int row, int column, const QModelIndex& parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex& index, int role) const override;
+    bool setData(const QModelIndex& index, const QVariant& value, int role = Qt::EditRole) override;
+    bool setItemData(const QModelIndex& index, const QMap<int, QVariant> &roles) override;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
-    Qt::ItemFlags flags(const QModelIndex &index) const override;
-    bool insertRows(int row, int count, const QModelIndex &index = QModelIndex()) override;
-    bool removeRows(int row, int count, const QModelIndex &index = QModelIndex()) override;
-    bool moveRows(const QModelIndex &sourceParent, int sourceFirst, int count,
-                  const QModelIndex &destinationParent, int destinationFirst) override;
+    Qt::ItemFlags flags(const QModelIndex& index) const override;
+    bool removeRows(int row, int count, const QModelIndex& index = QModelIndex()) override;
+    bool moveRows(const QModelIndex& sourceParent, int sourceFirst, int count,
+                  const QModelIndex& destinationParent, int destinationFirst) override;
+    Qt::DropActions supportedDropActions() const override;
+    bool canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                         const QModelIndex& parent) const override;
+    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                      const QModelIndex& parent) override;
 
 private:
     std::vector<Meteorology> data_;

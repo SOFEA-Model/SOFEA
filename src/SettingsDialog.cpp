@@ -38,6 +38,7 @@ SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent)
     navTree->setUniformRowHeights(true);
     navTree->setHeaderHidden(true);
     navTree->setColumnCount(1);
+    navTree->setFocusPolicy(Qt::NoFocus);
     QFont font = QApplication::font();
     font.setPointSizeF(font.pointSizeF() + 1);
     navTree->setFont(font);

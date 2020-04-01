@@ -23,7 +23,7 @@
 #include <QAbstractTableModel>
 #include <QVariant>
 
-#include "FluxProfile.h"
+#include "core/FluxProfile.h"
 
 class FluxProfileModel : public QAbstractTableModel
 {

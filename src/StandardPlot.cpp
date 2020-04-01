@@ -25,13 +25,17 @@
 
 class ScaleDraw : public QwtScaleDraw
 {
+public:
     virtual QwtText label(double value) const override
-    {
-        // Disable scientific notation.
-        return QwtText(QString::number(value, 'f', 0));
-    }
-};
+        { return QwtText(QString::number(value, format_, precision_)); }
 
+    void setFormat(char format) { format_ = format; }
+    void setPrecision(int precision) { precision_ = precision; }
+
+private:
+    char format_ = 'g';
+    int precision_ = 6;
+};
 
 StandardPlot::StandardPlot(QWidget *parent) : QwtPlot(parent)
 {
@@ -65,8 +69,29 @@ StandardPlot::StandardPlot(QWidget *parent) : QwtPlot(parent)
     plotLayout()->setCanvasMargin(10);
 }
 
-StandardPlot::~StandardPlot()
-{}
+void StandardPlot::setXAxisScaleFormat(char format)
+{
+    static_cast<ScaleDraw *>(axisScaleDraw(QwtPlot::xBottom))->setFormat(format);
+    static_cast<ScaleDraw *>(axisScaleDraw(QwtPlot::xTop))->setFormat(format);
+}
+
+void StandardPlot::setXAxisScalePrecision(int precision)
+{
+    static_cast<ScaleDraw *>(axisScaleDraw(QwtPlot::xBottom))->setPrecision(precision);
+    static_cast<ScaleDraw *>(axisScaleDraw(QwtPlot::xTop))->setPrecision(precision);
+}
+
+void StandardPlot::setYAxisScaleFormat(char format)
+{
+    static_cast<ScaleDraw *>(axisScaleDraw(QwtPlot::yLeft))->setFormat(format);
+    static_cast<ScaleDraw *>(axisScaleDraw(QwtPlot::yRight))->setFormat(format);
+}
+
+void StandardPlot::setYAxisScalePrecision(int precision)
+{
+    static_cast<ScaleDraw *>(axisScaleDraw(QwtPlot::yLeft))->setPrecision(precision);
+    static_cast<ScaleDraw *>(axisScaleDraw(QwtPlot::yRight))->setPrecision(precision);
+}
 
 void StandardPlot::setXAxisTitle(const QString& text)
 {

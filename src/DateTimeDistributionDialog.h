@@ -18,7 +18,7 @@
 
 #include <QDialog>
 
-#include "DateTimeDistribution.h"
+#include "core/DateTimeDistribution.h"
 #include "widgets/StandardTableView.h"
 #include "widgets/StatusLabel.h"
 

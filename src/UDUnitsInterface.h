@@ -30,18 +30,19 @@ static QString message;
 // UDUnits::UnitSystem
 //-----------------------------------------------------------------------------
 
-struct UnitSystem final
+class UnitSystem
 {
-    static ut_system* get();
-
-private:
-    UnitSystem() = default;
-    ~UnitSystem() = default;
+public:
+    static ut_system* instance();
 
     UnitSystem(const UnitSystem&) = delete;
     UnitSystem& operator=(const UnitSystem&) = delete;
     UnitSystem(UnitSystem&&) = delete;
     UnitSystem& operator=(UnitSystem&&) = delete;
+
+private:
+    UnitSystem() = default;
+    ~UnitSystem() = default;
 };
 
 //-----------------------------------------------------------------------------

@@ -15,26 +15,25 @@
 
 #pragma once
 
+#include <QBuffer>
 #include <QDialog>
-#include <QNetworkAccessManager>
-#include <QTimer>
 #include <QUrl>
 
 class StatusLabel;
+class DoubleLineEdit;
+class CurlEasy;
 
 QT_BEGIN_NAMESPACE
-class QAuthenticator;
 class QButtonGroup;
 class QComboBox;
 class QDateEdit;
 class QDialogButtonBox;
-class QDoubleSpinBox;
 class QLabel;
 class QLineEdit;
-class QNetworkReply;
+class QPlainTextEdit;
 class QPushButton;
 class QRadioButton;
-class QSslError;
+class QWidget;
 QT_END_NAMESPACE
 
 class MagneticDeclinationDialog : public QDialog
@@ -54,11 +53,10 @@ public slots:
     void reject() override;
 
 private slots:
-    void startRequest(const QUrl& url);
-    void abortRequest();
-    void httpProgress(qint64 bytesRead, qint64 totalBytes);
-    void httpFinished();
-    void sslErrors(QNetworkReply *, const QList<QSslError> &errors);
+    void onStartStopClicked();
+    void onTransferProgress(qint64 downloadTotal, qint64 downloadNow, qint64 uploadTotal, qint64 uploadNow);
+    void onTransferDone();
+    void onTransferAborted();
 
 private:
     enum Model {
@@ -67,26 +65,22 @@ private:
         EMM
     };
 
-    void setupConnections();
     QUrl createUrl() const;
 
     StatusLabel *infoLabel;
-    QDoubleSpinBox *sbLongitude;
-    QDoubleSpinBox *sbLatitude;
+    DoubleLineEdit *sbLongitude;
+    DoubleLineEdit *sbLatitude;
     QDateEdit *deModelDate;
     QButtonGroup *bgModel;
     QLineEdit *leResult;
-    QPushButton *btnUpdate;
+    QPushButton *btnStartStop;
     QLabel *statusLabel;
     QDialogButtonBox *buttonBox;
 
-    QTimer timer;
-    QUrl currentUrl;
-    QNetworkAccessManager qnam;
-    QNetworkReply *reply = nullptr;
+    CurlEasy *transfer = nullptr;
+    QBuffer response;
 
     bool updateComplete = false;
-    bool httpRequestAborted = false;
     double declination = 0;
     double uncertainty = 0;
 };

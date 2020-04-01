@@ -13,12 +13,14 @@
 // limitations under the License.
 //
 
+#include "SourceGroupProperties.h"
+#include "AppStyle.h"
+#include "MonteCarloLineEdit.h"
+#include "MonteCarloDateTimeEdit.h"
+
 #include <QPushButton>
 #include <QWidget>
 #include <QIcon>
-
-#include "AppStyle.h"
-#include "SourceGroupProperties.h"
 
 SourceGroupProperties::SourceGroupProperties(Scenario *s, SourceGroup *sg, QWidget *parent)
     : SettingsDialog(parent), sgPtr(sg)

@@ -18,7 +18,7 @@
 
 #include <QWidget>
 
-#include "Scenario.h"
+#include "core/Scenario.h"
 #include "FluxProfileModel.h"
 #include "ProjectionEditor.h"
 #include "widgets/DoubleLineEdit.h"

@@ -13,10 +13,15 @@
 // limitations under the License.
 //
 
+#ifndef BOOST_MULTI_INDEX_DISABLE_SERIALIZATION
+#define BOOST_MULTI_INDEX_DISABLE_SERIALIZATION
+#endif
+
 #include "RunstreamParser.h"
 #include "Runstream.h"
 #include "GeometryOp.h"
 
+#include <QHash>
 #include <QMap>
 #include <QString>
 #include <QFile>
@@ -28,10 +33,50 @@
 #include <boost/log/trivial.hpp>
 #include <boost/log/attributes/scoped_attribute.hpp>
 
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/random_access_index.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/member.hpp>
+
 // FIXME: allow reading without SO STARTING / SO FINISHED
 // TODO:
 // - add DISCCART, EVALCART, GRIDCART receptor parsing
 // - use variant visitation and operator>> for parsing
+
+
+// QString hash operator for boost::multi_index::hashed_unique
+namespace boost {
+template <> struct hash<QString> {
+    size_t operator()(QString const& v) const {
+        return qHash(v);
+    }
+};
+} // namespace boost
+
+namespace runstream {
+namespace source {
+
+struct kvp {
+    kvp() {}
+    kvp(QString srcid, variant var) : srcid(srcid), var(var) {}
+    QString srcid;
+    variant var;
+};
+
+using container = boost::multi_index_container<
+    kvp,
+    boost::multi_index::indexed_by<
+        boost::multi_index::random_access<>,
+        boost::multi_index::hashed_unique<
+            boost::multi_index::member<kvp, QString, &kvp::srcid>
+        >
+    >
+>;
+
+using unique_srcid_view = container::nth_index<1>::type;
+
+} // namespace source
+} // namespace runstream
 
 bool parseInternalLocation(QTextStream& is, runstream::source::container& sc, int iline)
 {
@@ -133,6 +178,24 @@ bool parseInternalLocation(QTextStream& is, runstream::source::container& sc, in
         runstream::source::kvp kvp(srcid, s);
         sc.push_back(kvp);
     }
+    else if (st == "RLINE") {
+        runstream::source::rline s;
+        is >> s.xs1 >> s.ys1 >> s.xs2 >> s.ys2;
+        if (is.status() != QTextStream::Ok)
+            return false; // read failure
+        is >> s.zs;
+        runstream::source::kvp kvp(srcid, s);
+        sc.push_back(kvp);
+    }
+    else if (st == "RLINEXT") {
+        runstream::source::rlinext s;
+        is >> s.xs1 >> s.ys1 >> s.zs1 >> s.xs2 >> s.ys2 >> s.zs2;
+        if (is.status() != QTextStream::Ok)
+            return false; // read failure
+        is >> s.zs;
+        runstream::source::kvp kvp(srcid, s);
+        sc.push_back(kvp);
+    }
     else {
         return false; // read failure
     }
@@ -142,15 +205,15 @@ bool parseInternalLocation(QTextStream& is, runstream::source::container& sc, in
 
 bool parseInternalSrcParam(QTextStream& is, runstream::source::container& sc, int iline)
 {
-    typedef runstream::source::container::nth_index<1>::type indexed_view;
+    using unique_srcid_view = runstream::source::unique_srcid_view;
 
     QString srcid;
     is >> srcid;
     if (is.status() != QTextStream::Ok)
         return false; // read failure
 
-    indexed_view& v = sc.get<1>();
-    indexed_view::iterator it = v.find(srcid);
+    unique_srcid_view& v = sc.get<1>();
+    unique_srcid_view::iterator it = v.find(srcid);
     if (it == v.end())
         return false; // id not found
 
@@ -216,15 +279,15 @@ bool parseInternalSrcParam(QTextStream& is, runstream::source::container& sc, in
 
 bool parseInternalAreaVert(QTextStream& is, runstream::source::container& sc, int iline)
 {
-    typedef runstream::source::container::nth_index<1>::type indexed_view;
+    using unique_srcid_view = runstream::source::unique_srcid_view;
 
     QString srcid;
     is >> srcid;
     if (is.status() != QTextStream::Ok)
         return false; // read failure
 
-    indexed_view& v = sc.get<1>();
-    indexed_view::iterator it = v.find(srcid);
+    unique_srcid_view& v = sc.get<1>();
+    unique_srcid_view::iterator it = v.find(srcid);
     if (it == v.end())
         return false; // id not found
 
@@ -417,6 +480,14 @@ void RunstreamParser::parseSources(const QString& filename, SourceGroup *sgPtr)
         }
         case 9: {  // BUOYLINE
             BOOST_LOG_TRIVIAL(warning) << "Unsupported source type (BUOYLINE)";
+            break;
+        }
+        case 10: { // RLINE
+            BOOST_LOG_TRIVIAL(warning) << "Unsupported source type (RLINE)";
+            break;
+        }
+        case 11: { // RLINEXT
+            BOOST_LOG_TRIVIAL(warning) << "Unsupported source type (RLINEXT)";
             break;
         }
         default:

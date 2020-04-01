@@ -15,6 +15,7 @@
 
 #include "DoubleLineEdit.h"
 
+#include <QLocale>
 #include <QString>
 #include <QWidget>
 
@@ -23,6 +24,7 @@ DoubleLineEdit::DoubleLineEdit(QWidget *parent)
 {
     validator = new QDoubleValidator(this);
     validator->setNotation(QDoubleValidator::StandardNotation);
+    //validator->setLocale(QLocale::C);
     this->setValidator(validator);
 }
 
@@ -31,6 +33,7 @@ DoubleLineEdit::DoubleLineEdit(double min, double max, int decimals, QWidget *pa
 {
     validator = new QDoubleValidator(min, max, decimals, this);
     validator->setNotation(QDoubleValidator::StandardNotation);
+    //validator->setLocale(QLocale::C);
     validator->setRange(min, max, decimals);
     this->setValidator(validator);
 }
@@ -42,6 +45,12 @@ void DoubleLineEdit::setMinimum(double min)
 
 void DoubleLineEdit::setMaximum(double max)
 {
+    validator->setTop(max);
+}
+
+void DoubleLineEdit::setRange(double min, double max)
+{
+    validator->setBottom(min);
     validator->setTop(max);
 }
 

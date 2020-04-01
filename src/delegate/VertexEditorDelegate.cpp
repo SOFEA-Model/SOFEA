@@ -13,69 +13,14 @@
 // limitations under the License.
 //
 
-#include <QBoxLayout>
 #include <QDoubleSpinBox>
-#include <QGridLayout>
-#include <QLabel>
 #include <QPolygonF>
 #include <QSignalBlocker>
 #include <QSpinBox>
 
 #include "VertexEditorDelegate.h"
 #include "SourceModel.h"
-
-VertexEditor::VertexEditor(QWidget *parent) : QWidget(parent)
-{
-    sbVertexCount = new QSpinBox;
-    sbVertexCount->setRange(3, 5);
-    sbVertexCount->setValue(5);
-
-    sbVertex = new QSpinBox;
-    sbVertex->setRange(1, 5);
-    sbVertex->setWrapping(true);
-    sbVertex->setValue(1);
-
-    sbXCoord = new QDoubleSpinBox;
-    sbXCoord->setRange(-10000000, 10000000);
-    sbXCoord->setDecimals(2);
-    sbXCoord->setButtonSymbols(QAbstractSpinBox::NoButtons);
-
-    sbYCoord = new QDoubleSpinBox;
-    sbYCoord->setRange(-10000000, 10000000);
-    sbYCoord->setDecimals(2);
-    sbYCoord->setButtonSymbols(QAbstractSpinBox::NoButtons);
-
-    connect(sbVertexCount, QOverload<int>::of(&QSpinBox::valueChanged),
-            this, &VertexEditor::vertexCountChanged);
-
-    connect(sbVertex, QOverload<int>::of(&QSpinBox::valueChanged),
-            this, &VertexEditor::vertexChanged);
-
-    connect(sbXCoord, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &VertexEditor::coordinatesChanged);
-
-    connect(sbYCoord, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &VertexEditor::coordinatesChanged);
-
-    // Layout
-    QGridLayout *gridLayout = new QGridLayout;
-    gridLayout->setContentsMargins(0, 0, 0, 0);
-    gridLayout->setColumnMinimumWidth(0, 120);
-    gridLayout->addWidget(new QLabel(tr("Vertex count:")), 0, 0);
-    gridLayout->addWidget(sbVertexCount, 0, 1, 1, 2);
-    gridLayout->addWidget(new QLabel(tr("Selected vertex:")), 1, 0);
-    gridLayout->addWidget(sbVertex, 1, 1, 1, 2);
-    gridLayout->addWidget(new QLabel(tr("Coordinates:")), 2, 0);
-    gridLayout->addWidget(sbXCoord, 2, 1);
-    gridLayout->addWidget(sbYCoord, 2, 2);
-
-    QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->addLayout(gridLayout);
-    mainLayout->addStretch(1);
-
-    setLayout(mainLayout);
-}
+#include "widgets/VertexEditor.h"
 
 VertexEditorDelegate::VertexEditorDelegate(QObject *parent)
     : QStyledItemDelegate(parent)

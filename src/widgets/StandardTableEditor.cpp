@@ -14,16 +14,21 @@
 //
 
 #include "StandardTableEditor.h"
+#include "StandardTableView.h"
 
 #include <QDir>
 #include <QFileDialog>
+#include <QPushButton>
 #include <QSettings>
+
+#include <algorithm>
+#include <iterator>
 
 StandardTableEditor::StandardTableEditor(Qt::Orientation orientation, StandardButtons buttons, QWidget *parent)
     : QWidget(parent)
 {
-    m_importFilter = nullptr;
-    m_importCaption = tr("Import File");
+    filter_ = nullptr;
+    caption_ = tr("Import File");
 
     // Layout
     QBoxLayout *mainLayout;
@@ -90,128 +95,152 @@ StandardTableEditor::StandardTableEditor(Qt::Orientation orientation, StandardBu
     setLayout(mainLayout);
 }
 
-void StandardTableEditor::init(StandardTableView *standardTableView)
+void StandardTableEditor::setView(StandardTableView *view)
 {
-    m_standardTableView = standardTableView;
+    view_ = view;
 
-    if (m_standardTableView->selectionModel()->selectedIndexes().isEmpty()) {
+    if (view_->selectionModel()->selectedIndexes().isEmpty()) {
         if (btnRemove)   btnRemove->setEnabled(false);
         if (btnMoveUp)   btnMoveUp->setEnabled(false);
         if (btnMoveDown) btnMoveDown->setEnabled(false);
     }
 
-    if (m_standardTableView->selectionModel()->selectedRows().count() != 1) {
+    if (view_->selectionModel()->selectedRows().count() != 1) {
         if (btnEdit)     btnEdit->setEnabled(false);
         if (btnRename)   btnRename->setEnabled(false);
     }
+
+    if (btnAdd)      btnAdd->setFocusProxy(view);
+    if (btnRemove)   btnRemove->setFocusProxy(view);
+    if (btnRename)   btnRename->setFocusProxy(view);
+    if (btnMoveUp)   btnMoveUp->setFocusProxy(view);
+    if (btnMoveDown) btnMoveDown->setFocusProxy(view);
+    if (btnEdit)     btnEdit->setFocusProxy(view);
+    if (btnImport)   btnImport->setFocusProxy(view);
 
     // Connections
     if (btnAdd)      connect(btnAdd,      &QPushButton::clicked, this, &StandardTableEditor::onAddItemClicked);
     if (btnRemove)   connect(btnRemove,   &QPushButton::clicked, this, &StandardTableEditor::onRemoveItemClicked);
     if (btnRename)   connect(btnRename,   &QPushButton::clicked, this, &StandardTableEditor::onRenameItemClicked);
-    if (btnMoveUp)   connect(btnMoveUp,   &QPushButton::clicked, this, &StandardTableEditor::onMoveRequested);
-    if (btnMoveDown) connect(btnMoveDown, &QPushButton::clicked, this, &StandardTableEditor::onMoveRequested);
+    if (btnMoveUp)   connect(btnMoveUp,   &QPushButton::clicked, this, &StandardTableEditor::onMoveUpClicked);
+    if (btnMoveDown) connect(btnMoveDown, &QPushButton::clicked, this, &StandardTableEditor::onMoveDownClicked);
     if (btnEdit)     connect(btnEdit,     &QPushButton::clicked, this, &StandardTableEditor::onEditItemClicked);
     if (btnImport)   connect(btnImport,   &QPushButton::clicked, this, &StandardTableEditor::onImportClicked);
 
-    connect(m_standardTableView->selectionModel(), &QItemSelectionModel::selectionChanged,
+    connect(view_->selectionModel(), &QItemSelectionModel::selectionChanged,
             this, &StandardTableEditor::onSelectionChanged);
+
+    connect(view_->model(), &QAbstractItemModel::rowsMoved,
+            this, &StandardTableEditor::onRowsMoved);
 }
 
 void StandardTableEditor::setImportFilter(const QString& filter)
 {
-    m_importFilter = filter;
+    filter_ = filter;
 }
 
 void StandardTableEditor::setImportCaption(const QString& caption)
 {
-    m_importCaption = caption;
+    caption_ = caption;
+}
+
+QAbstractButton * StandardTableEditor::button(ButtonRole role)
+{
+    switch (role) {
+    case ButtonRole::AddRole:      return btnAdd;
+    case ButtonRole::RemoveRole:   return btnRemove;
+    case ButtonRole::RenameRole:   return btnRename;
+    case ButtonRole::MoveUpRole:   return btnMoveUp;
+    case ButtonRole::MoveDownRole: return btnMoveDown;
+    case ButtonRole::EditRole:     return btnEdit;
+    case ButtonRole::ImportRole:   return btnImport;
+    }
+    return nullptr;
 }
 
 void StandardTableEditor::onAddItemClicked()
 {
-    if (!m_standardTableView)
+    if (!view_)
         return;
 
-    m_standardTableView->addRow();
-    m_standardTableView->selectLastRow();
-    m_standardTableView->setFocus();
+    if (view_->appendRow()) {
+        view_->selectLastRow();
+    }
 }
 
 void StandardTableEditor::onRemoveItemClicked()
 {
-    if (!m_standardTableView)
+    if (!view_)
         return;
 
-    m_standardTableView->removeSelectedRows();
+    view_->removeSelectedRows();
 }
 
 void StandardTableEditor::onRenameItemClicked()
 {
-    if (!m_standardTableView)
+    if (!view_)
         return;
 
-    QModelIndexList selectedRows = m_standardTableView->selectionModel()->selectedRows();
-    if (selectedRows.count() == 1) {
-        m_standardTableView->edit(selectedRows.first());
+    if (view_->selectionBehavior() == QAbstractItemView::SelectItems) {
+        QModelIndexList selectedItems = view_->selectionModel()->selectedIndexes();
+        if (selectedItems.count() == 1)
+            view_->edit(selectedItems.first());
+    }
+    else if (view_->selectionBehavior() == QAbstractItemView::SelectRows) {
+        QModelIndexList selectedRows = view_->selectionModel()->selectedRows();
+        if (selectedRows.count() == 1)
+            view_->edit(selectedRows.first());
     }
 }
 
-void StandardTableEditor::onMoveRequested()
+void StandardTableEditor::onMoveUpClicked()
 {
-    if (!m_standardTableView)
+    if (!view_)
         return;
 
-    QPushButton *sender = qobject_cast<QPushButton *>(QObject::sender());
-    if (sender != btnMoveUp && sender != btnMoveDown)
+    view_->moveSelectedRows(-1);
+}
+
+void StandardTableEditor::onMoveDownClicked()
+{
+    if (!view_)
         return;
 
-    QModelIndexList rows = m_standardTableView->selectionModel()->selectedRows();
-
-    if (rows.empty())
-        return;
-
-    auto index = std::min_element(rows.begin(), rows.end(),
-        [](const QModelIndex& a, const QModelIndex& b)->bool {
-            return a.row() < b.row();
-        });
-
-    int sourceRow = index->row();
-
-    int offset = sender == btnMoveUp ? -1 : 1;
-
-    emit moveRequested(QModelIndex(), sourceRow, rows.size(),
-                       QModelIndex(), sourceRow + offset);
-
-    m_standardTableView->setFocus();
+    view_->moveSelectedRows(1);
 }
 
 void StandardTableEditor::onEditItemClicked()
 {
-    if (!m_standardTableView)
+    if (!view_)
         return;
 
-    QModelIndexList selectedRows = m_standardTableView->selectionModel()->selectedRows();
-    if (selectedRows.count() == 1) {
-        emit editRequested(selectedRows.first());
+    if (view_->selectionBehavior() == QAbstractItemView::SelectItems) {
+        QModelIndexList selectedItems = view_->selectionModel()->selectedIndexes();
+        if (selectedItems.count() == 1)
+            emit editRequested(selectedItems.first());
+    }
+    else if (view_->selectionBehavior() == QAbstractItemView::SelectRows) {
+        QModelIndexList selectedRows = view_->selectionModel()->selectedRows();
+        if (selectedRows.count() == 1)
+            emit editRequested(selectedRows.first());
     }
 }
 
 void StandardTableEditor::onImportClicked()
 {
-    if (!m_standardTableView)
+    if (!view_)
         return;
 
-    int cols = m_standardTableView->model()->columnCount();
+    int cols = view_->model()->columnCount();
     if (cols == 0)
         return;
 
     QSettings settings;
     QString currentDir = settings.value("DefaultDirectory", QDir::currentPath()).toString();
     QString filename = QFileDialog::getOpenFileName(this,
-                       m_importCaption,
+                       caption_,
                        currentDir,
-                       m_importFilter);
+                       filter_);
 
     if (filename.isEmpty())
         return;
@@ -219,57 +248,49 @@ void StandardTableEditor::onImportClicked()
     emit importRequested(filename);
 }
 
-void StandardTableEditor::onSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected)
+void StandardTableEditor::onSelectionChanged(const QItemSelection&, const QItemSelection&)
 {
-    Q_UNUSED(selected);
-    Q_UNUSED(deselected);
+    checkSelection();
+}
 
-    if (!m_standardTableView)
-        return;
+void StandardTableEditor::onRowsMoved(const QModelIndex&, int sourceFirst, int sourceLast,
+                                      const QModelIndex&, int destinationFirst)
+{
+    // Need to query the current selection after each move.
+    // This slot will be invoked multiple times for non-contiguous selections.
 
-    bool hasSelection = m_standardTableView->selectionModel()->hasSelection();
+    checkSelection();
+}
+
+void StandardTableEditor::checkSelection()
+{
+    bool hasSelection = view_->selectionModel()->hasSelection();
+
     if (btnRemove) btnRemove->setEnabled(hasSelection);
     if (!hasSelection) {
         if (btnMoveUp)   btnMoveUp->setEnabled(false);
         if (btnMoveDown) btnMoveDown->setEnabled(false);
+        if (btnEdit)     btnEdit->setEnabled(false);
+        if (btnRename)   btnRename->setEnabled(false);
         return;
     }
 
-    // Sort selection ascending.
-    QModelIndexList selectedRows = m_standardTableView->selectionModel()->selectedRows();
-    std::sort(selectedRows.begin(), selectedRows.end(),
-        [](const QModelIndex& a, const QModelIndex& b)->bool {
-        return a.row() < b.row();
-    });
+    QModelIndexList selectedRows = view_->selectedRows();
 
+    // Edit and Rename requires single selection.
     bool singleSelection = selectedRows.count() == 1;
-    if (btnEdit)   btnEdit->setEnabled(singleSelection);
-    if (btnRename) btnRename->setEnabled(singleSelection);
+    if (btnEdit)     btnEdit->setEnabled(singleSelection);
+    if (btnRename)   btnRename->setEnabled(singleSelection);
 
-    // Only enable move for contiguous selection modes.
-    if (m_standardTableView->selectionMode() != QAbstractItemView::SingleSelection &&
-        m_standardTableView->selectionMode() != QAbstractItemView::ContiguousSelection) {
-        btnMoveUp->setEnabled(false);
-        btnMoveDown->setEnabled(false);
-        return;
-    }
+    int nrows = view_->model()->rowCount();
 
-    // Check for valid move up.
     if (btnMoveUp) {
         int start = selectedRows.first().row();
-        if (start - 1 < 0)
-            btnMoveUp->setEnabled(false);
-        else
-            btnMoveUp->setEnabled(true);
+        btnMoveUp->setEnabled(nrows > 1 && start - 1 >= 0);
     }
 
-    // Check for valid move down.
     if (btnMoveDown) {
         int start = selectedRows.last().row();
-        int nrows = m_standardTableView->model()->rowCount();
-        if (start + 1 >= nrows)
-            btnMoveDown->setEnabled(false);
-        else
-            btnMoveDown->setEnabled(true);
+        btnMoveDown->setEnabled(nrows > 1 && start + 1 < nrows);
     }
 }

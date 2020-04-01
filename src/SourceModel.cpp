@@ -728,12 +728,13 @@ Qt::ItemFlags SourceModel::flags(const QModelIndex &index) const
 
 bool SourceModel::removeRows(int row, int count, const QModelIndex &)
 {
+    if (row < 0 || static_cast<std::size_t>(row) > sgPtr->sources.size())
+        return false;
+
     beginRemoveRows(QModelIndex(), row, row + count - 1);
-
-    auto it = sgPtr->sources.begin() + row;
-    for (int i = 0; i < count; ++i)
-        it = sgPtr->sources.erase(it);
-
+    auto it0 = std::next(sgPtr->sources.begin(), row);
+    auto it1 = std::next(it0, count);
+    sgPtr->sources.erase(it0, it1);
     endRemoveRows();
 
     return true;

@@ -19,6 +19,8 @@
 #include "StandardPlot.h"
 #include "FluxProfileDialog.h"
 #include "FluxProfilePlot.h"
+#include "delegate/DoubleItemDelegate.h"
+#include "delegate/SpinBoxDelegate.h"
 #include "widgets/BackgroundFrame.h"
 #include "widgets/GridLayout.h"
 
@@ -287,11 +289,11 @@ void FluxProfileDialog::init()
     refModel->setHorizontalHeaderLabels(QStringList{"Duration (hr)", fluxHeader});
 
     refTable->setModel(refModel);
-    refTable->setSpinBoxForColumn(0, 1, 1000, 1);
-    refTable->setDoubleLineEditForColumn(1, 0, 10000000, 8, false);
+    refTable->setItemDelegateForColumn(0, new SpinBoxDelegate(1, 1000, 1));
+    refTable->setItemDelegateForColumn(1, new DoubleItemDelegate(0, 10000000, 8, false));
     refTable->setMinimumWidth(400);
 
-    refEditor->init(refTable);
+    refEditor->setView(refTable);
     refEditor->setImportFilter("Flux Profile (*.csv *.txt)");
     refEditor->setImportCaption(tr("Import Flux Profile"));
 
@@ -369,9 +371,6 @@ void FluxProfileDialog::load()
         refModel->setItem(currentRow, 1, item1);
     }
 
-    using TSMethod = FluxProfile::TSMethod;
-    using DSMethod = FluxProfile::DSMethod;
-
     //if (fp->constantFlux)
     //    radioConstantFlux->setChecked(true);
     //else
@@ -442,7 +441,7 @@ FluxProfile FluxProfileDialog::currentProfile()
 
 void FluxProfileDialog::onRowsInserted(const QModelIndex &parent, int first, int last)
 {
-    Q_UNUSED(parent);
+    Q_UNUSED(parent)
 
     for (int i = first; i <= last; ++i) {
         QStandardItem *item0 = new QStandardItem;
@@ -452,15 +451,11 @@ void FluxProfileDialog::onRowsInserted(const QModelIndex &parent, int first, int
         refModel->setItem(i, 0, item0);
         refModel->setItem(i, 1, item1);
     }
-
-    refTable->scrollToBottom();
-    refTable->selectLastRow();
-    refTable->setFocus();
 }
 
 void FluxProfileDialog::importFluxProfile(const QString &filename)
 {
-    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Import");
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Import")
 
     using ReferenceFlux = FluxProfile::ReferenceFlux;
 
@@ -468,20 +463,21 @@ void FluxProfileDialog::importFluxProfile(const QString &filename)
     refModel->removeRows(0, refModel->rowCount());
 
     ReferenceFlux imported;
-    io::CSVReader<2> in(filename.toStdString());
 
-    while (true) {
-        try {
+    try {
+        io::CSVReader<2> in(filename.toStdString());
+        while (true) {
             int hour;
             double flux;
             if (in.read_row(hour, flux))
                 imported.push_back(std::make_pair(hour, flux));
             else
                 break;
-        } catch (const std::exception &e) {
-            BOOST_LOG_TRIVIAL(error) << e.what();
-            break;
         }
+    }
+    catch (const std::exception &e) {
+        QMessageBox::critical(this, "Import Failed", QString::fromLocal8Bit(e.what()));
+        return;
     }
 
     for (const auto &xy : imported) {
@@ -526,12 +522,12 @@ void FluxProfileDialog::plotFluxProfile()
     plotWidget->updatePlot();
 
     QDialog *plotDialog = new QDialog(this);
-    QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Close);
-    connect(buttonBox, &QDialogButtonBox::rejected, plotDialog, &QDialog::reject);
+    QDialogButtonBox *plotDialogButtonBox = new QDialogButtonBox(QDialogButtonBox::Close);
+    connect(plotDialogButtonBox, &QDialogButtonBox::rejected, plotDialog, &QDialog::reject);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(plotWidget);
-    mainLayout->addWidget(buttonBox);
+    mainLayout->addWidget(plotDialogButtonBox);
 
     plotDialog->setWindowTitle("Reference Flux Profile");
     plotDialog->setWindowFlag(Qt::Tool);
@@ -618,12 +614,12 @@ void FluxProfileDialog::plotTemporalScaling()
     plotFrame->setLayout(plotLayout);
 
     QDialog *dialog = new QDialog(this);
-    QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Close);
-    connect(buttonBox, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
+    QDialogButtonBox *plotDialogButtonBox = new QDialogButtonBox(QDialogButtonBox::Close);
+    connect(plotDialogButtonBox, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(plotFrame);
-    mainLayout->addWidget(buttonBox);
+    mainLayout->addWidget(plotDialogButtonBox);
 
     dialog->setWindowTitle("Time Scale Factor");
     dialog->setWindowFlag(Qt::Tool);
@@ -634,7 +630,6 @@ void FluxProfileDialog::plotTemporalScaling()
 
 void FluxProfileDialog::plotDepthScaling()
 {
-    using DSMethod = FluxProfile::DSMethod;
     FluxProfile fp = currentProfile();
 
     double x0 = 0.0;
@@ -681,12 +676,12 @@ void FluxProfileDialog::plotDepthScaling()
     plotFrame->setLayout(plotLayout);
 
     QDialog *dialog = new QDialog(this);
-    QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Close);
-    connect(buttonBox, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
+    QDialogButtonBox *plotDialogButtonBox = new QDialogButtonBox(QDialogButtonBox::Close);
+    connect(plotDialogButtonBox, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(plotFrame);
-    mainLayout->addWidget(buttonBox);
+    mainLayout->addWidget(plotDialogButtonBox);
 
     dialog->setWindowTitle("Depth Scale Factor");
     dialog->setWindowFlag(Qt::Tool);

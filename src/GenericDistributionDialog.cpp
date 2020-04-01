@@ -435,7 +435,6 @@ GenericDistributionDialog::GenericDistributionDialog(const GenericDistribution& 
     pdfPlot = new StandardPlot;
     pdfPlot->setXAxisTitle("Value");
     pdfPlot->setYAxisTitle("Density");
-    //pdfPlot->setAxisScale(QwtPlot::yLeft, 0, 1);
 
     pdfPlotCurveData = new QwtPointSeriesData;
     pdfPlotCurve = new QwtPlotCurve;

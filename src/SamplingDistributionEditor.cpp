@@ -23,6 +23,7 @@
 #include <QDebug>
 
 #include "SamplingDistributionEditor.h"
+#include "delegate/DoubleSpinBoxDelegate.h"
 
 SamplingDistributionEditor::SamplingDistributionEditor(QAbstractItemModel *sourceModel, QWidget *parent)
     : QWidget(parent)
@@ -40,7 +41,7 @@ SamplingDistributionEditor::SamplingDistributionEditor(QAbstractItemModel *sourc
     view->setEditTriggers(QAbstractItemView::AllEditTriggers);
 
     int lastColumn = proxyModel->proxyColumnForExtraColumn(0);
-    view->setDoubleSpinBoxForColumn(lastColumn, 0, 1, 4, 0.1);
+    view->setItemDelegateForColumn(lastColumn, new DoubleSpinBoxDelegate(0, 1, 4, 0.1));
 
     QHeaderView *header = view->horizontalHeader();
     header->setStretchLastSection(false);

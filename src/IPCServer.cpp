@@ -31,7 +31,7 @@ IPCServer::IPCServer(QObject *parent) : QObject(parent)
 
 bool IPCServer::start()
 {
-    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Model");
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "General");
 
     // QLocalServer will open a pipe for asynchronous I/O (FILE_FLAG_OVERLAPPED).
     // See Qt sources: src/network/socket/qlocalserver_win.cpp
@@ -49,7 +49,7 @@ bool IPCServer::start()
 
 bool IPCServer::stop()
 {
-    BOOST_LOG_SCOPED_THREAD_TAG("Source", "Model");
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "General");
 
     server->close();
     if (server->isListening()) {
@@ -76,7 +76,7 @@ void IPCServer::removePid(const qint64 pid)
 
 void IPCServer::clientConnected()
 {
-    //BOOST_LOG_SCOPED_THREAD_TAG("Source", "Model");
+    //BOOST_LOG_SCOPED_THREAD_TAG("Source", "General");
     //BOOST_LOG_TRIVIAL(debug) << "IPC client connected";
 
     QLocalSocket *socket = server->nextPendingConnection();
@@ -87,7 +87,7 @@ void IPCServer::clientConnected()
 
 void IPCServer::clientDisconnected()
 {
-    //BOOST_LOG_SCOPED_THREAD_TAG("Source", "Model");
+    //BOOST_LOG_SCOPED_THREAD_TAG("Source", "General");
     //BOOST_LOG_TRIVIAL(debug) << "IPC client disconnected";
 
     QLocalSocket *socket = qobject_cast<QLocalSocket*>(QObject::sender());

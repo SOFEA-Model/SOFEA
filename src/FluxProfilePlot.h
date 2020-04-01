@@ -18,7 +18,7 @@
 
 #include <QWidget>
 
-#include "FluxProfile.h"
+#include "core/FluxProfile.h"
 #include "StandardPlot.h"
 
 QT_BEGIN_NAMESPACE

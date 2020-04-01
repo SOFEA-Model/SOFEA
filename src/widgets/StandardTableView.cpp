@@ -25,11 +25,6 @@
 #include <QDebug>
 
 #include "FilterHeaderView.h"
-#include "delegate/ComboBoxDelegate.h"
-#include "delegate/DateTimeEditDelegate.h"
-#include "delegate/DoubleItemDelegate.h"
-#include "delegate/DoubleSpinBoxDelegate.h"
-#include "delegate/SpinBoxDelegate.h"
 
 StandardTableView::StandardTableView(QWidget *parent) : QTableView(parent)
 {
@@ -68,13 +63,44 @@ void StandardTableView::initHeaderStyles()
     vertical->setVisible(false);
 }
 
-void StandardTableView::addRow()
+QModelIndexList StandardTableView::selectedRows() const
+{
+    QModelIndexList rows;
+    if (!selectionModel()->hasSelection())
+        return rows;
+
+    if (selectionBehavior() == QAbstractItemView::SelectRows) {
+        // Use QItemSelectionModel::selectedRows
+        rows = selectionModel()->selectedRows();
+    }
+    else {
+        // Use QItemSelectionModel::selectedIndexes and remove duplicates
+        rows = selectionModel()->selectedIndexes();
+        auto it = std::unique(rows.begin(), rows.end(),
+            [](const QModelIndex& a, const QModelIndex& b) {
+            return a.row() == b.row();
+        });
+        rows.erase(it, rows.end());
+    }
+
+    if (rows.count() > 1) {
+        // Ensure rows are ordered.
+        std::sort(rows.begin(), rows.end(),
+            [](const QModelIndex& a, const QModelIndex& b) {
+            return a.row() < b.row();
+        });
+    }
+
+    return rows;
+}
+
+bool StandardTableView::appendRow()
 {
     if (!model())
-        return;
+        return false;
 
     int nrows = model()->rowCount();
-    model()->insertRow(nrows);
+    return model()->insertRow(nrows);
 }
 
 void StandardTableView::selectLastRow()
@@ -83,91 +109,159 @@ void StandardTableView::selectLastRow()
         return;
 
     int nrows = model()->rowCount();
-    if (nrows > 0)
+    if (nrows > 0) {
+        scrollToBottom();
         selectRow(nrows - 1);
+    }
 }
 
-void StandardTableView::removeSelectedRows()
+bool StandardTableView::removeSelectedRows()
 {
     if (!model() || !selectionModel())
-        return;
+        return false;
 
-    QModelIndexList selectedIndexes = selectionModel()->selectedIndexes();
+    if (!selectionModel()->hasSelection())
+        return false;
 
-    // Sort in descending order.
-    std::sort(selectedIndexes.begin(), selectedIndexes.end(),
-        [](const QModelIndex& a, const QModelIndex& b)->bool {
-        return a.row() > b.row();
-    });
-
-    // Keep unique rows.
-    auto it = std::unique(selectedIndexes.begin(), selectedIndexes.end(),
-        [](const QModelIndex& a, const QModelIndex& b)->bool {
-        return a.row() == b.row();
-    });
-    selectedIndexes.erase(it, selectedIndexes.end());
-
-    // Update the model.
-    for (const QModelIndex& i : selectedIndexes) {
-        model()->removeRow(i.row(), i.parent());
+    QModelIndexList selectedRows;
+    if (selectionBehavior() == QAbstractItemView::SelectRows) {
+        selectedRows = selectionModel()->selectedRows();
     }
+    else {
+        selectedRows = selectionModel()->selectedIndexes();
+        auto it = std::unique(selectedRows.begin(), selectedRows.end(),
+            [](const QModelIndex& a, const QModelIndex& b)->bool {
+            return a.row() == b.row();
+        });
+        selectedRows.erase(it, selectedRows.end());
+    }
+
+    if (selectedRows.size() == 0)
+        return false;
+
+    // Sort selection descending.
+    if (selectedRows.size() > 1) {
+        std::sort(selectedRows.begin(), selectedRows.end(),
+            [](const auto& a, const auto& b) {
+                return a.row() > b.row();
+            });
+    }
+
+    // Partition selected rows into contiguous ranges.
+    std::vector<std::pair<int, int>> remove;
+    auto current = selectedRows.begin();
+    while (current != selectedRows.end()) {
+        auto next = std::adjacent_find(current, selectedRows.end(),
+            [](const auto& a, const auto& b) {
+                return a.row() - b.row() > 1;
+            });
+
+        if (next != selectedRows.end()) {
+            auto start = next;
+            int count = static_cast<int>(std::distance(current, std::next(next)));
+            remove.emplace_back(std::make_pair(start->row(), count));
+            current = std::next(next);
+        }
+        else {
+            auto start = std::prev(next);
+            int count = static_cast<int>(std::distance(current, next));
+            remove.emplace_back(std::make_pair(start->row(), count));
+            break;
+        }
+    }
+
+    // Remove all rows in the selection.
+    QModelIndex parent = selectedRows.front().parent();
+    for (const auto& p : remove) {
+        model()->removeRows(p.first, p.second, parent);
+    }
+
+    return true;
 }
 
 bool StandardTableView::moveSelectedRows(int offset)
 {
-    // TODO: Create StandardItemModel and implement moveRows
-
-    if (offset == 0)
+    if (!model() || !selectionModel() || offset == 0)
         return false;
 
-    if (!model() || !selectionModel())
+    if (!selectionModel()->hasSelection())
         return false;
 
-    // Only QStandardItemModel supported.
-    QStandardItemModel *siModel = qobject_cast<QStandardItemModel *>(model());
-    if (siModel == nullptr)
+    QModelIndexList selectedRows;
+    if (selectionBehavior() == QAbstractItemView::SelectRows) {
+        selectedRows = selectionModel()->selectedRows();
+    }
+    else {
+        selectedRows = selectionModel()->selectedIndexes();
+        auto it = std::unique(selectedRows.begin(), selectedRows.end(),
+            [](const QModelIndex& a, const QModelIndex& b)->bool {
+            return a.row() == b.row();
+        });
+        selectedRows.erase(it, selectedRows.end());
+    }
+
+    if (selectedRows.size() == 0)
         return false;
 
-    QModelIndexList selectedRows = selectionModel()->selectedRows();
+    // Sort selection descending.
+    if (selectedRows.size() > 1) {
+        std::sort(selectedRows.begin(), selectedRows.end(),
+            [](const auto& a, const auto& b) {
+                return a.row() > b.row();
+            });
+    }
+
+    int nrows = model()->rowCount();
+    if (nrows == 1)
+        return false;
 
     if (offset < 0) {
-        // Sort ascending for move up.
-        std::sort(selectedRows.begin(), selectedRows.end(),
-            [](const QModelIndex& a, const QModelIndex& b)->bool {
-            return a.row() < b.row();
-        });
-
         // Check for valid move up.
-        int start = selectedRows.first().row();
+        int start = selectedRows.last().row();
         if (start + offset < 0)
             return false;
     }
     else {
-        // Sort descending for move down.
-        std::sort(selectedRows.begin(), selectedRows.end(),
-            [](const QModelIndex& a, const QModelIndex& b)->bool {
-            return a.row() > b.row();
-        });
-
         // Check for valid move down.
         int start = selectedRows.first().row();
-        int nrows = siModel->rowCount();
         if (start + offset >= nrows)
             return false;
     }
 
-    // Move each row in the selection.
-    for (const QModelIndex& i : selectedRows) {
-        int row = i.row();
-        QList<QStandardItem *> items = siModel->takeRow(row);
-        siModel->insertRow(row + offset, items);
+    // Partition selected rows into contiguous ranges.
+    std::vector<std::pair<int, int>> move; // start, count
+    auto current = selectedRows.begin();
+    while (current != selectedRows.end()) {
+        auto next = std::adjacent_find(current, selectedRows.end(),
+            [](const auto& a, const auto& b) {
+                return (a.row() - b.row()) > 1;
+            });
+
+        if (next != selectedRows.end()) {
+            auto start = next;
+            int count = static_cast<int>(std::distance(current, std::next(next)));
+            move.emplace_back(std::make_pair(start->row(), count));
+            current = std::next(next);
+        }
+        else {
+            auto start = std::prev(next);
+            int count = static_cast<int>(std::distance(current, next));
+            move.emplace_back(std::make_pair(start->row(), count));
+            break;
+        }
     }
 
-    // Move the selection.
-    selectionModel()->clearSelection();
-    for (const QModelIndex& i : selectedRows) {
-        const QModelIndex j = i.siblingAtRow(i.row() + offset);
-        selectionModel()->select(j, QItemSelectionModel::Select);
+    // Move all rows in the selection.
+    QModelIndex parent = selectedRows.front().parent();
+    if (offset > 0) {
+        // Use reverse iterator for move up.
+        for (auto p = move.crbegin(); p != move.crend(); ++p)
+            model()->moveRows(parent, p->first, p->second, parent, p->first + offset);
+    }
+    else {
+        // Use forward iterator for move down.
+        for (auto p = move.cbegin(); p != move.cend(); ++p)
+            model()->moveRows(parent, p->first, p->second, parent, p->first + offset);
     }
 
     return true;
@@ -213,34 +307,10 @@ void StandardTableView::copyClipboard()
     QApplication::clipboard()->setText(clipboardString);
 }
 
-void StandardTableView::setDoubleLineEditForColumn(int column, double min, double max, int decimals, bool fixed)
+template <typename T>
+std::vector<T> StandardTableView::columnData(int column)
 {
-    setItemDelegateForColumn(column, new DoubleItemDelegate(min, max, decimals, fixed));
-}
-
-void StandardTableView::setSpinBoxForColumn(int column, int min, int max, int singleStep)
-{
-    setItemDelegateForColumn(column, new SpinBoxDelegate(min, max, singleStep));
-}
-
-void StandardTableView::setDoubleSpinBoxForColumn(int column, double min, double max, int decimals, double singleStep)
-{
-    setItemDelegateForColumn(column, new DoubleSpinBoxDelegate(min, max, decimals, singleStep));
-}
-
-void StandardTableView::setDateTimeEditForColumn(int column, QDateTime min, QDateTime max)
-{
-    setItemDelegateForColumn(column, new DateTimeEditDelegate(min, max));
-}
-
-void StandardTableView::setComboBoxForColumn(int column, QAbstractItemModel *model, int modelColumn)
-{
-    setItemDelegateForColumn(column, new ComboBoxDelegate(model, modelColumn));
-}
-
-std::vector<double> StandardTableView::getNumericColumn(int j)
-{
-    std::vector<double> values;
+    std::vector<T> values;
 
     if (!model())
         return values;
@@ -248,20 +318,23 @@ std::vector<double> StandardTableView::getNumericColumn(int j)
     int nrows = model()->rowCount();
     int ncols = model()->columnCount();
 
-    if (j < 0 || j >= ncols)
+    if (column < 0 || column >= ncols)
         return values;
 
-    for (int i = 0; i < nrows; ++i) {
-        QModelIndex currentIndex = model()->index(i, j);
+    values.reserve(nrows);
+
+    for (int row = 0; row < nrows; ++row) {
+        QModelIndex currentIndex = model()->index(row, column);
         QVariant data = model()->data(currentIndex);
-        bool ok;
-        double value = data.toDouble(&ok);
-        if (ok)
-            values.push_back(value);
+        if (data.canConvert<T>())
+            values.emplace_back(data.value<T>());
     }
 
     return values;
 }
+
+template std::vector<int> StandardTableView::columnData<int>(int);
+template std::vector<double> StandardTableView::columnData<double>(int);
 
 template <typename T>
 void StandardTableView::setColumnData(int column, const std::vector<T> &values)
@@ -275,18 +348,18 @@ void StandardTableView::setColumnData(int column, const std::vector<T> &values)
     if (column < 0 || column >= ncols)
         return;
 
-    if (values.size() != nrows)
+    if (values.size() != static_cast<std::size_t>(nrows))
         return;
 
     for (int row = 0; row < nrows; ++row) {
         QModelIndex currentIndex = model()->index(row, column);
-        model()->setData(currentIndex, values[row], Qt::DisplayRole);
+        const std::size_t i = static_cast<std::size_t>(row);
+        model()->setData(currentIndex, values[i], Qt::DisplayRole);
     }
 
     return;
 }
 
-// Template Specialization
 template void StandardTableView::setColumnData<int>(int, const std::vector<int> &);
 template void StandardTableView::setColumnData<double>(int, const std::vector<double> &);
 
@@ -296,7 +369,20 @@ void StandardTableView::keyPressEvent(QKeyEvent *event)
         copyClipboard();
         event->accept();
     }
-    else {
-        QTableView::keyPressEvent(event);
+    else if (event->modifiers() & Qt::ControlModifier) {
+        switch (event->key()) {
+        case Qt::Key_Plus:
+            moveSelectedRows(1); // move down
+            event->accept();
+            break;
+        case Qt::Key_Minus:
+            moveSelectedRows(-1); // move up
+            event->accept();
+            break;
+        default:
+            break;
+        }
     }
+
+    QTableView::keyPressEvent(event);
 }

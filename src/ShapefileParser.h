@@ -18,7 +18,7 @@
 
 #include <QString>
 
-#include "SourceGroup.h"
+#include "core/SourceGroup.h"
 
 class ShapefileParser
 {

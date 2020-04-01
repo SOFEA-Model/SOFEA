@@ -27,10 +27,21 @@
 #include <algorithm>
 
 #include "AppStyle.h"
+
+#include "SourceEditor.h"
+#include "SourceModel.h"
 #include "SourceTable.h"
+#include "FluxProfileModel.h"
 #include "FluxProfilePlot.h"
-#include "Projection.h"
+#include "core/Projection.h"
 #include "delegate/ComboBoxDelegate.h"
+#include "delegate/DateTimeEditDelegate.h"
+#include "delegate/DoubleItemDelegate.h"
+#include "delegate/DoubleSpinBoxDelegate.h"
+#include "delegate/SpinBoxDelegate.h"
+#include "widgets/FilterHeaderView.h"
+#include "widgets/FilterProxyModel.h"
+#include "widgets/StandardTableView.h"
 
 class SymbolHeaderView : public QHeaderView
 {
@@ -106,47 +117,44 @@ protected:
     }
 };
 
-
-
 SourceTable::SourceTable(Scenario *s, SourceGroup *sg, QWidget *parent)
     : QWidget(parent), sPtr(s), sgPtr(sg)
 {
-    model = new SourceModel(s, sgPtr);
+    model = new SourceModel(s, sgPtr, this);
     sourceEditor = new SourceEditor;
     sourceEditor->setModel(model);
-    proxyModel = new QSortFilterProxyModel;
+    proxyModel = new FilterProxyModel(this);
     proxyModel->setSourceModel(model);
 
     table = new StandardTableView;
     table->setSelectionBehavior(QAbstractItemView::SelectRows);
-    //table->setSelectionMode(QAbstractItemView::ExtendedSelection); // FIXME
-    table->setSelectionMode(QAbstractItemView::ContiguousSelection);
+    table->setSelectionMode(QAbstractItemView::ExtendedSelection);
     table->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     table->setFrameStyle(QFrame::NoFrame);
     table->setContextMenuPolicy(Qt::CustomContextMenu);
     table->setModel(proxyModel);
     table->setAutoFilterEnabled(true);
 
-    QHeaderView *horizontal = table->horizontalHeader();
-    horizontal->setStretchLastSection(false);
-    horizontal->setContextMenuPolicy(Qt::CustomContextMenu);
-    horizontal->setVisible(true);
+    QHeaderView *horizontalHeader = table->horizontalHeader();
+    horizontalHeader->setStretchLastSection(false);
+    horizontalHeader->setContextMenuPolicy(Qt::CustomContextMenu);
+    horizontalHeader->setVisible(true);
 
-    QHeaderView *vertical = new SymbolHeaderView(Qt::Vertical, table);
-    table->setVerticalHeader(vertical);
-    vertical->setVisible(true);
+    QHeaderView *verticalHeader = new SymbolHeaderView(Qt::Vertical, table);
+    table->setVerticalHeader(verticalHeader);
+    verticalHeader->setVisible(true);
 
     // NOTE: Format should be the same as ReceptorDialog and SourceGroupPages
-    table->setDoubleLineEditForColumn(SourceModel::Column::X, -10000000, 10000000, 2, true);
-    table->setDoubleLineEditForColumn(SourceModel::Column::Y, -10000000, 10000000, 2, true);
-    table->setDoubleLineEditForColumn(SourceModel::Column::Z, 0, 9999.99, 2, true);
-    table->setDoubleLineEditForColumn(SourceModel::Column::Longitude, -180.0, 180.0, 5, true);
-    table->setDoubleLineEditForColumn(SourceModel::Column::Latitude, -90.0, 90.0, 5, true);
-    table->setDateTimeEditForColumn(SourceModel::Column::Start);
-    table->setDoubleSpinBoxForColumn(SourceModel::Column::AppRate, 0, 10000000, 2, 1);
-    table->setDoubleSpinBoxForColumn(SourceModel::Column::IncDepth, 0, 100, 2, 1);
-    table->setDoubleLineEditForColumn(SourceModel::Column::XInit, 0, 10000, 2, true);
-    table->setDoubleLineEditForColumn(SourceModel::Column::YInit, 0, 10000, 2, true);
+    table->setItemDelegateForColumn(SourceModel::Column::X, new DoubleItemDelegate(-10000000, 10000000, 2, true));
+    table->setItemDelegateForColumn(SourceModel::Column::Y, new DoubleItemDelegate(-10000000, 10000000, 2, true));
+    table->setItemDelegateForColumn(SourceModel::Column::Z, new DoubleItemDelegate(0, 9999.99, 2, true));
+    table->setItemDelegateForColumn(SourceModel::Column::Longitude, new DoubleItemDelegate(-180.0, 180.0, 5, true));
+    table->setItemDelegateForColumn(SourceModel::Column::Latitude, new DoubleItemDelegate(-90.0, 90.0, 5, true));
+    table->setItemDelegateForColumn(SourceModel::Column::Start, new DateTimeEditDelegate);
+    table->setItemDelegateForColumn(SourceModel::Column::AppRate, new DoubleSpinBoxDelegate(0, 10000000, 2, 1));
+    table->setItemDelegateForColumn(SourceModel::Column::IncDepth, new DoubleSpinBoxDelegate(0, 100, 2, 1));
+    table->setItemDelegateForColumn(SourceModel::Column::XInit, new DoubleItemDelegate(0, 10000, 2, true));
+    table->setItemDelegateForColumn(SourceModel::Column::YInit, new DoubleItemDelegate(0, 10000, 2, true));
 
     fpEditorModel = new FluxProfileModel(this);
     ComboBoxDelegate *fpEditorDelegate = new ComboBoxDelegate(fpEditorModel, 0);
@@ -180,10 +188,10 @@ SourceTable::SourceTable(Scenario *s, SourceGroup *sg, QWidget *parent)
     connect(table, &QTableView::customContextMenuRequested,
             this, &SourceTable::contextMenuRequested);
 
-    connect(horizontal, &QHeaderView::customContextMenuRequested,
+    connect(horizontalHeader, &QHeaderView::customContextMenuRequested,
             this, &SourceTable::headerContextMenuRequested);
 
-    connect(vertical, &QHeaderView::sectionDoubleClicked, [=](int section) {
+    connect(verticalHeader, &QHeaderView::sectionDoubleClicked, [=](int section) {
         QModelIndex proxyIndex = proxyModel->index(section, 0);
         QModelIndex index = proxyModel->mapToSource(proxyIndex);
         QModelIndexList selection;
@@ -197,6 +205,13 @@ SourceTable::SourceTable(Scenario *s, SourceGroup *sg, QWidget *parent)
     connect(model, &SourceModel::dataChanged, this, &SourceTable::onDataChanged);
     connect(model, &SourceModel::rowsInserted, this, &SourceTable::onRowsInserted);
     connect(model, &SourceModel::rowsRemoved, this, &SourceTable::onRowsRemoved);
+
+    FilterHeaderView *filterHeader = qobject_cast<FilterHeaderView *>(horizontalHeader);
+    if (filterHeader) {
+        connect(filterHeader, &FilterHeaderView::filterStateChanged, [=]() {
+            proxyModel->setFilteredRows(filterHeader->filteredRows());
+        });
+    }
 
     // Layout
     QSplitter *splitter = new QSplitter(Qt::Horizontal, this);
@@ -371,14 +386,13 @@ void SourceTable::onSelectionChanged(const QItemSelection&, const QItemSelection
         sourceEditor->setStatusText("No sources selected.");
         return;
     }
-    else if (selectedRows.size() != 1) {
+    else if (selectedRows.size() > 1) {
         sourceEditor->setStatusText("Multiple sources selected.");
         return;
     }
 
     QModelIndex proxyIndex = selectedRows.front();
     QModelIndex index = proxyModel->mapToSource(proxyIndex);
-    Source *currentSource = model->sourceFromIndex(index);
     sourceEditor->setCurrentModelIndex(index);
 }
 
