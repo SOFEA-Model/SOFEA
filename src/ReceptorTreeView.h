@@ -20,7 +20,7 @@
 #include <QPainter>
 #include <QPaintEvent>
 
-#include "ReceptorModel.h"
+#include "models/ReceptorModel.h"
 
 class ReceptorTreeView : public QTreeView
 {

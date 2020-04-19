@@ -21,7 +21,7 @@
 
 #include "AppStyle.h"
 #include "ProjectTreeView.h"
-#include "ProjectModel.h"
+#include "models/ProjectModel.h"
 
 ProjectTreeView::ProjectTreeView(QWidget *parent)
     : QTreeView(parent)

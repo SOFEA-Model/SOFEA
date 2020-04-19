@@ -30,10 +30,12 @@
 
 #include <QDebug>
 
-#include <iterator>
-
 #include <boost/log/trivial.hpp>
 #include <boost/log/attributes/scoped_attribute.hpp>
+
+#include <fmt/format.h>
+
+#include <iterator>
 
 MeteorologyModel::MeteorologyModel(QObject *parent)
     : QAbstractTableModel(parent)
@@ -68,23 +70,23 @@ void MeteorologyModel::addUrls(const QList<QUrl>& urls)
         else
             continue;
 
-        if (QFileInfo::exists(paired)) // TODO: error if no paired file
-            basePaths.insert(basePath);
+        if (!QFileInfo::exists(paired))
+            BOOST_LOG_TRIVIAL(warning) << fmt::format("SFC/PFL pair not found for file '{}'", fi.fileName().toStdString());
+
+        basePaths.insert(basePath);
     }
 
-    beginInsertRows(QModelIndex(), rowCount(), rowCount());
     for (const auto& path : basePaths) {
         std::string sfc = QString(path + ".sfc").toStdString();
         std::string pfl = QString(path + ".pfl").toStdString();
         try {
             Meteorology item{sfc, pfl};
             initFromDb(item);
-            data_.push_back(item);
+            appendRow(item);
         } catch (const std::exception& e) {
             BOOST_LOG_TRIVIAL(error) << e.what();
         }
     }
-    endInsertRows();
 }
 
 void MeteorologyModel::appendRow(const Meteorology& item)
@@ -104,17 +106,17 @@ void MeteorologyModel::initFromDb(Meteorology& item)
         item.name = stationQuery.value(StationQueryModel::Column::StationName).toString().toStdString();
         item.terrainElevation = stationQuery.value(StationQueryModel::Column::GroundElevation).toDouble();
 
-        qDebug() << stationQuery.value(StationQueryModel::Column::GroundElevationUnit).toString();
-        qDebug() << stationQuery.value(StationQueryModel::Column::HorizontalDatum).toString(); // 35039, 185, NAD83, NAD27, OLD HAWAIIAN, WGS84
-        qDebug() << stationQuery.value(StationQueryModel::Column::VerticalDatum).toString(); // NAGVD29, NAVD88, MSL(HAWAII)
-        qDebug() << stationQuery.value(StationQueryModel::Column::LatLonSource).toString();
+        //qDebug() << stationQuery.value(StationQueryModel::Column::GroundElevationUnit).toString();
+        //qDebug() << stationQuery.value(StationQueryModel::Column::HorizontalDatum).toString(); // 35039, 185, NAD83, NAD27, OLD HAWAIIAN, WGS84
+        //qDebug() << stationQuery.value(StationQueryModel::Column::VerticalDatum).toString(); // NAGVD29, NAVD88, MSL(HAWAII)
+        //qDebug() << stationQuery.value(StationQueryModel::Column::LatLonSource).toString();
     }
 
     QSqlQuery anemometerQuery = MeteorologyStationData::anemometerQuery(id, dt, dt);
     if (anemometerQuery.exec() && anemometerQuery.next()) {
         item.anemometerHeight = anemometerQuery.value(AnemometerQueryModel::Column::AnemometerHeight).toDouble();
 
-        qDebug() << anemometerQuery.value(AnemometerQueryModel::Column::AnemometerHeightUnit).toString();
+        //qDebug() << anemometerQuery.value(AnemometerQueryModel::Column::AnemometerHeightUnit).toString();
     }
 }
 
@@ -127,7 +129,7 @@ int MeteorologyModel::rowCount(const QModelIndex &parent) const
 int MeteorologyModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent)
-    return 6;
+    return 9;
 }
 
 QModelIndex MeteorologyModel::index(int row, int column, const QModelIndex &parent) const
@@ -173,6 +175,9 @@ QVariant MeteorologyModel::data(const QModelIndex &index, int role) const
             QDateTime dt = sofea::utilities::convert<QDateTime>(item.surfaceFile.maxTime());
             return dt.isValid() ? dt.toString("yyyy-MM-dd HH:mm") : QVariant();
         }
+        case Column::TotalHours:       return item.surfaceFile.totalHours();
+        case Column::CalmHours:        return item.surfaceFile.calmHours();
+        case Column::MissingHours:     return item.surfaceFile.missingHours();
         case Column::TerrainElevation: return QString::number(item.terrainElevation, 'f', 1);
         case Column::AnemometerHeight: return QString::number(item.anemometerHeight, 'f', 1);
         case Column::WindRotation:     return QString::number(item.windRotation, 'f', 1);
@@ -183,11 +188,18 @@ QVariant MeteorologyModel::data(const QModelIndex &index, int role) const
     }
     else if (role == Qt::TextAlignmentRole) {
         switch (index.column()) {
+        case Column::Name:
+            return Qt::AlignLeft;
         case Column::SurfaceStation:
         case Column::UpperAirStation:
         case Column::OnSiteStation:
+            return Qt::AlignCenter;
         case Column::StartTime:
         case Column::EndTime:
+            return Qt::AlignLeft;
+        case Column::TotalHours:
+        case Column::CalmHours:
+        case Column::MissingHours:
             return Qt::AlignCenter;
         default: return QVariant();
         }
@@ -199,6 +211,9 @@ QVariant MeteorologyModel::data(const QModelIndex &index, int role) const
         case Column::OnSiteStation:
         case Column::StartTime:
         case Column::EndTime:
+        case Column::TotalHours:
+        case Column::CalmHours:
+        case Column::MissingHours:
             return QApplication::palette().color(QPalette::Window).lighter(104);
         default: return QVariant();
         }
@@ -262,17 +277,20 @@ QVariant MeteorologyModel::headerData(int section, Qt::Orientation orientation, 
     if (role == Qt::DisplayRole) {
         if (orientation == Qt::Horizontal) {
             switch (section) {
-            case Column::Name:             return QString("Name");
-            case Column::SurfaceStation:   return QString("Surface ID");
-            case Column::UpperAirStation:  return QString("Upper Air ID");
-            case Column::OnSiteStation:    return QString("On Site ID");
-            case Column::StartTime:        return QString("Start Time");
-            case Column::EndTime:          return QString("End Time");
-            case Column::TerrainElevation: return QString("Terrain Elevation");
-            case Column::AnemometerHeight: return QString("Anemometer Height");
-            case Column::WindRotation:     return QString("Wind Rotation");
-            case Column::SurfaceFile:      return QString("Surface File");
-            case Column::UpperAirFile:     return QString("Upper Air File");
+            case Column::Name:             return tr("Name");
+            case Column::SurfaceStation:   return tr("Surface ID");
+            case Column::UpperAirStation:  return tr("Upper Air ID");
+            case Column::OnSiteStation:    return tr("On Site ID");
+            case Column::StartTime:        return tr("Start Time");
+            case Column::EndTime:          return tr("End Time");
+            case Column::TotalHours:       return tr("Total Hours");
+            case Column::CalmHours:        return tr("Calm Hours");
+            case Column::MissingHours:     return tr("Missing Hours");
+            case Column::TerrainElevation: return tr("Terrain Elevation");
+            case Column::AnemometerHeight: return tr("Anemometer Height");
+            case Column::WindRotation:     return tr("Wind Rotation");
+            case Column::SurfaceFile:      return tr("Surface File");
+            case Column::UpperAirFile:     return tr("Upper Air File");
             default: return QVariant();
             }
         }

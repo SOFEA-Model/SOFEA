@@ -19,8 +19,8 @@
 #include "StandardPlot.h"
 #include "FluxProfileDialog.h"
 #include "FluxProfilePlot.h"
-#include "delegate/DoubleItemDelegate.h"
-#include "delegate/SpinBoxDelegate.h"
+#include "delegates/DoubleItemDelegate.h"
+#include "delegates/SpinBoxDelegate.h"
 #include "widgets/BackgroundFrame.h"
 #include "widgets/GridLayout.h"
 

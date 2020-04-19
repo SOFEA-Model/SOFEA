@@ -14,8 +14,8 @@
 //
 
 #include "AppStyle.h"
-#include "LogFilterProxyModel.h"
 #include "LogWidget.h"
+#include "models/LogFilterProxyModel.h"
 
 #include <QAction>
 #include <QApplication>

@@ -14,7 +14,7 @@
 //
 
 #include "MeteorologyTableView.h"
-#include "MeteorologyModel.h"
+#include "models/MeteorologyModel.h"
 
 #include <QDir>
 #include <QFileInfo>

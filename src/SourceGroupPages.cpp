@@ -14,15 +14,14 @@
 //
 
 #include "SourceGroupPages.h"
-
-#include "BufferZoneModel.h"
 #include "BufferZoneEditor.h"
-#include "FluxProfileModel.h"
 #include "MonteCarloLineEdit.h"
 #include "MonteCarloDateTimeEdit.h"
 #include "SamplingDistributionEditor.h"
-#include "delegate/DoubleSpinBoxDelegate.h"
-#include "delegate/SpinBoxDelegate.h"
+#include "delegates/DoubleSpinBoxDelegate.h"
+#include "delegates/SpinBoxDelegate.h"
+#include "models/BufferZoneModel.h"
+#include "models/FluxProfileModel.h"
 #include "widgets/BackgroundFrame.h"
 #include "widgets/GridLayout.h"
 #include "widgets/StandardTableView.h"

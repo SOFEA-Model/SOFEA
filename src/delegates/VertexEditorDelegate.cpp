@@ -19,8 +19,8 @@
 #include <QSpinBox>
 
 #include "VertexEditorDelegate.h"
-#include "SourceModel.h"
-#include "widgets/VertexEditor.h"
+#include "../models/SourceModel.h"
+#include "../widgets/VertexEditor.h"
 
 VertexEditorDelegate::VertexEditorDelegate(QObject *parent)
     : QStyledItemDelegate(parent)

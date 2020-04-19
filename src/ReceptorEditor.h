@@ -22,10 +22,10 @@
 #include <memory>
 #include <vector>
 
-#include "core/Scenario.h"
-#include "ReceptorModel.h"
 #include "ReceptorTreeView.h"
 #include "StandardPlot.h"
+#include "core/Scenario.h"
+#include "models/ReceptorModel.h"
 #include "widgets/DoubleLineEdit.h"
 
 QT_BEGIN_NAMESPACE

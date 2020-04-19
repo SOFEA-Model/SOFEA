@@ -27,9 +27,9 @@
 #include <QStackedLayout>
 
 #include "SourceEditor.h"
-#include "SourceModel.h"
+#include "models/SourceModel.h"
 #include "widgets/VertexEditor.h"
-#include "delegate/VertexEditorDelegate.h"
+#include "delegates/VertexEditorDelegate.h"
 
 #include "ctk/ctkCollapsibleGroupBox.h"
 
@@ -79,6 +79,11 @@ SourceEditor::SourceEditor(QWidget *parent) : QWidget(parent)
     //leHenryConstant = new DoubleLineEdit;
     //leHenryConstant->setRange(0, 10000);
     //leHenryConstant->setDecimals(8);
+
+    // Advanced
+    // sbEmissionRate = new DoubleLineEdit;
+    // sbReleaseHeight = new DoubleLineEdit;
+    // sbSigmaZ0 = new DoubleLineEdit;
 
     mapper = new QDataWidgetMapper(this);
     mapper->setOrientation(Qt::Horizontal);

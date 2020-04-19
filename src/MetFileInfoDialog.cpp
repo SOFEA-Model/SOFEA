@@ -43,7 +43,7 @@
 #include "MetFileInfoDialog.h"
 #include "PixmapUtilities.h"
 #include "ctk/ctkRangeSlider.h"
-//#include "delegate/GradientItemDelegate.h"
+//#include "delegates/GradientItemDelegate.h"
 #include "widgets/ReadOnlyLineEdit.h"
 #include "widgets/StandardTableView.h"
 

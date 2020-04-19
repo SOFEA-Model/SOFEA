@@ -17,9 +17,9 @@
 #include "MagneticDeclinationDialog.h"
 #include "MeteorologyEditor.h"
 #include "MeteorologyFileDialog.h"
-#include "MeteorologyModel.h"
 #include "MeteorologyStationData.h"
 #include "MeteorologyTableView.h"
+#include "models/MeteorologyModel.h"
 #include "widgets/ButtonLineEdit.h"
 #include "widgets/PathEdit.h"
 #include "widgets/StandardTableEditor.h"
@@ -194,8 +194,7 @@ void MeteorologyEditor::onAddClicked()
     QVariant defaultPath = settings.value("DefaultMetFileDirectory", QDir::currentPath());
     QUrl dialogDir = QUrl::fromLocalFile(defaultPath.toString());
 
-    QString dialogFilter = QString("%1;;%2;;%3").arg(
-        "All Supported Files (*.sfc *.pfl)",
+    QString dialogFilter = QString("%1;;%2").arg(
         "AERMET Surface Data (*.sfc)",
         "AERMET Profile Data (*.pfl)");
 

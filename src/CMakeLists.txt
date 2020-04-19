@@ -49,7 +49,7 @@ project(sofea)
 # │   └── zlib                      [static]
 # ├── proj                          [static]
 # │   ├── curl                      [dynamic]
-# │   ├── tiff                      [dynamic]
+# │   ├── tiff                      [static]
 # │   └── sqlite3                   [static]
 # └── gdal                          [dynamic]
 #     ├── curl                      [dynamic]
@@ -65,7 +65,7 @@ project(sofea)
 # set(VCPKG_TARGET_ARCHITECTURE x64)
 # set(VCPKG_CRT_LINKAGE dynamic)
 # set(VCPKG_LIBRARY_LINKAGE static)
-# if(PORT MATCHES "netcdf-c|qt5-|geos|tiff|libwebp|jasper|curl")
+# if(PORT MATCHES "netcdf-c|qt5-|geos|curl|tiff|libwebp|jasper")
 #   set(VCPKG_LIBRARY_LINKAGE dynamic)
 # endif()
 #
@@ -150,6 +150,10 @@ find_package(geos PATHS "../external/geos-3.8.0dev/lib/cmake/GEOS" NO_DEFAULT_PA
 
 find_package(PROJ PATHS "../external/proj-7.0.0/lib/cmake/proj" NO_DEFAULT_PATH CONFIG REQUIRED)
 
+set(GDAL_INCLUDE_DIR "../external/gdal-3.1.0dev/include")
+set(GDAL_LIBRARY_DIR "../external/gdal-3.1.0dev/lib")
+set(GDAL_LIBRARIES "gdal_i")
+
 set(QWT_INCLUDE_DIR "../external/qwt-6.1.4/include")
 set(QWT_LIBRARY_DIR "../external/qwt-6.1.4/lib")
 set(QWT_LIBRARIES "qwt")
@@ -170,8 +174,8 @@ set(UDUNITS2_INCLUDE_DIR "../external/udunits-2.2.27.12/include")
 set(UDUNITS2_LIBRARY_DIR "../external/udunits-2.2.27.12/lib")
 set(UDUNITS2_LIBRARIES "udunits2")
 
-set(SCINTILLA_ROOT "../external/scintilla-4.3.0")
-set(SCINTILLA_LIBRARY_DIR "../external/scintilla-4.3.0/bin")
+set(SCINTILLA_ROOT "../external/scintilla-4.3.2")
+set(SCINTILLA_LIBRARY_DIR "../external/scintilla-4.3.2/bin")
 set(SCINTILLA_LIBRARIES "ScintillaEditBase")
 
 set(CSV_INCLUDE_DIR "../external/fast-cpp-csv-parser/include")
@@ -196,17 +200,14 @@ set(SOURCES
     AnalysisWindow.cpp
     AppStyle.cpp
     BufferZoneEditor.cpp
-    BufferZoneModel.cpp
     DateTimeDistributionDialog.cpp
     FluxProfileDialog.cpp
-    FluxProfileModel.cpp
     FluxProfilePlot.cpp
     GenericDistributionDialog.cpp
     GeometryOp.cpp
     GeosOp.cpp
     InputViewer.cpp
     IPCServer.cpp
-    LogFilterProxyModel.cpp
     LogWidget.cpp
     MagneticDeclinationDialog.cpp
     MainWindow.cpp
@@ -214,7 +215,6 @@ set(SOURCES
     MetFileParser.cpp
     MeteorologyEditor.cpp
     MeteorologyFileDialog.cpp
-    MeteorologyModel.cpp
     MeteorologyStationData.cpp
     MeteorologyTableView.cpp
     MonteCarloDateTimeEdit.cpp
@@ -222,18 +222,15 @@ set(SOURCES
     PixmapUtilities.cpp
     PlotCurveTracker.cpp
     PlotItemTitleTracker.cpp
-    ProjectModel.cpp
     ProjectOptionsDialog.cpp
     ProjectTreeView.cpp
     ProjectionEditor.cpp
     ReceptorDialog.cpp
     ReceptorEditor.cpp
-    ReceptorModel.cpp
     ReceptorTreeView.cpp
     RunModelDialog.cpp
     RunstreamParser.cpp
     SamplingDistributionEditor.cpp
-    SamplingProxyModel.cpp
     ScenarioPages.cpp
     ScenarioProperties.cpp
     SettingsDialog.cpp
@@ -242,7 +239,6 @@ set(SOURCES
     SourceEditor.cpp
     SourceGroupPages.cpp
     SourceGroupProperties.cpp
-    SourceModel.cpp
     SourceTable.cpp
     StandardPlot.cpp
     UDUnitsInterface.cpp
@@ -262,18 +258,26 @@ set(SOURCES
     ctk/ctkMenuButton.cpp
     ctk/ctkProxyStyle.cpp
     ctk/ctkRangeSlider.cpp
-    delegate/ColorIntervalDelegate.cpp
-    delegate/ColorPickerDelegate.cpp
-    delegate/ComboBoxDelegate.cpp
-    delegate/DateTimeEditDelegate.cpp
-    delegate/DoubleItemDelegate.cpp
-    delegate/DoubleSpinBoxDelegate.cpp
-    delegate/FilePickerDelegate.cpp
-    delegate/GradientItemDelegate.cpp
-    delegate/PointDelegate.cpp
-    delegate/ProgressBarDelegate.cpp
-    delegate/SpinBoxDelegate.cpp
-    delegate/VertexEditorDelegate.cpp
+    delegates/ColorIntervalDelegate.cpp
+    delegates/ColorPickerDelegate.cpp
+    delegates/ComboBoxDelegate.cpp
+    delegates/DateTimeEditDelegate.cpp
+    delegates/DoubleItemDelegate.cpp
+    delegates/DoubleSpinBoxDelegate.cpp
+    delegates/FilePickerDelegate.cpp
+    delegates/GradientItemDelegate.cpp
+    delegates/PointDelegate.cpp
+    delegates/ProgressBarDelegate.cpp
+    delegates/SpinBoxDelegate.cpp
+    delegates/VertexEditorDelegate.cpp
+    models/BufferZoneModel.cpp
+    models/FluxProfileModel.cpp
+    models/LogFilterProxyModel.cpp
+    models/MeteorologyModel.cpp
+    models/ProjectModel.cpp
+    models/ReceptorModel.cpp
+    models/SamplingProxyModel.cpp
+    models/SourceModel.cpp
     qtcurl/CurlEasy.cpp
     qtcurl/CurlMulti.cpp
     #ribbon/CRibbon.cpp
@@ -310,9 +314,7 @@ set(HEADERS
     AnalysisWindow.h
     AppStyle.h
     BufferZoneEditor.h
-    BufferZoneModel.h
     FluxProfileDialog.h
-    FluxProfileModel.h
     FluxProfilePlot.h
     DateTimeDistributionDialog.h
     GenericDistributionDialog.h
@@ -321,13 +323,11 @@ set(HEADERS
     InputViewer.h
     IPCMessage.h
     IPCServer.h
-    LogFilterProxyModel.h
     LogWidget.h
     MagneticDeclinationDialog.h
     MainWindow.h
     MeteorologyEditor.h
     MeteorologyFileDialog.h
-    MeteorologyModel.h
     MeteorologyStationData.h
     MeteorologyTableView.h
     MetFileInfoDialog.h
@@ -337,14 +337,12 @@ set(HEADERS
     PixmapUtilities.h
     PlotCurveTracker.h
     PlotItemTitleTracker.h
-    ProjectModel.h
     ProjectOptionsDialog.h
     ProjectTreeView.h
     ProjectionEditor.h
     ReceptorDelegate.h
     ReceptorDialog.h
     ReceptorEditor.h
-    ReceptorModel.h
     ReceptorTreeView.h
     ReceptorVisitor.h
     RunModelDialog.h
@@ -352,7 +350,6 @@ set(HEADERS
     RunstreamParser.h
     SamplingDistribution.h
     SamplingDistributionEditor.h
-    SamplingProxyModel.h
     ScenarioPages.h
     ScenarioProperties.h
     SettingsDialog.h
@@ -362,7 +359,6 @@ set(HEADERS
     SourceEditor.h
     SourceGroupPages.h
     SourceGroupProperties.h
-    SourceModel.h
     SourceTable.h
     StandardPlot.h
     UDUnitsInterface.h
@@ -391,18 +387,26 @@ set(HEADERS
     ctk/ctkMenuButton.h
     ctk/ctkProxyStyle.h
     ctk/ctkRangeSlider.h
-    delegate/ColorIntervalDelegate.h
-    delegate/ColorPickerDelegate.h
-    delegate/ComboBoxDelegate.h
-    delegate/DateTimeEditDelegate.h
-    delegate/DoubleItemDelegate.h
-    delegate/DoubleSpinBoxDelegate.h
-    delegate/FilePickerDelegate.h
-    delegate/GradientItemDelegate.h
-    delegate/PointDelegate.h
-    delegate/ProgressBarDelegate.h
-    delegate/SpinBoxDelegate.h
-    delegate/VertexEditorDelegate.h
+    delegates/ColorIntervalDelegate.h
+    delegates/ColorPickerDelegate.h
+    delegates/ComboBoxDelegate.h
+    delegates/DateTimeEditDelegate.h
+    delegates/DoubleItemDelegate.h
+    delegates/DoubleSpinBoxDelegate.h
+    delegates/FilePickerDelegate.h
+    delegates/GradientItemDelegate.h
+    delegates/PointDelegate.h
+    delegates/ProgressBarDelegate.h
+    delegates/SpinBoxDelegate.h
+    delegates/VertexEditorDelegate.h
+    models/BufferZoneModel.h
+    models/FluxProfileModel.h
+    models/LogFilterProxyModel.h
+    models/MeteorologyModel.h
+    models/ProjectModel.h
+    models/ReceptorModel.h
+    models/SamplingProxyModel.h
+    models/SourceModel.h
     qtcurl/CurlEasy.h
     qtcurl/CurlMulti.h
     #ribbon/CRibbon.h
@@ -413,7 +417,6 @@ set(HEADERS
     widgets/ExtendedComboBox.h
     widgets/FilterEditor.h
     widgets/FilterHeaderView.h
-    widgets/FilterProxyModel.h
     widgets/GridLayout.h
     widgets/GridLineFrame.h
     widgets/ListEditor.h
@@ -496,6 +499,7 @@ endif()
 
 target_include_directories(main PRIVATE
     ${CURL_INCLUDE_DIRS}
+    ${GDAL_INCLUDE_DIR}
     ${QWT_INCLUDE_DIR}
     ${QWTPOLAR_INCLUDE_DIR}
     ${QTPROPERTYBROWSER_INCLUDE_DIR}
@@ -510,6 +514,7 @@ target_include_directories(main PRIVATE
 )
 
 target_link_directories(main PRIVATE
+    ${GDAL_LIBRARY_DIR}
     ${QWT_LIBRARY_DIR}
     ${QWTPOLAR_LIBRARY_DIR}
     ${QTPROPERTYBROWSER_LIBRARY_DIR}
@@ -534,6 +539,7 @@ target_link_libraries(main PRIVATE EXPAT::EXPAT)
 target_link_libraries(main PRIVATE date::date date::tz)
 target_link_libraries(main PRIVATE fmt::fmt-header-only)
 target_link_libraries(main PRIVATE cereal)
+target_link_libraries(main PRIVATE ${GDAL_LIBRARIES})
 target_link_libraries(main PRIVATE ${QWT_LIBRARIES})
 target_link_libraries(main PRIVATE ${QWTPOLAR_LIBRARIES})
 target_link_libraries(main PRIVATE ${QTPROPERTYBROWSER_LIBRARIES})

@@ -17,7 +17,7 @@
 #include "AppStyle.h"
 #include "DateTimeDistributionDialog.h"
 #include "core/DateTimeConversion.h"
-#include "delegate/DoubleSpinBoxDelegate.h"
+#include "delegates/DoubleSpinBoxDelegate.h"
 
 #include <utility>
 

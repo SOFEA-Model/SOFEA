@@ -20,7 +20,7 @@
 #include "AppStyle.h"
 #include "RunModelDialog.h"
 #include "core/Common.h"
-#include "delegate/ProgressBarDelegate.h"
+#include "delegates/ProgressBarDelegate.h"
 
 RunModelDialog::RunModelDialog(QWidget *parent) : QDialog(parent)
 {

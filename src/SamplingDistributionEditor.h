@@ -19,8 +19,8 @@
 #include <QWidget>
 #include <QString>
 
-#include "SamplingProxyModel.h"
 #include "SamplingDistribution.h"
+#include "models/SamplingProxyModel.h"
 #include "widgets/StandardTableView.h"
 
 QT_BEGIN_NAMESPACE

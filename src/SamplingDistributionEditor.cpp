@@ -23,7 +23,7 @@
 #include <QDebug>
 
 #include "SamplingDistributionEditor.h"
-#include "delegate/DoubleSpinBoxDelegate.h"
+#include "delegates/DoubleSpinBoxDelegate.h"
 
 SamplingDistributionEditor::SamplingDistributionEditor(QAbstractItemModel *sourceModel, QWidget *parent)
     : QWidget(parent)
