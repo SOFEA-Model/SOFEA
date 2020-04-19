@@ -299,5 +299,9 @@
         <file>res/CheckboxClearAll_20x.png</file>
         <file>res/CheckboxClearAll_24x.png</file>
         <file>res/CheckboxClearAll_32x.png</file>
+        <file>res/WindRose_36x.png</file>
+        <file>res/WindRose_40x.png</file>
+        <file>res/WindRose_48x.png</file>
+        <file>res/WindRose_64x.png</file>
     </qresource>
 </RCC>

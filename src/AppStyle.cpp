@@ -88,6 +88,7 @@ QIcon AppStyle::standardIcon(QStyle::StandardPixmap sp,
     static const QIcon runIcon               = largeIconResource("Run");
     static const QIcon runSettingsIcon       = largeIconResource("RunTestDialog");
     static const QIcon measureIcon           = largeIconResource("Measure");
+    static const QIcon windRoseIcon          = largeIconResource("WindRose");
     // Status Icons
     static const QIcon statusHelpIcon        = largeIconResource("StatusHelp");
     static const QIcon statusOkIcon          = smallIconResource("StatusOK");
@@ -110,7 +111,6 @@ QIcon AppStyle::standardIcon(QStyle::StandardPixmap sp,
     static const QIcon filterDropdownIcon    = smallIconResource("FilterDropdown");
     static const QIcon functionIcon          = smallIconResource("Effects");
     static const QIcon syncArrowIcon         = smallIconResource("SyncArrow");
-    static const QIcon windRoseIcon          = smallIconResource("WindRose");
     // Action Icons
     static const QIcon addIcon               = smallIconResource("Add", "MD");
     static const QIcon removeIcon            = smallIconResource("Remove", "MD");
@@ -168,6 +168,8 @@ QIcon AppStyle::standardIcon(QStyle::StandardPixmap sp,
         return runSettingsIcon;
     case AppStyle::CP_Measure:
         return measureIcon;
+    case AppStyle::CP_WindRose:
+        return windRoseIcon;
     case AppStyle::CP_StatusHelp:
         return statusHelpIcon;
     case AppStyle::CP_StatusOK:
@@ -208,8 +210,6 @@ QIcon AppStyle::standardIcon(QStyle::StandardPixmap sp,
         return functionIcon;
     case AppStyle::CP_SyncArrow:
         return syncArrowIcon;
-    case AppStyle::CP_WindRose:
-        return windRoseIcon;
     case AppStyle::CP_ActionAdd:
         return addIcon;
     case AppStyle::CP_ActionRemove:
