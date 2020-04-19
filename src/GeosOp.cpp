@@ -19,8 +19,6 @@
 #include <string>
 #include <memory>
 
-#include <QDebug>
-
 #include <boost/log/trivial.hpp>
 #include <boost/log/attributes/scoped_attribute.hpp>
 
@@ -38,12 +36,7 @@ static void noticeHandler(const char *fmt, ...)
     va_list ap;
     va_start(ap, fmt);
     vsnprintf(buf, 1024, fmt, ap);
-    BOOST_LOG_TRIVIAL(info) << "geos: " << buf;
-
-    QString message = QString::fromLocal8Bit(buf);
-    qDebug() << "geos:";
-    qDebug() << message;
-
+    BOOST_LOG_TRIVIAL(info) << "GEOS: " << buf;
     va_end(ap);
 }
 
@@ -55,12 +48,7 @@ static void errorHandler(const char *fmt, ...)
     va_list ap;
     va_start(ap, fmt);
     vsnprintf(buf, 1024, fmt, ap);
-    BOOST_LOG_TRIVIAL(error) << "geos: " << buf;
-
-    QString message = QString::fromLocal8Bit(buf);
-    qDebug() << "geos:";
-    qDebug() << message;
-
+    BOOST_LOG_TRIVIAL(error) << "GEOS: " << buf;
     va_end(ap);
 }
 
