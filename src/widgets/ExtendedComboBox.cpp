@@ -69,7 +69,13 @@ int ExtendedComboBox::popupHeight() const
 
 void ExtendedComboBox::showPopup()
 {
+    if (container_ == nullptr || this->view() == nullptr)
+        return;
+
     this->setUpdatesEnabled(false);
+    container_->setUpdatesEnabled(false);
+    this->view()->setUpdatesEnabled(false);
+
     QComboBox::showPopup();
 
     // Update the height of the internal QFrame.
@@ -84,5 +90,11 @@ void ExtendedComboBox::showPopup()
     for (QWidget *scroller : scrollers_)
         scroller->hide();
 
+    // Update the scroll state.
+    if (this->view())
+        this->view()->scrollTo(view()->currentIndex(), QAbstractItemView::PositionAtTop);
+
+    this->view()->setUpdatesEnabled(true);
+    container_->setUpdatesEnabled(true);
     this->setUpdatesEnabled(true);
 }
