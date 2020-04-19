@@ -105,8 +105,8 @@ ut_system* UnitSystem::instance()
     static QString xmlPath = QDir::cleanPath(QCoreApplication::applicationDirPath()
         + QDir::separator() + SOFEA_UDUNITS_XML_PATH);
 
-    std::once_flag once;
-    std::call_once(once, ut_set_error_message_handler, &errorHandler);
+    static std::once_flag flag;
+    std::call_once(flag, ut_set_error_message_handler, &errorHandler);
 
     static std::shared_ptr<ut_system> us(
         ut_read_xml(xmlPath.toLocal8Bit().constData()),
