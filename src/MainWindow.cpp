@@ -13,6 +13,33 @@
 // limitations under the License.
 //
 
+#include "AnalysisWindow.h"
+#include "AppStyle.h"
+#include "InputViewer.h"
+#include "LogWidget.h"
+#include "MainWindow.h"
+#include "MeteorologyEditor.h"
+#include "ProjectTreeView.h"
+#include "ReceptorDialog.h"
+#include "ReceptorElevationEditor.h"
+//#include "RibbonDefinition.h"
+#include "RunModelDialog.h"
+#include "ScenarioProperties.h"
+#include "SourceGroupProperties.h"
+#include "SourceTable.h"
+
+#include "core/Common.h"
+#include "core/Scenario.h"
+#include "core/Serialization.h"
+#include "core/SourceGroup.h"
+#include "core/Project.h"
+#include "core/Validation.h"
+
+#include "models/MeteorologyModel.h"
+#include "models/ProjectModel.h"
+
+#include "widgets/ProgressBar.h"
+
 #include <QAction>
 #include <QApplication>
 #include <QBoxLayout>
@@ -24,6 +51,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QMimeData>
 #include <QScreen>
 #include <QSettings>
 #include <QStatusBar>
@@ -36,15 +64,6 @@
 #include <QWinTaskbarButton>
 #include <QWinTaskbarProgress>
 #endif
-
-#include "AppStyle.h"
-#include "MainWindow.h"
-//#include "RibbonDefinition.h"
-#include "ReceptorDialog.h"
-#include "RunModelDialog.h"
-#include "core/Serialization.h"
-#include "core/Validation.h"
-#include "core/Common.h"
 
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/smart_ptr/make_shared_object.hpp>
@@ -80,7 +99,8 @@ MainWindow::MainWindow()
 
     createMenus();
     createActions();
-    createToolbar();
+    createToolBar();
+    createProgressBar();
     createPanels();
     setupConnections();
     setupLogging();
@@ -92,8 +112,6 @@ MainWindow::MainWindow()
     }
 
     projectModified = false;
-
-    statusBar()->showMessage(tr("Ready"), 3000);
 }
 
 void MainWindow::createMenus()
@@ -111,6 +129,7 @@ void MainWindow::createActions()
     const QIcon openIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_OpenFile));
     const QIcon saveIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_Save));
     const QIcon saveAsIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_SaveAs));
+    const QIcon windRoseIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_WindRose));
     const QIcon validateIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_Checkmark));
     const QIcon runIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_Run));
     const QIcon analyzeIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_Measure));
@@ -120,35 +139,38 @@ void MainWindow::createActions()
     const QIcon renameIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionRename));
     const QIcon addGroupIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionAddBuildQueue));
     const QIcon importDataIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionImport));
-    const QIcon editReceptorsIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionEditorZone));
+    const QIcon receptorEditorIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionEditorZone));
     const QIcon showTableIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionTable));
     const QIcon showInputFileIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionTextFile));
     const QIcon exportFluxFileIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_ActionExportFile));
 
     // File Menu actions
     newAct = new QAction(newIcon, tr("&New Scenario"), this);
-    newAct->setShortcuts(QKeySequence::New);
     newAct->setStatusTip(tr("Create a new scenario"));
+    newAct->setShortcuts(QKeySequence::New);
 
     openAct = new QAction(openIcon, tr("&Open Project..."), this);
-    openAct->setShortcuts(QKeySequence::Open);
     openAct->setStatusTip(tr("Open an existing project"));
+    openAct->setShortcuts(QKeySequence::Open);
 
     saveAct = new QAction(saveIcon, tr("&Save Project"), this);
-    saveAct->setShortcuts(QKeySequence::Save);
     saveAct->setStatusTip(tr("Save the current project"));
+    saveAct->setShortcuts(QKeySequence::Save);
 
     saveAsAct = new QAction(saveAsIcon, tr("&Save Project As..."), this);
-    saveAsAct->setShortcuts(QKeySequence::SaveAs);
     saveAsAct->setStatusTip(tr("Save the current project to a new file"));
+    saveAsAct->setShortcuts(QKeySequence::SaveAs);
 
     closeAct = new QAction(tr("Close Project"), this);
     closeAct->setStatusTip(tr("Close the current project"));
 
     exitAct = new QAction(tr("E&xit"), this);
-    //exitAct->setShortcuts(QKeySequence::Quit);
-    exitAct->setShortcut(QKeySequence(Qt::ALT + Qt::Key_F4));
     exitAct->setStatusTip(tr("Exit the application"));
+#ifdef Q_OS_WIN
+    exitAct->setShortcut(QKeySequence(Qt::ALT + Qt::Key_F4));
+#else
+    exitAct->setShortcuts(QKeySequence::Quit);
+#endif
 
     fileMenu->addAction(newAct);
     fileMenu->addAction(openAct);
@@ -157,6 +179,10 @@ void MainWindow::createActions()
     fileMenu->addSeparator();
     fileMenu->addAction(closeAct);
     fileMenu->addAction(exitAct);
+
+    // Project actions
+    meteorologyAct = new QAction(windRoseIcon, tr("Meteorology"), this);
+    meteorologyAct->setStatusTip(tr("Edit meteorological data"));
 
     // Tools Menu actions
     validateAct = new QAction(validateIcon, tr("Check Project"), this);
@@ -197,6 +223,7 @@ void MainWindow::createActions()
     scenarioAddSourceGroupAct = new QAction(addGroupIcon, tr("Add Source Group"), this);
     scenarioImportValidationAct = new QAction(importDataIcon, tr("Import Retrospective Data..."), this);
     scenarioPropertiesAct = new QAction(tr("Properties..."), this);
+
     scenarioInputFileAct = new QAction(showInputFileIcon, tr("Show Input File"), this);
     scenarioFluxFileAct = new QAction(exportFluxFileIcon, tr("Export Flux File..."), this);
 
@@ -205,11 +232,13 @@ void MainWindow::createActions()
     sourceGroupRenameAct = new QAction(renameIcon, tr("Rename"), this);
     sourceGroupRemoveAct = new QAction(tr("Remove"), this);
     sourceGroupPropertiesAct = new QAction(tr("Properties..."), this);
-    editReceptorsAct = new QAction(editReceptorsIcon, tr("Edit Receptors..."), this);
-    sourceTableAct = new QAction(showTableIcon, tr("Show Source Table"), this);
+
+    receptorEditorAct = new QAction(receptorEditorIcon, tr("Edit Receptors..."), this);
+    elevationEditorAct = new QAction(tr("Edit Elevations..."), this);
+    sourceTableAct = new QAction(showTableIcon, tr("Show Source Table"), this); 
 }
 
-void MainWindow::createToolbar()
+void MainWindow::createToolBar()
 {
     toolbar = addToolBar(tr("Standard"));
     toolbar->setObjectName("MainToolbar");
@@ -217,6 +246,7 @@ void MainWindow::createToolbar()
     toolbar->addAction(openAct);
     toolbar->addAction(saveAct);
     toolbar->addSeparator();
+    toolbar->addAction(meteorologyAct);
     toolbar->addAction(validateAct);
     toolbar->addAction(runAct);
     toolbar->addAction(analyzeAct);
@@ -225,6 +255,17 @@ void MainWindow::createToolbar()
     //toolbar->setContentsMargins(0, 0, 0, 0);
     //toolbar->layout()->setSpacing(0);
     //toolbar->layout()->setContentsMargins(0, 0, 0, 20);
+}
+
+void MainWindow::createProgressBar()
+{
+    QFontMetrics fm = fontMetrics();
+
+    progressBar = new ProgressBar;
+    progressBar->setFixedWidth(fm.averageCharWidth() * 30);
+    progressBar->setAutoHide(true);
+
+    statusBar()->addPermanentWidget(progressBar, 0);
 }
 
 void MainWindow::createPanels()
@@ -309,7 +350,6 @@ void MainWindow::setupConnections()
     connect(this, &MainWindow::scenarioUpdated, this, &MainWindow::onScenarioUpdated);
     connect(this, &MainWindow::sourceGroupUpdated, this, &MainWindow::onSourceGroupUpdated);
 
-
     // File Menu
     connect(newAct, &QAction::triggered, this, &MainWindow::newScenario);
     connect(openAct, &QAction::triggered, this, &MainWindow::openProject);
@@ -319,9 +359,10 @@ void MainWindow::setupConnections()
     connect(exitAct, &QAction::triggered, this, &MainWindow::exitApplication);
 
     // Model Menu
+    connect(meteorologyAct, &QAction::triggered, this, &MainWindow::showMeteorologyEditor);
     connect(validateAct, &QAction::triggered, this, &MainWindow::validate);
     connect(runAct, &QAction::triggered, this, &MainWindow::runModel);
-    connect(analyzeAct, &QAction::triggered, this, &MainWindow::analyzeOutput);
+    connect(analyzeAct, &QAction::triggered, this, &MainWindow::showAnalysisWindow);
 
     // Help Menu
     connect(helpAct, &QAction::triggered, this, &MainWindow::showHelp);
@@ -343,7 +384,7 @@ void MainWindow::setupLogging()
     lwValidation->setColumn(0, "Message", "", 0);
     lwValidation->setColumn(1, "Source", "Source", avgCharWidth * 50);
     lwValidation->setFilterKeyColumn(1);
-    lwValidation->setFilterValues(QStringList{"Distribution", "Geometry", "Import", "Export", "Model", "Analysis", "General"});
+    lwValidation->setFilterValues(QStringList{"Distribution", "Geometry", "Projection", "Import", "Export", "Meteorology", "Model", "Analysis", "General"});
 
     lwOutput->setColumn(0, "Message", "", 0);
     lwOutput->setColumn(1, "PW", "Pathway", maxCharWidth * 2);
@@ -359,7 +400,9 @@ void MainWindow::setupLogging()
     auto core = boost::log::core::get();
 
     // Set a global severity filter.
-#ifndef SOFEA_DEBUG
+#ifdef SOFEA_DEBUG
+    core->set_filter(boost::log::trivial::severity >= boost::log::trivial::trace);
+#else
     core->set_filter(boost::log::trivial::severity >= boost::log::trivial::info);
 #endif
 
@@ -443,7 +486,7 @@ void MainWindow::onCommandActivated(int commandId)
         runModel();
         break;
     case IDC_ANALYZE:
-        analyzeOutput();
+        showAnalysisWindow();
         break;
     case IDC_INPUTFILE:
     case IDC_SOURCETABLE:
@@ -557,7 +600,8 @@ void MainWindow::contextMenuRequested(const QPoint& pos)
         contextMenu.addSeparator();
         contextMenu.addAction(scenarioPropertiesAct);
         contextMenu.addSeparator();
-        contextMenu.addAction(editReceptorsAct);
+        contextMenu.addAction(receptorEditorAct);
+        contextMenu.addAction(elevationEditorAct);
         contextMenu.addSeparator();
         contextMenu.addAction(scenarioInputFileAct);
 
@@ -580,8 +624,11 @@ void MainWindow::contextMenuRequested(const QPoint& pos)
         else if (selectedItem && selectedItem == scenarioPropertiesAct) {
             showScenarioProperties(s);
         }
-        else if (selectedItem && selectedItem == editReceptorsAct) {
+        else if (selectedItem && selectedItem == receptorEditorAct) {
             showReceptorEditor(s);
+        }
+        else if (selectedItem && selectedItem == elevationEditorAct) {
+            showElevationEditor(s);
         }
         else if (selectedItem && selectedItem == scenarioInputFileAct) {
             showInputViewer(s);
@@ -685,22 +732,27 @@ void MainWindow::openProjectFile(const QString& openFile)
     // Close current project.
     closeProject();
 
-    // Read the scenario data.
-    std::string ifile = openFile.toStdString();
+    // Update the current working directory.
+    QString projectDir = fi.canonicalPath();
+    QString prevCurrentPath = QDir::currentPath();
+    QDir::setCurrent(projectDir);
+
+    // Read the input archive.
+    std::ifstream ifs(openFile.toStdString());
 
     try {
-        std::ifstream is(ifile);
         // Simple check for JSON: first character is '{'
-        if (is.peek() == 0x7b) {
-            cereal::JSONInputArchive ia(is);
+        if (ifs.peek() == 0x7b) {
+            cereal::JSONInputArchive ia(ifs);
             ia(scenarios);
         }
         else {
-            //cereal::PortableBinaryInputArchive ia(is);
+            //cereal::PortableBinaryInputArchive ia(ifs);
             //ia(scenarios);
         }
     } catch (const cereal::Exception &e) {
         QMessageBox::critical(this, "Parse Error", QString::fromLocal8Bit(e.what()));
+        QDir::setCurrent(prevCurrentPath);
         return;
     }
 
@@ -713,10 +765,8 @@ void MainWindow::openProjectFile(const QString& openFile)
         }
     }
 
-    // Update project file and working directory.
+    // Update project file and default directory.
     projectFile = openFile;
-    QString projectDir = fi.canonicalPath();
-
     QSettings settings;
     settings.setValue("DefaultDirectory", projectDir);
 
@@ -734,10 +784,9 @@ void MainWindow::saveProject()
     if (projectFile.isEmpty() || sender == saveAsAct) {
         QSettings settings;
         QString saveFile;
-        QString currentDir = settings.value("DefaultDirectory", QDir::currentPath()).toString();
         saveFile = QFileDialog::getSaveFileName(this,
                                                 tr("Save Project"),
-                                                currentDir,
+                                                QDir::currentPath(),
                                                 tr("SOFEA Project (*.sofea)"));
 
         if (saveFile.isEmpty())
@@ -752,23 +801,25 @@ void MainWindow::saveProjectFile(const QString& saveFile)
     if (scenarios.size() == 0)
         return;
 
-    // Write the scenario data.
-    std::string ofile = saveFile.toStdString();
+    // Update the current working directory.
+    QFileInfo fi(saveFile);
+    QString projectDir = fi.canonicalPath();
+    QString prevCurrentPath = QDir::currentPath();
+    QDir::setCurrent(projectDir);
+
+    // Create the output archive.
+    std::ofstream ofs(saveFile.toStdString());
 
     try {
-        std::ofstream os(ofile);
-        cereal::JSONOutputArchive oa(os, cereal::JSONOutputArchive::Options::NoIndent());
+        cereal::JSONOutputArchive oa(ofs, cereal::JSONOutputArchive::Options::NoIndent());
         oa(scenarios);
     } catch (const cereal::Exception &e) {
         QMessageBox::critical(this, "Parse Error", QString::fromLocal8Bit(e.what()));
+        QDir::setCurrent(prevCurrentPath);
         return;
     }
 
-    // Update project file and working directory.
-    projectFile = saveFile;
-    QFileInfo fi(saveFile);
-    QString projectDir = fi.canonicalPath();
-
+    // Update default directory.
     QSettings settings;
     settings.setValue("DefaultDirectory", projectDir);
 
@@ -926,6 +977,9 @@ void MainWindow::addSourceGroupToTree(SourceGroup *sg, Scenario *s)
 
 void MainWindow::removeScenario(Scenario *s)
 {
+    if (runModelDialog)
+        runModelDialog->removeScenario(s);
+
     // Remove scenario tabs.
     if (scenarioToInputViewer.count(s) > 0) {
         InputViewer *viewer = scenarioToInputViewer[s];
@@ -1039,11 +1093,64 @@ void MainWindow::showReceptorEditor(Scenario *s)
     }
 }
 
+void MainWindow::showElevationEditor(Scenario *s)
+{
+    using namespace Projection;
+
+    if (s->receptors.empty() && s->sourceGroups.empty()) {
+        QMessageBox::critical(this, "Error", "No receptors or source groups have been defined.");
+        return;
+    }
+
+    if (s->conversionCode.empty() ||
+        s->hUnitsCode.empty() ||
+        s->hDatumCode.empty() ||
+        s->vUnitsCode.empty() ||
+        s->vDatumCode.empty()) {
+        QMessageBox::critical(this, "Error", "Projection is not set.");
+        return;
+    }
+
+    auto conv = createConversion(s->conversionCode);
+    auto gcrs = createGeodeticCRS(s->hDatumCode);
+    auto pcrs = createProjectedCRS(gcrs, conv, s->hUnitsCode);
+    auto vcrs = createVerticalCRS(s->vDatumCode, s->vUnitsCode);
+    auto ccrs = createCompoundCRS(pcrs, vcrs);
+    auto area = getObjectAreaOfUse(conv);
+    auto pipeline = Pipeline(ccrs, gcrs, area);
+
+    if (!pipeline.valid()) {
+        QMessageBox::critical(this, "Error", "Invalid projection.");
+        return;
+    }
+
+    ReceptorElevationEditor *editor = new ReceptorElevationEditor;
+    editor->setCompoundCRS(ccrs);
+    editor->setAreaOfUse(area);
+    editor->setReceptors(s->receptors);
+
+    editor->show();
+}
+
+void MainWindow::showMeteorologyEditor()
+{
+    if (meteorologyEditor == nullptr) {
+        MeteorologyModel *model = new MeteorologyModel(this);
+        meteorologyEditor = new MeteorologyEditor(model, this);
+    }
+
+    int index = centralTabWidget->indexOf(meteorologyEditor);
+    if (index >= 0) {
+        centralTabWidget->setCurrentIndex(index);
+    }
+    else {
+        centralTabWidget->addTab(meteorologyEditor, tr("Meteorology"));
+        centralTabWidget->setCurrentIndex(centralTabWidget->count() - 1);
+    }
+}
+
 void MainWindow::showInputViewer(Scenario *s)
 {
-    // If the tab already exists, refresh and set current.
-    // Otherwise, create a new tab.
-
     if (scenarioToInputViewer.count(s) > 0) {
         InputViewer *viewer = scenarioToInputViewer[s];
         viewer->refresh();
@@ -1066,9 +1173,6 @@ void MainWindow::showInputViewer(Scenario *s)
 
 void MainWindow::showSourceTable(SourceGroup *sg)
 {
-    // If the tab already exists, refresh and set current.
-    // Otherwise, create a new tab.
-
     if (sourceGroupToSourceTable.count(sg) > 0) {
         SourceTable *table = sourceGroupToSourceTable[sg];
         int index = centralTabWidget->indexOf(table);
@@ -1096,10 +1200,9 @@ void MainWindow::exportFluxFile(Scenario *s)
 {
     QSettings settings;
     QString saveFile;
-    QString currentDir = settings.value("DefaultDirectory", QDir::currentPath()).toString();
     saveFile = QFileDialog::getSaveFileName(this,
                                             tr("Export Flux File"),
-                                            currentDir,
+                                            QDir::currentPath(),
                                             tr("Flux File (*.dat)"));
 
     if (!saveFile.isEmpty()) {
@@ -1134,6 +1237,9 @@ void MainWindow::deleteTab(int index)
         widget->deleteLater();
         return;
     }
+
+    centralTabWidget->removeTab(index);
+    return;
 }
 
 void MainWindow::validate()
@@ -1148,34 +1254,24 @@ void MainWindow::validate()
 
 void MainWindow::runModel()
 {
-    RunModelDialog *dialog = new RunModelDialog(this);
+    if (runModelDialog == nullptr)
+        runModelDialog = new RunModelDialog(this);
 
-    QSettings settings;
-    QString defaultDir = settings.value("DefaultDirectory", QDir::currentPath()).toString();
-    dialog->setWorkingDirectory(defaultDir);
+    for (Scenario &s : scenarios)
+        runModelDialog->addScenario(&s);
 
-    for (Scenario &s : scenarios) {
-        dialog->addScenario(&s);
-    }
-
-#ifdef Q_OS_WIN
-    if (taskbarProgress) {
-        connect(dialog, &RunModelDialog::progressValueChanged,
-                taskbarProgress, &QWinTaskbarProgress::setValue);
-        connect(dialog, &RunModelDialog::progressVisibilityChanged,
-                taskbarProgress, &QWinTaskbarProgress::setVisible);
-    }
-#endif
+    connect(runModelDialog, &RunModelDialog::progressValueChanged, progressBar, &ProgressBar::setValue);
 
     dwOutput->raise();
-    dialog->exec();
+    runModelDialog->show();
+    runModelDialog->raise();
+    runModelDialog->activateWindow();
 }
 
-void MainWindow::analyzeOutput()
+void MainWindow::showAnalysisWindow()
 {
-    if (analysisWindow == nullptr) {
+    if (analysisWindow == nullptr)
         analysisWindow = new AnalysisWindow(this);
-    }
 
     analysisWindow->show();
 
@@ -1244,6 +1340,7 @@ void MainWindow::showEvent(QShowEvent *event)
     taskbarButton = new QWinTaskbarButton(this);
     taskbarButton->setWindow(windowHandle());
     taskbarProgress = taskbarButton->progress();
+    progressBar->setTaskbarProgress(taskbarProgress);
 #endif
 
     QMainWindow::showEvent(event);

@@ -106,9 +106,7 @@ GeometryOp::GeometryOp()
 
 double GeometryOp::area(QPolygonF const& polygon)
 {
-    // 1 square meter = 0.0001 hectares
-    double area = boost::geometry::area(polygon) * 0.0001;
-    return area;
+    return boost::geometry::area(polygon);
 }
 
 bool GeometryOp::is_simple(QPolygonF const& polygon)
@@ -134,6 +132,23 @@ bool GeometryOp::correct(QPolygonF &polygon)
     else {
         return true;
     }
+}
+
+QPolygonF GeometryOp::rotate(const QPolygonF& polygon, const QPointF& pivot, double angle)
+{
+    QPolygonF result;
+
+    bg::strategy::transform::translate_transformer<double, 2, 2> translate1(-pivot.x(), -pivot.y());
+    bg::strategy::transform::rotate_transformer<bg::degree, double, 2, 2> rotate(angle);
+    bg::strategy::transform::translate_transformer<double, 2, 2> translate2(pivot.x(), pivot.y());
+
+    QPolygonF res1, res2;
+
+    bg::transform(polygon, res1,   translate1); // move from pivot point to origin
+    bg::transform(res1,    res2,   rotate);     // rotate about the origin
+    bg::transform(res2,    result, translate2); // move from origin to pivot point
+
+    return result;
 }
 
 void GeometryOp::rotate(const QPolygonF& polygon, QPolygonF& result, const QPointF& pivot, double angle)

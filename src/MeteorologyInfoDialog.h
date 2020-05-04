@@ -13,8 +13,7 @@
 // limitations under the License.
 //
 
-#ifndef METFILEINFODIALOG_H
-#define METFILEINFODIALOG_H
+#pragma once
 
 #include <memory>
 #include <vector>
@@ -45,7 +44,7 @@ class ReadOnlyLineEdit;
 #include <qwt_polar_plot.h>
 #include <qwt_scale_map.h>
 
-#include "MetFileParser.h"
+#include "core/Meteorology.h"
 
 //-----------------------------------------------------------------------------
 // WindRoseSector
@@ -83,15 +82,15 @@ private:
 };
 
 //-----------------------------------------------------------------------------
-// MetFileInfoDialog
+// MeteorologyInfoDialog
 //-----------------------------------------------------------------------------
 
-class MetFileInfoDialog : public QDialog
+class MeteorologyInfoDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    MetFileInfoDialog(std::shared_ptr<SurfaceData> sd, QWidget *parent = nullptr);
+    MeteorologyInfoDialog(const Meteorology& m, QWidget *parent = nullptr);
 
 private:
     void init();
@@ -104,7 +103,7 @@ private slots:
     void onBinCountChanged(int value);
 
 private:
-    std::shared_ptr<SurfaceData> sd;
+    std::vector<SurfaceRecord> surfaceData;
 
     // Data Controls
     ctkRangeSlider *timeRangeSlider;
@@ -138,5 +137,3 @@ private:
     double wsMin = 0;
     double wsMax = 10;
 };
-
-#endif // METFILEINFODIALOG_H

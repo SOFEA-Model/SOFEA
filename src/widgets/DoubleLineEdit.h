@@ -15,8 +15,11 @@
 
 #pragma once
 
-#include <QLineEdit>
 #include <QDoubleValidator>
+#include <QLineEdit>
+#include <QPalette>
+
+class DoubleValidator;
 
 QT_BEGIN_NAMESPACE
 class QWidget;
@@ -24,6 +27,10 @@ QT_END_NAMESPACE
 
 class DoubleLineEdit : public QLineEdit
 {
+    Q_OBJECT
+
+    Q_PROPERTY(double value READ value WRITE setValue NOTIFY valueChanged USER true)
+
 public:
     explicit DoubleLineEdit(QWidget *parent = nullptr);
     DoubleLineEdit(double min, double max, int decimals, QWidget *parent = nullptr);
@@ -33,9 +40,20 @@ public:
     void setRange(double min, double max);
     void setDecimals(int prec);
     void setNotation(QDoubleValidator::Notation notation);
+    void setReadOnly(bool);
     void setValue(double value);
     double value() const;
-    
+    void setErrorPalette(bool);
+
+signals:
+    void valueChanged(double value);
+
+private slots:
+    void onTextChanged(const QString& text);
+    void updatePalette();
+
 private:
-    QDoubleValidator *validator;
+    DoubleValidator *validator_;
+    QPalette defaultPalette_;
+    QPalette errorPalette_;
 };

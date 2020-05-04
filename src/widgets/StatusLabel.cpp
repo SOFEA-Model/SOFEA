@@ -45,6 +45,11 @@ StatusLabel::StatusLabel(QWidget *parent)
     m_iconLabel->setMinimumSize(fm.ascent(), fm.lineSpacing());
     m_iconLabel->setContentsMargins(0, 0, 0, offset);
 
+    // Retain size when hidden.
+    QSizePolicy policy = sizePolicy();
+    policy.setRetainSizeWhenHidden(true);
+    setSizePolicy(policy);
+
     QHBoxLayout *mainLayout = new QHBoxLayout;
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->addWidget(m_iconLabel, 0, Qt::AlignLeft | Qt::AlignTop);
@@ -100,4 +105,9 @@ void StatusLabel::setStatusType(StatusType type)
 void StatusLabel::setText(const QString& text)
 {
     m_textLabel->setText(text);
+}
+
+QLabel * StatusLabel::label()
+{
+    return m_textLabel;
 }

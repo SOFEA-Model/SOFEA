@@ -21,62 +21,18 @@
 #include <string>
 #include <vector>
 
-#include <boost/date_time/gregorian/gregorian.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/ptr_container/ptr_vector.hpp>
-
-#include <QDateTime>
-#include <QDir>
-#include <QFileInfo>
-#include <QSettings>
-
 #include "core/FluxProfile.h"
-#include "core/SourceGroup.h"
+#include "core/Meteorology.h"
 #include "core/Receptor.h"
-#include "core/Projection.h"
-
-static std::string absolutePath(const std::string& filename)
-{
-    // If this is a relative path, assume current project directory.
-    // FIXME: store current directory in project.
-
-    QString path = QString::fromStdString(filename);
-    QFileInfo fi(path);
-    if (!path.isEmpty() && fi.isRelative()) {
-        QSettings settings;
-        QDir base(settings.value("DefaultDirectory", QDir::currentPath()).toString());
-        path = base.absoluteFilePath(path);
-    }
-
-    return path.toStdString();
-}
-
-struct SurfaceInfo
-{
-    // Header
-    std::string mplat;
-    std::string mplon;
-    std::string ualoc;
-    std::string sfloc;
-    std::string osloc;
-    std::string versno;
-
-    // Derived
-    int nrec = 0;
-    int ncalm = 0;
-    int nmiss = 0;
-
-    boost::posix_time::ptime tmin = boost::posix_time::ptime();
-    boost::posix_time::ptime tmax = boost::posix_time::ptime();
-    std::vector<std::string> intervals;
-};
+#include "core/SourceGroup.h"
 
 struct Scenario
 {
     Scenario();
     Scenario(const Scenario& rhs);
 
-    void resetSurfaceFileInfo();
+    double areaToHectares(double area) const;
+    //void resetSurfaceFileInfo();
     std::string writeInput() const;
     void writeInputFile(const std::string& path) const;
     void writeFluxFile(const std::string& path) const;
@@ -90,17 +46,7 @@ struct Scenario
     double decayCoefficient;
 
     // Meteorological Data
-    std::string surfaceFile;
-    std::string upperAirFile;
-    double anemometerHeight;
-    double windRotation;
-
-    // Surface File Info
-    SurfaceInfo sfInfo;
-    QDateTime minTime;
-    QDateTime maxTime;
-    std::string surfaceId;
-    std::string upperAirId;
+    Meteorology meteorology;
 
     // AERMOD Non-DFAULT
     bool aermodFlat;                        // assume flat terrain (FLAT)
@@ -138,7 +84,8 @@ struct Scenario
     std::vector<SourceGroupPtr> sourceGroups;
 
     // Coordinate System
-    Projection::Area domain;
+    double xShift = 0;
+    double yShift = 0;
     std::string conversionCode;
     std::string hUnitsCode;
     std::string hDatumCode;

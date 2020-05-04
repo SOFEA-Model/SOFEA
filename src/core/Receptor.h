@@ -23,6 +23,7 @@
 
 #include <QPointF>
 #include <QPolygonF>
+#include <QRectF>
 #include <QColor>
 
 #include <boost/numeric/ublas/matrix_sparse.hpp>
@@ -68,6 +69,8 @@ struct ReceptorNodeGroup
     bool removeNodes(int start, int count);
     ReceptorNode getNode(int index) const;
     std::size_t nodeCount() const;
+    QPolygonF points() const;
+    QRectF boundingRect() const;
     std::string format() const;
 };
 
@@ -100,6 +103,7 @@ struct ReceptorRingGroup
     ReceptorNode getNode(int index) const;
     std::size_t nodeCount() const;
     QPolygonF points() const;
+    QRectF boundingRect() const;
     std::string format() const;
 };
 
@@ -140,6 +144,7 @@ struct ReceptorGridGroup
     ReceptorNode getNode(int index) const;
     std::size_t nodeCount() const;
     QPolygonF points() const;
+    QRectF boundingRect() const;
     std::string format() const;
 };
 
@@ -158,7 +163,7 @@ enum class ReceptorGroupType {
 
 
 
-// *** Depreciated, For Serialization Only ***
+// *** DEPRECIATED, FOR SERIALIZATION ONLY ***
 struct ReceptorRing
 {
     std::string arcid; // length 8
@@ -175,7 +180,7 @@ struct ReceptorRing
     }
 };
 
-// *** Depreciated, For Serialization Only ***
+// *** DEPRECIATED, FOR SERIALIZATION ONLY ***
 struct ReceptorGrid
 {
     std::string netid; // length 8

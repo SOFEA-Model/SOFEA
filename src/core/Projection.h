@@ -20,107 +20,134 @@
 #include <vector>
 
 // proj.h opaque pointers
+
 struct PJconsts;
-struct PJ_AREA;
+typedef struct PJconsts PJ;
+
 struct projCtx_t;
+typedef struct projCtx_t PJ_CONTEXT;
 
 namespace Projection {
 
-enum class Type {
-    Local = 1,
-    SPCS83,
-    UTM
+struct GeographicExtent {
+    double westLongitude = -180.0;
+    double southLatitude = -90.0;
+    double eastLongitude = 180.0;
+    double northLatitude = 90.0;
 };
 
-enum class HDatum {
-    Local = 1,
-    NAD83,
-    WGS84
+struct ProjectedExtent {
+    double xmin = 0;
+    double ymin = 0;
+    double xmax = 0;
+    double ymax = 0;
 };
 
-enum class Units {
-    Meter,
-    InternationalFoot,
-    USSurveyFoot
-};
-
-struct Area
+struct UnitOfMeasure
 {
-    double xmin = -180.0;
-    double ymin = -90.0;
-    double xmax = 180.0;
-    double ymax = 90.0;
+    std::string name;
+    double factor = 1;
+    std::string category;
+};
+
+struct Grid {
+    std::string shortName;
+    std::string fullName;
+    std::string packageName;
+    std::string url;
+    bool directDownload;
+    bool openLicense;
+    bool available;
 };
 
 //-----------------------------------------------------------------------------
-// Projection::Context
+// Context Functions
 //-----------------------------------------------------------------------------
 
-struct Context
+void setSearchPath(const std::string& path) noexcept;
+
+void setDatabasePath(const std::string& path, PJ_CONTEXT *ctx = nullptr) noexcept;
+
+std::string databasePath(PJ_CONTEXT *ctx = nullptr) noexcept;
+
+void setCacheDirectory(const std::string& path, PJ_CONTEXT *ctx = nullptr) noexcept;
+
+std::string cacheDirectory(PJ_CONTEXT *ctx = nullptr) noexcept;
+
+//-----------------------------------------------------------------------------
+// Object Inquiry Functions
+//-----------------------------------------------------------------------------
+
+std::string getObjectTypeString(std::shared_ptr<PJ> object);
+
+std::string getObjectName(std::shared_ptr<PJ> object);
+
+std::string getObjectAuthName(std::shared_ptr<PJ> object);
+
+std::string getObjectCode(std::shared_ptr<PJ> object);
+
+GeographicExtent getObjectAreaOfUse(std::shared_ptr<PJ> object) noexcept;
+
+std::shared_ptr<PJ> createObjectFromWKT(const std::string& wkt) noexcept;
+
+std::shared_ptr<PJ> createObjectFromString(const std::string& definition) noexcept;
+
+//-----------------------------------------------------------------------------
+// CRS and Coordinate Operation Functions
+//-----------------------------------------------------------------------------
+
+UnitOfMeasure createUnitOfMeasure(const std::string& code);
+
+std::shared_ptr<PJ> createGeodeticCRS(const std::string& datumCode) noexcept;
+
+std::shared_ptr<PJ> createConversion(const std::string& conversionCode) noexcept;
+
+std::shared_ptr<PJ> createProjectedCRS(std::shared_ptr<PJ> geodeticCRS,
+                                       std::shared_ptr<PJ> conversion,
+                                       const std::string& unitCode);
+
+std::shared_ptr<PJ> createVerticalCRS(const std::string& datumCode,
+                                      const std::string& unitCode,
+                                      const std::string& geoidName = {});
+
+std::shared_ptr<PJ> createCompoundCRS(std::shared_ptr<PJ> horizontalCRS,
+                                      std::shared_ptr<PJ> verticalCRS) noexcept;
+
+std::shared_ptr<PJ> getComponentCRS(std::shared_ptr<PJ> compoundCRS,
+                                    int index) noexcept;
+
+std::shared_ptr<PJ> getGeodeticCRS(std::shared_ptr<PJ> crs) noexcept;
+
+std::shared_ptr<PJ> createPipeline(std::shared_ptr<PJ> from,
+                                   std::shared_ptr<PJ> to,
+                                   const GeographicExtent& bbox = {}) noexcept;
+
+std::string exportToPROJString(std::shared_ptr<PJ> object);
+
+std::string exportToWKT(std::shared_ptr<PJ> object);
+
+std::string exportToJSON(std::shared_ptr<PJ> object);
+
+//-----------------------------------------------------------------------------
+// Pipeline
+//-----------------------------------------------------------------------------
+
+struct Pipeline
 {
-    static projCtx_t* instance();
-    static void setDatabasePath(const std::string& path);
-    static std::string databasePath();
-    static void setCacheDirectory(const std::string& path);
-    static std::string cacheDirectory();
+    Pipeline() noexcept {}
+    Pipeline(std::shared_ptr<PJ> from,
+             std::shared_ptr<PJ> to,
+             const GeographicExtent& bbox = {}) noexcept;
 
-    Context(const Context&) = delete;
-    Context& operator=(const Context&) = delete;
-    Context(Context&&) = delete;
-    Context& operator=(Context&&) = delete;
-
-private:
-    Context() = default;
-    ~Context() = default;
-};
-
-//-----------------------------------------------------------------------------
-// Projection::Generic
-//-----------------------------------------------------------------------------
-
-struct Generic
-{
-    Generic(const std::string& conversionCode,
-            const std::string& hDatumCode, const std::string& hUnitsCode,
-            const std::string& vDatumCode, const std::string& vUnitsCode);
-
-    bool isValid() const;
-    const std::string& conversionCode() const;
-    const std::string& hDatumCode() const;
-    const std::string& hUnitsCode() const;
-    const std::string& vDatumCode() const;
-    const std::string& vUnitsCode() const;
-    const std::string& geodeticCRS() const;
-    const std::string& compoundCRS() const;
-
-private:
-    bool valid_ = false;
-    const std::string conversionCode_;
-    const std::string hDatumCode_;
-    const std::string hUnitsCode_;
-    const std::string vDatumCode_;
-    const std::string vUnitsCode_;
-    std::string compoundCRS_;
-    std::string geodeticCRS_;
-};
-
-//-----------------------------------------------------------------------------
-// Projection::Transform
-//-----------------------------------------------------------------------------
-
-struct Transform
-{
-    Transform();
-    Transform(const std::string& from, const std::string& to, const Area& bbox = Area{});
-    bool isValid() const;
-    int forward(double lon, double lat, double elev, double& x, double& y, double& z) const;
-    int inverse(double x, double y, double z, double& lon, double& lat, double& elev) const;
+    bool valid() noexcept;
+    std::vector<Grid> grids();
+    double accuracy() noexcept;
+    int forward(double x0, double y0, double z0, double& x1, double& y1, double& z1) const noexcept;
+    int inverse(double x0, double y0, double z0, double& x1, double& y1, double& z1) const noexcept;
     static std::string errorString(int err);
 
 private:
-    bool valid_ = false;
-    std::shared_ptr<PJ_AREA> area_;
-    std::shared_ptr<PJconsts> pdata_;
+    std::shared_ptr<PJ> coordop_;
 };
 
 } // namespace Projection

@@ -125,10 +125,9 @@ void BufferZoneEditor::onRemoveClicked()
 void BufferZoneEditor::onImportClicked()
 {
     QSettings settings;
-    QString currentDir = settings.value("DefaultDirectory", QDir::currentPath()).toString();
     QString filename = QFileDialog::getOpenFileName(this,
                        tr("Import Buffer Zone Table"),
-                       currentDir,
+                       QDir::currentPath(),
                        tr("Buffer Zone Table (*.csv *.txt)"));
 
     if (filename.isEmpty())

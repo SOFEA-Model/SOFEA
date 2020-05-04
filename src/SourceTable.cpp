@@ -27,18 +27,18 @@
 #include <algorithm>
 
 #include "AppStyle.h"
-
-#include "SourceEditor.h"
-#include "SourceModel.h"
+#include "SourceGeometryEditor.h"
 #include "SourceTable.h"
-#include "FluxProfileModel.h"
 #include "FluxProfilePlot.h"
+#include "core/Common.h"
 #include "core/Projection.h"
-#include "delegate/ComboBoxDelegate.h"
-#include "delegate/DateTimeEditDelegate.h"
-#include "delegate/DoubleItemDelegate.h"
-#include "delegate/DoubleSpinBoxDelegate.h"
-#include "delegate/SpinBoxDelegate.h"
+#include "delegates/ComboBoxDelegate.h"
+#include "delegates/DateTimeEditDelegate.h"
+#include "delegates/DoubleItemDelegate.h"
+#include "delegates/DoubleSpinBoxDelegate.h"
+#include "delegates/SpinBoxDelegate.h"
+#include "models/FluxProfileModel.h"
+#include "models/SourceModel.h"
 #include "widgets/FilterHeaderView.h"
 #include "widgets/FilterProxyModel.h"
 #include "widgets/StandardTableView.h"
@@ -101,14 +101,26 @@ protected:
             painter->setBrush(brush);
 
             switch (sourceType) {
+            case SourceType::POINT:
+            case SourceType::POINTCAP:
+            case SourceType::POINTHOR:
+            case SourceType::VOLUME:
+                break;
             case SourceType::AREA:
                 painter->drawRect(QRectF{0.1875, 0.1875, 0.625, 0.625});
+                break;
+            case SourceType::AREAPOLY:
+                painter->drawPolygon(polygon, sizeof polygon / sizeof polygon[0], Qt::WindingFill);
                 break;
             case SourceType::AREACIRC:
                 painter->drawEllipse(QPointF{0.5, 0.5}, 0.3125, 0.3125);
                 break;
-            case SourceType::AREAPOLY:
-                painter->drawPolygon(polygon, sizeof polygon / sizeof polygon[0], Qt::WindingFill);
+            case SourceType::OPENPIT:
+            case SourceType::LINE:
+            case SourceType::BUOYLINE:
+            case SourceType::RLINE:
+            case SourceType::RLINEXT:
+            default:
                 break;
             }
 
@@ -120,9 +132,11 @@ protected:
 SourceTable::SourceTable(Scenario *s, SourceGroup *sg, QWidget *parent)
     : QWidget(parent), sPtr(s), sgPtr(sg)
 {
+    using namespace sofea::constants;
+
     model = new SourceModel(s, sgPtr, this);
-    sourceEditor = new SourceEditor;
-    sourceEditor->setModel(model);
+    geometryEditor = new SourceGeometryEditor;
+    geometryEditor->setModel(model);
     proxyModel = new FilterProxyModel(this);
     proxyModel->setSourceModel(model);
 
@@ -145,16 +159,16 @@ SourceTable::SourceTable(Scenario *s, SourceGroup *sg, QWidget *parent)
     verticalHeader->setVisible(true);
 
     // NOTE: Format should be the same as ReceptorDialog and SourceGroupPages
-    table->setItemDelegateForColumn(SourceModel::Column::X, new DoubleItemDelegate(-10000000, 10000000, 2, true));
-    table->setItemDelegateForColumn(SourceModel::Column::Y, new DoubleItemDelegate(-10000000, 10000000, 2, true));
-    table->setItemDelegateForColumn(SourceModel::Column::Z, new DoubleItemDelegate(0, 9999.99, 2, true));
+    table->setItemDelegateForColumn(SourceModel::Column::X, new DoubleItemDelegate(MIN_X_COORDINATE, MAX_X_COORDINATE, X_COORDINATE_PRECISION, true));
+    table->setItemDelegateForColumn(SourceModel::Column::Y, new DoubleItemDelegate(MIN_Y_COORDINATE, MAX_Y_COORDINATE, Y_COORDINATE_PRECISION, true));
+    table->setItemDelegateForColumn(SourceModel::Column::Z, new DoubleItemDelegate(MIN_Z_COORDINATE, MAX_Z_COORDINATE, Z_COORDINATE_PRECISION, true));
     table->setItemDelegateForColumn(SourceModel::Column::Longitude, new DoubleItemDelegate(-180.0, 180.0, 5, true));
     table->setItemDelegateForColumn(SourceModel::Column::Latitude, new DoubleItemDelegate(-90.0, 90.0, 5, true));
     table->setItemDelegateForColumn(SourceModel::Column::Start, new DateTimeEditDelegate);
     table->setItemDelegateForColumn(SourceModel::Column::AppRate, new DoubleSpinBoxDelegate(0, 10000000, 2, 1));
     table->setItemDelegateForColumn(SourceModel::Column::IncDepth, new DoubleSpinBoxDelegate(0, 100, 2, 1));
-    table->setItemDelegateForColumn(SourceModel::Column::XInit, new DoubleItemDelegate(0, 10000, 2, true));
-    table->setItemDelegateForColumn(SourceModel::Column::YInit, new DoubleItemDelegate(0, 10000, 2, true));
+    table->setItemDelegateForColumn(SourceModel::Column::XInit, new DoubleItemDelegate(MIN_X_DIMENSION, MAX_X_DIMENSION, X_DIMENSION_PRECISION, true));
+    table->setItemDelegateForColumn(SourceModel::Column::YInit, new DoubleItemDelegate(MIN_Y_DIMENSION, MAX_Y_DIMENSION, Y_DIMENSION_PRECISION, true));
 
     fpEditorModel = new FluxProfileModel(this);
     ComboBoxDelegate *fpEditorDelegate = new ComboBoxDelegate(fpEditorModel, 0);
@@ -218,7 +232,7 @@ SourceTable::SourceTable(Scenario *s, SourceGroup *sg, QWidget *parent)
     splitter->setContentsMargins(0, 0, 0, 0);
     splitter->setHandleWidth(0);
     splitter->addWidget(table);
-    splitter->addWidget(sourceEditor);
+    splitter->addWidget(geometryEditor);
     splitter->setStretchFactor(0, 1);
     splitter->setStretchFactor(1, 0);
 
@@ -236,16 +250,14 @@ double SourceTable::getTotalMass() const
     // Calculate the total mass with AF.
     double total = 0;
     for (const Source &s : sgPtr->sources)
-        total += sgPtr->appFactor * s.appRate * s.area();
+        total += sgPtr->appFactor * s.appRate * sPtr->areaToHectares(s.area());
 
     return total;
 }
 
 void SourceTable::refresh()
 {
-    model->setProjection(Projection::Generic(sPtr->conversionCode,
-        sPtr->hDatumCode, sPtr->hUnitsCode, sPtr->vDatumCode, sPtr->vUnitsCode));
-
+    model->setProjection(sPtr->conversionCode, sPtr->hDatumCode, sPtr->hUnitsCode);
     fpEditorModel->load(sPtr->fluxProfiles);
     massLabel->setText(QString(" Total applied mass with AF: %1 kg").arg(getTotalMass()));
 }
@@ -380,20 +392,10 @@ void SourceTable::contextMenuRequested(const QPoint &pos)
 
 void SourceTable::onSelectionChanged(const QItemSelection&, const QItemSelection&)
 {
-    QModelIndexList selectedRows = table->selectionModel()->selectedRows();
-
-    if (selectedRows.empty()) {
-        sourceEditor->setStatusText("No sources selected.");
-        return;
-    }
-    else if (selectedRows.size() > 1) {
-        sourceEditor->setStatusText("Multiple sources selected.");
-        return;
-    }
-
-    QModelIndex proxyIndex = selectedRows.front();
-    QModelIndex index = proxyModel->mapToSource(proxyIndex);
-    sourceEditor->setCurrentModelIndex(index);
+    QModelIndexList selectedRows;
+    for (const QModelIndex& proxyIndex : table->selectionModel()->selectedRows())
+        selectedRows.push_back(proxyModel->mapToSource(proxyIndex));
+    geometryEditor->setIndexes(selectedRows);
 }
 
 QColor SourceTable::colorFromIndex(const QModelIndex &index) const

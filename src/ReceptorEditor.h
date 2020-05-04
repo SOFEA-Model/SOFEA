@@ -28,6 +28,10 @@
 #include "models/ReceptorModel.h"
 #include "widgets/DoubleLineEdit.h"
 
+class QwtPlotItem;
+class ReceptorParamsEditor;
+struct ReceptorParamsVisitor;
+
 QT_BEGIN_NAMESPACE
 class QButtonGroup;
 class QComboBox;
@@ -41,10 +45,6 @@ class QSpinBox;
 class QStackedWidget;
 class QToolButton;
 QT_END_NAMESPACE
-
-class QwtPlotItem;
-class ReceptorParamsEditor;
-struct ReceptorParamsVisitor;
 
 class GroupEditor : public QWidget
 {

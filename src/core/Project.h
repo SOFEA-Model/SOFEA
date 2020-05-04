@@ -42,7 +42,7 @@ struct Project
     //double decayCoefficient;
 
     // Coordinate System
-    //Projection::Area domain;
+    //Projection::BoundingBox bbox;
     //std::string conversionCode;
     //std::string hUnitsCode;
     //std::string hDatumCode;

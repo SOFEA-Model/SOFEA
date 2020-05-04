@@ -82,8 +82,6 @@ struct histogram_type
 class analysis
 {
 public:
-    using progress_function_type = std::function<void(std::size_t)>;
-
     explicit analysis(const std::string& filepath);
 
     static std::string library_version();
@@ -100,7 +98,7 @@ public:
     std::size_t time_step_count() const;
     std::vector<time_step_t> time_steps() const;
 
-    void set_progress_function(const progress_function_type& fn);
+    void set_progress_function(const std::function<void(std::size_t)>& fn);
     void export_time_series(const options::general& opts, const options::tsexport& exopts) const;
     void calc_receptor_stats(const options::general& opts, const options::statistics& statopts, statistics_type& out) const;
     void calc_histogram(const options::general& opts, const options::histogram& histopts, histogram_type& out) const;
@@ -111,7 +109,7 @@ private:
     ncpp::file file_;
     ncpp::dataset ds_;
 
-    progress_function_type progressfn_;
+    std::function<void(std::size_t)> progressfn_;
 };
 
 } // namespace ncpost

@@ -89,14 +89,14 @@ void MonteCarloLineEdit::resetState()
     // Reset palette and validator.
 
     if (m_distributionSet) {
-        QPalette palette = this->palette();
-        palette.setColor(QPalette::Text, Qt::blue);
-        setPalette(palette);
+        QPalette p = this->palette();
+        p.setColor(QPalette::Text, Qt::blue);
+        setPalette(p);
         setValidator(0);
 
     } else {
-        QPalette palette = QApplication::palette(this);
-        setPalette(palette);
+        QPalette p = QLineEdit::palette();
+        setPalette(p);
         setValidator(m_validator);
     }
 }

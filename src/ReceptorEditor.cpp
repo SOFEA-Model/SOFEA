@@ -48,6 +48,7 @@
 
 #include "ReceptorEditor.h"
 #include "ReceptorVisitor.h"
+#include "core/Common.h"
 #include "core/SourceGroup.h"
 #include "widgets/GridLineFrame.h"
 #include "widgets/NavButton.h"
@@ -179,11 +180,13 @@ void GroupEditor::onAddClicked(bool)
 NodeEditor::NodeEditor(QWidget *parent)
     : QWidget(parent)
 {
-    leNodeX = new DoubleLineEdit(-10000000, 10000000, 2);
-    leNodeY = new DoubleLineEdit(-10000000, 10000000, 2);
-    leNodeZ = new DoubleLineEdit(0, 9999.99, 2);
-    leNodeZHill = new DoubleLineEdit(0, 9999.99, 2);
-    leNodeZFlag = new DoubleLineEdit(0, 9999.99, 2);
+    using namespace sofea::constants;
+
+    leNodeX = new DoubleLineEdit(MIN_X_COORDINATE, MAX_X_COORDINATE, X_COORDINATE_PRECISION);
+    leNodeY = new DoubleLineEdit(MIN_Y_COORDINATE, MAX_Y_COORDINATE, Y_COORDINATE_PRECISION);
+    leNodeZ = new DoubleLineEdit(MIN_Z_COORDINATE, MAX_Z_COORDINATE, Z_COORDINATE_PRECISION);
+    leNodeZHill = new DoubleLineEdit(MIN_Z_COORDINATE, MAX_Z_COORDINATE, Z_COORDINATE_PRECISION);
+    leNodeZFlag = new DoubleLineEdit(MIN_Z_COORDINATE, MAX_Z_COORDINATE, Z_COORDINATE_PRECISION);
 
     QHBoxLayout *xyzLayout = new QHBoxLayout;
     xyzLayout->setContentsMargins(0, 0, 0, 0);
@@ -242,8 +245,10 @@ RingParamsEditor::RingParamsEditor(QWidget *parent)
 GridParamsEditor::GridParamsEditor(QWidget *parent)
     : QWidget(parent)
 {
-    leGridXInit = new DoubleLineEdit(-10000000, 10000000, 2);
-    leGridYInit = new DoubleLineEdit(-10000000, 10000000, 2);
+    using namespace sofea::constants;
+
+    leGridXInit = new DoubleLineEdit(MIN_X_COORDINATE, MAX_X_COORDINATE, X_COORDINATE_PRECISION);
+    leGridYInit = new DoubleLineEdit(MIN_Y_COORDINATE, MAX_Y_COORDINATE, Y_COORDINATE_PRECISION);
     sbGridXCount = new QSpinBox;
     sbGridYCount = new QSpinBox;
     sbGridXDelta = new QDoubleSpinBox;
@@ -475,8 +480,8 @@ void ReceptorParamsEditor::resetControls()
     // Update editor controls.
     switch (currentState) {
     case StateFlag::EditDiscreteGroup:
-        nodeEditor->leNodeX->setEnabled(true);
-        nodeEditor->leNodeY->setEnabled(true);
+        nodeEditor->leNodeX->setReadOnly(false);
+        nodeEditor->leNodeY->setReadOnly(false);
         nodeEditor->leNodeX->setValue(0);
         nodeEditor->leNodeY->setValue(0);
         nodeEditor->leNodeZ->setValue(0);
@@ -495,14 +500,14 @@ void ReceptorParamsEditor::resetControls()
         break;
     case StateFlag::EditSingleDiscrete:
         // TODO: Allow editing all fields
-        nodeEditor->leNodeX->setEnabled(false);
-        nodeEditor->leNodeY->setEnabled(false);
+        nodeEditor->leNodeX->setReadOnly(true);
+        nodeEditor->leNodeY->setReadOnly(true);
         btnAdd->setVisible(false);
         btnRemove->setText(tr("Remove"));
         break;
     case StateFlag::EditMultipleDiscrete:
-        nodeEditor->leNodeX->setEnabled(false);
-        nodeEditor->leNodeY->setEnabled(false);
+        nodeEditor->leNodeX->setReadOnly(true);
+        nodeEditor->leNodeY->setReadOnly(true);
         btnAdd->setVisible(false);
         btnRemove->setText(tr("Remove"));
         break;
@@ -510,8 +515,8 @@ void ReceptorParamsEditor::resetControls()
     case StateFlag::EditSingleGrid:
     case StateFlag::EditMultipleRing:
     case StateFlag::EditMultipleGrid:
-        nodeEditor->leNodeX->setEnabled(false);
-        nodeEditor->leNodeY->setEnabled(false);
+        nodeEditor->leNodeX->setReadOnly(true);
+        nodeEditor->leNodeY->setReadOnly(true);
         btnAdd->setVisible(false);
         btnRemove->setVisible(false);
         break;
@@ -530,16 +535,20 @@ void ReceptorParamsEditor::resetControls()
     case StateFlag::EditSingleDiscrete:
     case StateFlag::EditSingleRing:
     case StateFlag::EditSingleGrid:
-        const QModelIndex ix = index.siblingAtColumn(ReceptorModel::Column::X);
-        const QModelIndex iy = index.siblingAtColumn(ReceptorModel::Column::Y);
-        const QModelIndex iz = index.siblingAtColumn(ReceptorModel::Column::Z);
-        const QModelIndex izhill = index.siblingAtColumn(ReceptorModel::Column::ZHill);
-        const QModelIndex izflag = index.siblingAtColumn(ReceptorModel::Column::ZFlag);
-        nodeEditor->leNodeX->setValue(model->data(ix, Qt::DisplayRole).toDouble());
-        nodeEditor->leNodeY->setValue(model->data(iy, Qt::DisplayRole).toDouble());
-        nodeEditor->leNodeZ->setValue(model->data(iz, Qt::DisplayRole).toDouble());
-        nodeEditor->leNodeZHill->setValue(model->data(izhill, Qt::DisplayRole).toDouble());
-        nodeEditor->leNodeZFlag->setValue(model->data(izflag, Qt::DisplayRole).toDouble());
+        {
+            const QModelIndex ix = index.siblingAtColumn(ReceptorModel::Column::X);
+            const QModelIndex iy = index.siblingAtColumn(ReceptorModel::Column::Y);
+            const QModelIndex iz = index.siblingAtColumn(ReceptorModel::Column::Z);
+            const QModelIndex izhill = index.siblingAtColumn(ReceptorModel::Column::ZHill);
+            const QModelIndex izflag = index.siblingAtColumn(ReceptorModel::Column::ZFlag);
+            nodeEditor->leNodeX->setValue(model->data(ix, Qt::DisplayRole).toDouble());
+            nodeEditor->leNodeY->setValue(model->data(iy, Qt::DisplayRole).toDouble());
+            nodeEditor->leNodeZ->setValue(model->data(iz, Qt::DisplayRole).toDouble());
+            nodeEditor->leNodeZHill->setValue(model->data(izhill, Qt::DisplayRole).toDouble());
+            nodeEditor->leNodeZFlag->setValue(model->data(izflag, Qt::DisplayRole).toDouble());
+        }
+        break;
+    default:
         break;
     }
 

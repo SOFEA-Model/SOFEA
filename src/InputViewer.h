@@ -13,13 +13,16 @@
 // limitations under the License.
 //
 
-#ifndef INPUTVIEWER_H
-#define INPUTVIEWER_H
+#pragma once
 
-#include "core/Scenario.h"
+#include <QWidget>
 
-#include <Scintilla.h>
-#include <ScintillaEditBase.h>
+#include <cstddef>
+#include <string>
+
+struct Scenario;
+class ScintillaEditBase;
+struct SCNotification;
 
 class InputViewer : public QWidget
 {
@@ -33,21 +36,20 @@ public slots:
     void refresh();
 
 private:
-    sptr_t sendMessage(unsigned int iMessage, uptr_t wParam = 0, sptr_t lParam = 0);
+    intptr_t sendMessage(unsigned int message, uintptr_t wParam = 0, intptr_t lParam = 0);
     void defineMarker(int marker, int markerType, int fg, int bg);
     void setupStyles();
     void setupMargins();
     void setupConnections();
+    void updateFoldState();
 
 private slots:
     void onMarginClicked(int position, int modifiers, int margin);
     void onStyleNeeded(int position);
     void onNotify(SCNotification *pscn);
-    void onCommand(uptr_t wParam, sptr_t lParam);
+    void onCommand(uintptr_t wParam, intptr_t lParam);
 
 private:
     Scenario *sPtr;
     ScintillaEditBase *sci;
 };
-
-#endif // INPUTVIEWER_H

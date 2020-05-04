@@ -16,6 +16,7 @@
 #pragma once
 
 #include <QColor>
+#include <QRectF>
 #include <QString>
 #include <QVariant>
 
@@ -74,6 +75,14 @@ struct ReceptorNodeCountVisitor
     template <typename T>
     std::size_t operator()(const T& group) const {
         return group.nodeCount();
+    }
+};
+
+struct ReceptorGroupRectVisitor
+{
+    template <typename T>
+    QRectF operator()(const T& group) const {
+        return group.boundingRect();
     }
 };
 

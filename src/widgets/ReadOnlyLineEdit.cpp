@@ -22,14 +22,10 @@
 ReadOnlyLineEdit::ReadOnlyLineEdit(QWidget *parent)
     : QLineEdit(parent)
 {
-    setAutoFillBackground(true);
     setReadOnly(true);
-}
 
-void ReadOnlyLineEdit::setBasePalette()
-{
-    QPalette palette = this->palette();
-    QColor windowColor = QWidget::palette().window().color();
-    palette.setColor(QPalette::Base, windowColor);
-    this->setPalette(palette);
+    QPalette p = QLineEdit::palette();
+    QColor textColor = p.color(QPalette::Disabled, QPalette::Text);
+    p.setColor(QPalette::Text, textColor);
+    setPalette(p);
 }

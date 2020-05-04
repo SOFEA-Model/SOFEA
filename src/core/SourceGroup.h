@@ -98,11 +98,12 @@ struct SourceGroup
     FluxProfileDistribution fluxProfile;
 
     // Sources
+    // FIXME: use vector of variant
     boost::ptr_vector<Source> sources;
 
     // Receptors
-    std::vector<ReceptorRing> rings; // *** Depreciated, For Serialization Only ***
-    std::vector<ReceptorNode> nodes; // *** Depreciated, For Serialization Only ***
-    std::vector<ReceptorGrid> grids; // *** Depreciated, For Serialization Only ***
+    std::vector<ReceptorRing> rings; // *** DEPRECIATED, FOR SERIALIZATION ONLY ***
+    std::vector<ReceptorNode> nodes; // *** DEPRECIATED, FOR SERIALIZATION ONLY ***
+    std::vector<ReceptorGrid> grids; // *** DEPRECIATED, FOR SERIALIZATION ONLY ***
 };
 

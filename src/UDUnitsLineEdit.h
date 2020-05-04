@@ -26,7 +26,7 @@ class UDUnitsLineEdit : public QLineEdit
 
 public:
     explicit UDUnitsLineEdit(QWidget *parent = nullptr);
-    void setBasePalette();
+    void setReadOnly(bool);
     void setConvertFrom(const QString &unit);
     QString parsedText();
     double scaleFactor();
@@ -41,11 +41,16 @@ protected:
     void paintEvent(QPaintEvent *event) override;
 
 private:
-    QPalette m_defaultPalette;
-    QPalette m_errorPalette;
-    QString m_parsedText;
-    QString m_convertFromText;
-    double m_scaleFactor;
+    void updatePalette();
+    void updateToolTip();
+
+    bool errorFlag_ = false;
+    QPalette defaultPalette_;
+    QPalette normalPalette_;
+    QPalette errorPalette_;
+    QString parsedText_;
+    QString convertFromText_;
+    double scaleFactor_;
 };
 
 #endif // UDUNITSLINEEDIT_H

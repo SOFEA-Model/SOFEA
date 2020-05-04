@@ -12,3 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+
+#pragma once
+
+#include <QFrame>
+
+QT_BEGIN_NAMESPACE
+class QPaintEvent;
+class QWidget;
+QT_END_NAMESPACE
+
+class GroupBoxFrame : public QFrame
+{
+public:
+    explicit GroupBoxFrame(QWidget *parent = nullptr);
+protected:
+    void paintEvent(QPaintEvent *event) override;
+};

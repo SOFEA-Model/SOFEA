@@ -236,10 +236,9 @@ void StandardTableEditor::onImportClicked()
         return;
 
     QSettings settings;
-    QString currentDir = settings.value("DefaultDirectory", QDir::currentPath()).toString();
     QString filename = QFileDialog::getOpenFileName(this,
                        caption_,
-                       currentDir,
+                       QDir::currentPath(),
                        filter_);
 
     if (filename.isEmpty())

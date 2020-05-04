@@ -15,3 +15,9 @@
 
 #pragma once
 
+#include "core/TaskControl.h"
+
+struct TerrainProcessor
+{
+    TerrainProcessor();
+};

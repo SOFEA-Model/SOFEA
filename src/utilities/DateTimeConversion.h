@@ -91,5 +91,13 @@ std::enable_if_t<std::is_same_v<T, std::string>, T> convert(const boost::icl::di
     return oss.str();
 }
 
+// icl::discrete_interval<posix_time::ptime> to QString
+
+template <class T>
+std::enable_if_t<std::is_same_v<T, QString>, T> convert(const boost::icl::discrete_interval<boost::posix_time::ptime>& i)
+{
+    return QString::fromStdString(convert<std::string>(i));
+}
+
 } // namespace utilities
 } // namespace sofea

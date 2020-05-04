@@ -30,10 +30,10 @@
 QString dsMethodString(FluxProfile::DSMethod method)
 {
     switch (method) {
-        case FluxProfile::DSMethod::Disabled:      return QString("Disabled");
-        case FluxProfile::DSMethod::LinearCDPR:    return QString("Linear (CDPR)");
-        case FluxProfile::DSMethod::LinearGeneral: return QString("Linear (General)");
-        case FluxProfile::DSMethod::Nonlinear:     return QString("Nonlinear");
+    case FluxProfile::DSMethod::Disabled:      return QString("Disabled");
+    case FluxProfile::DSMethod::LinearCDPR:    return QString("Linear (CDPR)");
+    case FluxProfile::DSMethod::LinearGeneral: return QString("Linear (General)");
+    case FluxProfile::DSMethod::Nonlinear:     return QString("Nonlinear");
     }
 
     return QString();
@@ -42,9 +42,9 @@ QString dsMethodString(FluxProfile::DSMethod method)
 QString tsMethodString(FluxProfile::TSMethod method)
 {
     switch (method) {
-        case FluxProfile::TSMethod::Disabled:      return QString("Disabled");
-        case FluxProfile::TSMethod::Seasonal:      return QString("Seasonal (CDPR)");
-        case FluxProfile::TSMethod::Sinusoidal:    return QString("Sinusoidal");
+    case FluxProfile::TSMethod::Disabled:      return QString("Disabled");
+    case FluxProfile::TSMethod::Seasonal:      return QString("Seasonal (CDPR)");
+    case FluxProfile::TSMethod::Sinusoidal:    return QString("Sinusoidal");
     }
 
     return QString();
@@ -233,7 +233,7 @@ bool FluxProfileModel::insertRows(int row, int count, const QModelIndex &)
 
 bool FluxProfileModel::removeRows(int row, int count, const QModelIndex &)
 {
-    if (row < 0 || row > localData.size())
+    if (row < 0 || count < 1 || row > localData.size())
         return false;
 
     auto local = localData.at(row);

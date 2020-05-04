@@ -16,6 +16,7 @@
 #include "SourceModel.h"
 #include "RunstreamParser.h"
 #include "ShapefileParser.h"
+#include "core/Common.h"
 
 #include <QApplication>
 #include <QDir>
@@ -71,10 +72,26 @@ void SourceModel::import()
     endResetModel();
 }
 
-void SourceModel::setProjection(const Projection::Generic& p)
+void SourceModel::setProjection(const std::string& conversionCode,
+                                const std::string& hDatumCode,
+                                const std::string& hUnitsCode)
 {
-    // Geographic to projected coordinates
-    transform = Projection::Transform(p.geodeticCRS(), p.compoundCRS(), sPtr->domain);
+    using namespace Projection;
+
+    pipeline.reset();
+
+    if (!conversionCode.empty() && !hDatumCode.empty() && !hUnitsCode.empty()) {
+        // Geographic to projected coordinates
+        auto conv = createConversion(conversionCode);
+        auto gcrs = createGeodeticCRS(hDatumCode);
+        auto pcrs = createProjectedCRS(gcrs, conv, hUnitsCode);
+        auto bbox = getObjectAreaOfUse(conv);
+        pipeline = std::make_unique<Pipeline>(gcrs, pcrs, bbox);
+    }
+
+    QModelIndex topLeft = this->index(0, Column::Longitude);
+    QModelIndex bottomRight = this->index(this->rowCount() - 1, Column::Latitude);
+    emit dataChanged(topLeft, bottomRight);
 }
 
 Source* SourceModel::sourceFromIndex(const QModelIndex &index) const
@@ -90,11 +107,6 @@ QModelIndex SourceModel::vertexIndex(int row, int i) const
 {
     quintptr internalId = static_cast<quintptr>(i);
     return createIndex(row, Column::VertexData, internalId);
-}
-
-void SourceModel::emitDataChanged(const QModelIndex& index)
-{
-    emit dataChanged(index, index);
 }
 
 void SourceModel::setColumnHidden(int column, bool hidden)
@@ -254,9 +266,9 @@ QVariant SourceModel::data(const QModelIndex &index, int role) const
         case Column::Z:                   return s.zs;
         case Column::Longitude:
         case Column::Latitude:
-            if (transform.isValid()) {
+            if (pipeline && pipeline->valid()) {
                 double lon, lat, elev;
-                int rc = transform.inverse(s.xs, s.ys, s.zs, lon, lat, elev);
+                int rc = pipeline->inverse(s.xs, s.ys, s.zs, lon, lat, elev);
                 if (rc != 0)
                     return QVariant();
 
@@ -266,11 +278,11 @@ QVariant SourceModel::data(const QModelIndex &index, int role) const
                     return lat;
             }
             return QVariant();
-        case Column::Area:                return s.area();
+        case Column::Area:                return sPtr->areaToHectares(s.area());
         case Column::Start:               return s.appStart.toString("yyyy-MM-dd HH:mm");
         case Column::AppRate:             return s.appRate;
         case Column::IncDepth:            return s.incorpDepth;
-        case Column::MassAF:              return s.appRate * s.area() * sgPtr->appFactor;
+        case Column::MassAF:              return s.appRate * sPtr->areaToHectares(s.area()) * sgPtr->appFactor;
         case Column::FluxProfile:
             if (const auto fp = s.fluxProfile.lock())
                 return QString::fromStdString(fp->name);
@@ -292,7 +304,7 @@ QVariant SourceModel::data(const QModelIndex &index, int role) const
             if (sgPtr->enableBufferZones) {
                 BufferZone zref;
                 zref.appRateThreshold = s.appRate;
-                zref.areaThreshold = s.area();
+                zref.areaThreshold = sPtr->areaToHectares(s.area());
 
                 auto it = std::find_if(sgPtr->zones.begin(), sgPtr->zones.end(), [&zref](const BufferZone& z) {
                    return (z.areaThreshold >= zref.areaThreshold) && (z.appRateThreshold >= zref.appRateThreshold);
@@ -403,7 +415,7 @@ bool SourceModel::setData(const QModelIndex &index, const QVariant &value, int r
     else if (role == Qt::EditRole)
     {
         if ((index.column() == Column::Longitude || index.column() == Column::Latitude) &&
-            transform.isValid())
+            pipeline && pipeline->valid())
         {
             double lon, lat;
             if (index.column() == Column::Longitude) {
@@ -416,7 +428,7 @@ bool SourceModel::setData(const QModelIndex &index, const QVariant &value, int r
             }
 
             double x, y, z;
-            int rc = transform.forward(lon, lat, 0, x, y, z);
+            int rc = pipeline->forward(lon, lat, 0, x, y, z);
             if (rc != 0) {
                 return false;
             }
@@ -602,9 +614,9 @@ QVariant SourceModel::headerData(int section, Qt::Orientation orientation, int r
         if (role == Qt::DisplayRole) {
             switch (section) {
             case Column::ID:                   return QString("ID");
-            case Column::X:                    return QString("X (m)");
-            case Column::Y:                    return QString("Y (m)");
-            case Column::Z:                    return QString("Z (m)");
+            case Column::X:                    return QString("X");
+            case Column::Y:                    return QString("Y");
+            case Column::Z:                    return QString("Z");
             case Column::Longitude:            return QString("Longitude");
             case Column::Latitude:             return QString("Latitude");
             case Column::Area:                 return QString("Area (ha)");
@@ -648,7 +660,6 @@ QVariant SourceModel::headerData(int section, Qt::Orientation orientation, int r
     return QVariant();
 }
 
-
 bool SourceModel::setHeaderData(int section, Qt::Orientation orientation, const QVariant &value, int role)
 {
     if (role != Qt::ForegroundRole && role != Qt::BackgroundRole)
@@ -687,7 +698,7 @@ Qt::ItemFlags SourceModel::flags(const QModelIndex &index) const
     Qt::ItemFlags llFlags = QAbstractTableModel::flags(index);
     if (stype != SourceType::AREAPOLY) { // AREAPOLY coordinates must be set using the source editor.
         xyFlags |= Qt::ItemIsEditable;
-        if (transform.isValid()) // The GeoTransform must be valid to set latitude/longitude.
+        if (pipeline && pipeline->valid()) // The GeoTransform must be valid to set latitude/longitude.
             llFlags |= Qt::ItemIsEditable;
     }
 

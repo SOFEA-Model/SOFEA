@@ -40,6 +40,16 @@ void ProgressBarDelegate::paint(QPainter *painter, const QStyleOptionViewItem &o
         progressBarOption.textAlignment = Qt::AlignCenter;
         progressBarOption.textVisible = true;
 
+        // Check for DecorationRole
+        QVariant data = index.data(Qt::DecorationRole);
+        if (data.type() == QVariant::Color) {
+            QColor baseColor = qvariant_cast<QColor>(data);
+            QColor textColor = progressBarOption.palette.text().color();
+            progressBarOption.palette.setColor(QPalette::Highlight, baseColor);
+            progressBarOption.palette.setColor(QPalette::Text, textColor);
+            progressBarOption.palette.setColor(QPalette::HighlightedText, textColor);
+        }
+
         // Set the progress and text values of the style option.
         int progress = index.data(Qt::DisplayRole).toInt();
         progressBarOption.progress = progress < 0 ? 0 : progress;

@@ -17,6 +17,7 @@
 #include "MagneticDeclinationDialog.h"
 #include "MeteorologyEditor.h"
 #include "MeteorologyFileDialog.h"
+#include "MeteorologyInfoDialog.h"
 #include "MeteorologyStationData.h"
 #include "MeteorologyTableView.h"
 #include "models/MeteorologyModel.h"
@@ -62,6 +63,9 @@ MeteorologyEditor::MeteorologyEditor(MeteorologyModel *m, QWidget *parent)
     tableEditor = new StandardTableEditor(Qt::Vertical, buttons);
     tableEditor->setView(table);
     tableEditor->button(StandardTableEditor::AddRole)->setText(tr("Add..."));
+
+    btnWindRose = new QPushButton(tr("Wind Rose"));
+    btnWindRose->setEnabled(false);
 
     QSettings settings;
     QString defaultDir = settings.value("DefaultMetFileDirectory", QDir::currentPath()).toString();
@@ -116,8 +120,14 @@ MeteorologyEditor::MeteorologyEditor(MeteorologyModel *m, QWidget *parent)
     connect(table->selectionModel(), &QItemSelectionModel::currentRowChanged,
             mapper, &QDataWidgetMapper::setCurrentModelIndex);
 
+    connect(table->selectionModel(), &QItemSelectionModel::selectionChanged,
+            this, &MeteorologyEditor::onSelectionChanged);
+
     connect(tableEditor->button(StandardTableEditor::AddRole), &QPushButton::clicked,
             this, &MeteorologyEditor::onAddClicked);
+
+    connect(btnWindRose, &QPushButton::clicked,
+            this, &MeteorologyEditor::onWindRoseClicked);
 
     connect(btnDeclinationCalc, &QToolButton::clicked,
             this, &MeteorologyEditor::onDeclinationCalcClicked);
@@ -125,11 +135,18 @@ MeteorologyEditor::MeteorologyEditor(MeteorologyModel *m, QWidget *parent)
     connect(btnUpdate, &QPushButton::clicked, mapper, &QDataWidgetMapper::submit);
 
     // Layout
+    QVBoxLayout *tableEditorLayout = new QVBoxLayout;
+    tableEditorLayout->setContentsMargins(0, 0, 0, 0);
+    tableEditorLayout->addWidget(tableEditor);
+    tableEditorLayout->addSpacing(5);
+    tableEditorLayout->addWidget(btnWindRose);
+    tableEditorLayout->addStretch(2);
+
     QHBoxLayout *tableLayout = new QHBoxLayout;
     tableLayout->setContentsMargins(0, 8, 0, 8);
     tableLayout->addWidget(table);
     tableLayout->addSpacing(16);
-    tableLayout->addWidget(tableEditor);
+    tableLayout->addLayout(tableEditorLayout);
 
     QGridLayout *fileLayout = new QGridLayout;
     fileLayout->setContentsMargins(0, 8, 0, 8);
@@ -174,18 +191,12 @@ MeteorologyEditor::MeteorologyEditor(MeteorologyModel *m, QWidget *parent)
     setLayout(mainLayout);
 }
 
-void MeteorologyEditor::onCurrentPathChanged(const QString& path)
+void MeteorologyEditor::onSelectionChanged(const QItemSelection&, const QItemSelection&)
 {
-    if (path.isEmpty())
-        return;
+    bool singleSelection = table->selectionModel()->hasSelection() &&
+                           table->selectedRows().count() == 1;
 
-    QFileInfo fi(path);
-    QString defaultDir = fi.absoluteDir().absolutePath();
-    QSettings settings;
-    settings.setValue("DefaultMetFileDirectory", defaultDir);
-
-    leUpperAirFile->setDialogDirectory(defaultDir);
-    leSurfaceFile->setDialogDirectory(defaultDir);
+    btnWindRose->setEnabled(singleSelection);
 }
 
 void MeteorologyEditor::onAddClicked()
@@ -204,6 +215,15 @@ void MeteorologyEditor::onAddClicked()
     model->addUrls(urls);
 }
 
+void MeteorologyEditor::onWindRoseClicked()
+{
+    std::string sfpath = leSurfaceFile->currentPath().toStdString();
+    std::string uapath = leUpperAirFile->currentPath().toStdString();
+    Meteorology m(sfpath, uapath);
+    MeteorologyInfoDialog dialog(m, this);
+    dialog.exec();
+}
+
 void MeteorologyEditor::onDeclinationCalcClicked()
 {
     // Declination is positive when magnetic north is east of true north,
@@ -220,3 +240,16 @@ void MeteorologyEditor::onDeclinationCalcClicked()
     dialog->exec();
 }
 
+void MeteorologyEditor::onCurrentPathChanged(const QString& path)
+{
+    if (path.isEmpty())
+        return;
+
+    QFileInfo fi(path);
+    QString defaultDir = fi.absoluteDir().absolutePath();
+    QSettings settings;
+    settings.setValue("DefaultMetFileDirectory", defaultDir);
+
+    leUpperAirFile->setDialogDirectory(defaultDir);
+    leSurfaceFile->setDialogDirectory(defaultDir);
+}

@@ -16,12 +16,14 @@
 #include <QApplication>
 #include <QLoggingCategory>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QDir>
 
-#include "MainWindow.h"
 #include "AppStyle.h"
-#include "Projection.h"
-#include "UDUnitsInterface.h"
+#include "MainWindow.h"
+#include "core/Common.h"
+#include "core/Projection.h"
+#include "core/Raster.h"
 
 int main(int argc, char *argv[])
 {
@@ -50,20 +52,33 @@ int main(int argc, char *argv[])
     // QSettings::QSettings(QObject *parent = Q_NULLPTR)
     QSettings::setDefaultFormat(QSettings::IniFormat);
 
-    // Set default file paths.
     QString appPath = app.applicationDirPath();
-    QSettings settings;
+
+    // %LOCALAPPDATA%/Dow AgroSciences/SOFEA/cache
+    QString appCachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+
+    QSettings settings(QSettings::UserScope);
     if (!settings.contains("DefaultDirectory")) {
-        QString defaultDirectory = appPath + QDir::separator() + "examples";
+        QString defaultDirectory = QDir::cleanPath(appPath + QDir::separator() + "examples");
         settings.setValue("DefaultDirectory", defaultDirectory);
     }
     if (!settings.contains("DefaultMetFileDirectory")) {
-        QString defaultMetFileDirectory = appPath + QDir::separator() + "metfiles";
+        QString defaultMetFileDirectory = QDir::cleanPath(appPath + QDir::separator() + "metfiles");
         settings.setValue("DefaultMetFileDirectory", defaultMetFileDirectory);
     }
+    if (!settings.contains("DefaultPostFileDirectory")) {
+        QString defaultPostFileDirectory = QDir::cleanPath(appPath + QDir::separator() + "examples");
+        settings.setValue("DefaultPostFileDirectory", defaultPostFileDirectory);
+    }
 
-    QString dbPath = QDir::cleanPath(appPath + QDir::separator() + "share/proj/proj.db");
-    Projection::Context::setDatabasePath(dbPath.toStdString());
+    QDir::setCurrent(appPath);
+
+    QString projDataPath = QDir::cleanPath(appPath + QDir::separator() + SOFEA_PROJ_DATA_PATH);
+    Projection::setSearchPath(projDataPath.toStdString());
+    Projection::setCacheDirectory(appCachePath.toStdString());
+
+    QString gdalDataPath = QDir::cleanPath(appPath + QDir::separator() + SOFEA_GDAL_DATA_PATH);
+    Raster::setConfigOption("GDAL_DATA", gdalDataPath.toStdString());
 
     MainWindow w;
     w.setMinimumSize(800, 600);

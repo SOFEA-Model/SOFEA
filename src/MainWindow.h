@@ -18,19 +18,26 @@
 
 #include <QMainWindow>
 
-#include "AnalysisWindow.h"
-#include "InputViewer.h"
-#include "LogWidget.h"
-#include "ProjectModel.h"
-#include "ProjectTreeView.h"
-#include "ScenarioProperties.h"
-#include "SourceGroupProperties.h"
-#include "SourceTable.h"
+#include "core/Scenario.h"
+#include "core/SourceGroup.h"
+#include "core/Project.h"
 
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include <map>
 #include <memory>
+
+class AnalysisWindow;
+class InputViewer;
+class LogWidget;
+class MeteorologyEditor;
+class ProgressBar;
+class ProjectModel;
+class ProjectTreeView;
+class RunModelDialog;
+class ScenarioProperties;
+class SourceGroupProperties;
+class SourceTable;
 
 QT_BEGIN_NAMESPACE
 class QAction;
@@ -77,16 +84,18 @@ private slots:
     void closeProject();
     void exitApplication();
     void deleteTab(int index);
+    void showMeteorologyEditor();
     void validate();
     void runModel();
-    void analyzeOutput();
+    void showAnalysisWindow();
     void showHelp();
     void about();
 
 private:
-    void createActions();
     void createMenus();
-    void createToolbar();
+    void createActions();
+    void createToolBar();
+    void createProgressBar();
     void createPanels();
     void setupConnections();
     void setupLogging();
@@ -106,6 +115,7 @@ private:
     void showScenarioProperties(Scenario *s);
     void showSourceGroupProperties(SourceGroup *sg);
     void showReceptorEditor(Scenario *s);
+    void showElevationEditor(Scenario *s);
     void showInputViewer(Scenario *s);
     void showSourceTable(SourceGroup *sg);
     void exportFluxFile(Scenario *s);
@@ -128,20 +138,22 @@ private:
     QDockWidget *dwProjectTree;
     QDockWidget *dwValidation;
     QDockWidget *dwOutput;
-    ProjectTreeView *projectTreeView;
-    ProjectModel *projectModel;
-    QTreeWidget *projectTree;
-    LogWidget *lwValidation;
-    LogWidget *lwOutput;
-    AnalysisWindow *analysisWindow = nullptr;
-
+    ProgressBar *progressBar;
 #ifdef Q_OS_WIN
     QWinTaskbarButton *taskbarButton = nullptr;
     QWinTaskbarProgress *taskbarProgress = nullptr;
 #endif
+    QTreeWidget *projectTree; // TODO: Replace
+    ProjectModel *projectModel;
+    ProjectTreeView *projectTreeView;
+    LogWidget *lwValidation;
+    LogWidget *lwOutput;
+    RunModelDialog *runModelDialog = nullptr;
+    AnalysisWindow *analysisWindow = nullptr;
+    MeteorologyEditor *meteorologyEditor = nullptr;
 
     // Scenario/SourceGroup Containers
-    // TODO: implement ProjectModel.
+    // TODO: implement ProjectModel, use shared_ptr, weak_ptr
 
     boost::ptr_vector<Scenario> scenarios;
     std::map<SourceGroup *, Scenario *> sourceGroupToScenario;
@@ -171,6 +183,7 @@ private:
     QAction *closeAct;
     QAction *exitAct;
     QAction *validateAct;
+    QAction *meteorologyAct;
     QAction *runAct;
     QAction *analyzeAct;
     QAction *optionsAct;
@@ -192,7 +205,9 @@ private:
     QAction *sourceGroupRenameAct;
     QAction *sourceGroupRemoveAct;
     QAction *sourceGroupPropertiesAct;
-    QAction *editReceptorsAct;
+
+    QAction *receptorEditorAct;
+    QAction *elevationEditorAct;
     QAction *sourceTableAct;
 };
 

@@ -13,10 +13,10 @@
 // limitations under the License.
 //
 
-#include "core/Scenario.h"
-#include "MetFileParser.h"
-#include "core/InputFormat.h"
 #include "core/Common.h"
+#include "core/InputFormat.h"
+#include "core/Scenario.h"
+#include "utilities/DateTimeConversion.h"
 
 #include <algorithm>
 #include <iterator>
@@ -25,8 +25,6 @@
 
 #include <boost/log/trivial.hpp>
 #include <boost/log/attributes/scoped_attribute.hpp>
-
-#include <QDebug>
 
 #include <fmt/format.h>
 
@@ -50,10 +48,6 @@ Scenario::Scenario()
     name = fmt::format("Run{:0=2}", id);
     fumigantId = 7; // Other
     decayCoefficient = 0;
-
-    // Meteorological Data Defaults
-    anemometerHeight = 10;
-    windRotation = 0;
 
     // AERMOD Defaults
     aermodFlat = false;
@@ -94,15 +88,7 @@ Scenario::Scenario(const Scenario& rhs)
     this->name = rhs.name;
     this->fumigantId = rhs.fumigantId;
     this->decayCoefficient = rhs.decayCoefficient;
-    this->upperAirFile = rhs.upperAirFile;
-    this->surfaceFile = rhs.upperAirFile;
-    this->anemometerHeight = rhs.anemometerHeight;
-    this->windRotation = rhs.windRotation;
-    this->sfInfo = rhs.sfInfo;
-    this->minTime = rhs.minTime;
-    this->maxTime = rhs.minTime;
-    this->surfaceId = rhs.surfaceId;
-    this->upperAirId = rhs.upperAirId;
+    this->meteorology = rhs.meteorology;
     this->aermodFlat = rhs.aermodFlat;
     this->aermodFastArea = rhs.aermodFastArea;
     this->aermodDryDeposition = rhs.aermodDryDeposition;
@@ -175,7 +161,8 @@ Scenario::Scenario(const Scenario& rhs)
         }
     }
 
-    this->domain = rhs.domain;
+    this->xShift = rhs.xShift;
+    this->yShift = rhs.yShift;
     this->conversionCode = rhs.conversionCode;
     this->hUnitsCode = rhs.hUnitsCode;
     this->hDatumCode = rhs.hDatumCode;
@@ -183,30 +170,16 @@ Scenario::Scenario(const Scenario& rhs)
     this->vDatumCode = rhs.vDatumCode;
 }
 
-void Scenario::resetSurfaceFileInfo()
+double Scenario::areaToHectares(double area) const
 {
-    MetFileParser parser(surfaceFile);
-    sfInfo = parser.getSurfaceInfo();
-
-    if (sfInfo.tmin.is_not_a_date_time())
-        return;
-
-    if (sfInfo.tmax.is_not_a_date_time())
-        return;
-
-    // Construct QDateTime from boost::posix_time::ptime
-    const boost::gregorian::date gdmin = sfInfo.tmin.date();
-    const boost::gregorian::date gdmax = sfInfo.tmax.date();
-    const boost::posix_time::time_duration ptmin = sfInfo.tmin.time_of_day();
-    const boost::posix_time::time_duration ptmax = sfInfo.tmax.time_of_day();
-
-    minTime = QDateTime(QDate(gdmin.year(), gdmin.month(), gdmin.day()),
-                                  QTime(ptmin.hours(), 0, 0), Qt::UTC);
-    maxTime = QDateTime(QDate(gdmax.year(), gdmax.month(), gdmax.day()),
-                                  QTime(ptmax.hours(), 0, 0), Qt::UTC);
-
-    surfaceId = sfInfo.sfloc;
-    upperAirId = sfInfo.ualoc;
+    if (hUnitsCode == EPSG_UOM_METER)
+        return area * 0.0001; // 1 square meter = 0.0001 hectares
+    else if (hUnitsCode == EPSG_UOM_IFT)
+        return area * 0.3048 * 0.3048 * 0.0001;
+    else if (hUnitsCode == EPSG_UOM_USFT)
+        return area * (1200./3937.) * (1200./3937.) * 0.0001;
+    else
+        return 0.;
 }
 
 inline std::string aermodTimeString(const QDateTime& t)
@@ -342,7 +315,7 @@ std::string Scenario::writeInput() const
             if (sgptr->enableBufferZones) {
                 BufferZone zref;
                 zref.appRateThreshold = s.appRate;
-                zref.areaThreshold = s.area();
+                zref.areaThreshold = areaToHectares(s.area());
 
                 auto it = std::find_if(sgptr->zones.begin(), sgptr->zones.end(), [&zref](const BufferZone& z) {
                    return (z.areaThreshold >= zref.areaThreshold) && (z.appRateThreshold >= zref.appRateThreshold);
@@ -389,18 +362,24 @@ std::string Scenario::writeInput() const
     // METEOROLOGY Pathway
     //-------------------------------------------------------------------------
 
+    // TODO: Use Terrain Height in PROFBASE
+
+    auto surfaceHeader = meteorology.surfaceFile.header();
+    QDateTime minTime = sofea::utilities::convert<QDateTime>(meteorology.surfaceFile.minTime());
+    QDateTime maxTime = sofea::utilities::convert<QDateTime>(meteorology.surfaceFile.maxTime());
     QString startend;
+
     if (minTime.isValid() && maxTime.isValid())
         startend = minTime.toString("yy MM dd") + " " + maxTime.toString("yy MM dd");
 
     fmt::format_to(w, "ME STARTING\n");
-    fmt::format_to(w, "   SURFFILE \"{}\"\n", absolutePath(surfaceFile));
-    fmt::format_to(w, "   PROFFILE \"{}\"\n", absolutePath(upperAirFile));
-    fmt::format_to(w, "   SURFDATA {} {}\n", surfaceId, minTime.date().year());
-    fmt::format_to(w, "   UAIRDATA {} {}\n", upperAirId, maxTime.date().year());
-    fmt::format_to(w, "   PROFBASE {: 6.1f} METERS\n", anemometerHeight);
+    fmt::format_to(w, "   SURFFILE \"{}\"\n", meteorology.surfaceFile.absolutePath());
+    fmt::format_to(w, "   PROFFILE \"{}\"\n", meteorology.upperAirFile.absolutePath());
+    fmt::format_to(w, "   SURFDATA {} {}\n", surfaceHeader.sfloc, minTime.date().year());
+    fmt::format_to(w, "   UAIRDATA {} {}\n", surfaceHeader.ualoc, maxTime.date().year());
+    fmt::format_to(w, "   PROFBASE {: 6.1f} METERS\n", meteorology.anemometerHeight);
     fmt::format_to(w, "   STARTEND {}\n", startend.toStdString());
-    fmt::format_to(w, "   WDROTATE {: 5.1f}\n", windRotation);
+    fmt::format_to(w, "   WDROTATE {: 5.1f}\n", meteorology.windRotation);
     fmt::format_to(w, "ME FINISHED\n\n");
 
     //-------------------------------------------------------------------------
@@ -440,9 +419,12 @@ void Scenario::writeFluxFile(const std::string& path) const
 {
     BOOST_LOG_SCOPED_THREAD_TAG("Source", "Model");
 
+    QDateTime minTime = sofea::utilities::convert<QDateTime>(meteorology.surfaceFile.minTime());
+    QDateTime maxTime = sofea::utilities::convert<QDateTime>(meteorology.surfaceFile.maxTime());
+
     if (!minTime.isValid() || !maxTime.isValid()) {
         BOOST_LOG_TRIVIAL(error) << "Invalid time range";
-        return; // FIXME: throw an exception
+        return; // FIXME: throw an exception or return error status
     }
 
     // Make sure that each source has a valid flux profile.
@@ -457,7 +439,7 @@ void Scenario::writeFluxFile(const std::string& path) const
     }
 
     if (missingProfile)
-        return; // FIXME: throw an exception
+        return; // FIXME: throw an exception or return error status
 
     fmt::memory_buffer w;
     std::map<QDateTime, std::string> grid;

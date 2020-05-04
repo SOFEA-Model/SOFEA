@@ -18,6 +18,7 @@
 #include <QDataWidgetMapper>
 #include <QDateTimeEdit>
 #include <QGridLayout>
+#include <QGroupBox>
 #include <QLabel>
 #include <QLineEdit>
 #include <QSpinBox>
@@ -26,25 +27,21 @@
 #include <QPushButton>
 #include <QStackedLayout>
 
-#include "SourceEditor.h"
+#include "SourceGeometryEditor.h"
+#include "core/Common.h"
 #include "models/SourceModel.h"
 #include "widgets/VertexEditor.h"
 #include "delegates/VertexEditorDelegate.h"
 
-#include "ctk/ctkCollapsibleGroupBox.h"
-
-SourceEditor::SourceEditor(QWidget *parent) : QWidget(parent)
+SourceGeometryEditor::SourceGeometryEditor(QWidget *parent) : QWidget(parent)
 {
     statusLabel = new QLabel;
     statusLabel->setText("No sources selected.");
     statusLabel->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 
-    areaPolyEditorDelegate = new VertexEditorDelegate(this);
-
-    areaEditor = new AreaSourceEditor;
-    areaCircEditor = new AreaCircSourceEditor;
-    areaPolyEditor = qobject_cast<VertexEditor *>(
-        areaPolyEditorDelegate->createEditor(nullptr, QStyleOptionViewItem(), QModelIndex()));
+    areaEditor = new AreaSourceGeometryEditor;
+    areaCircEditor = new AreaCircSourceGeometryEditor;
+    areaPolyEditor = new AreaPolySourceGeometryEditor;
 
     btnUpdate = new QPushButton(tr("Update"));
     QSizePolicy btnUpdateSizePolicy = btnUpdate->sizePolicy();
@@ -90,12 +87,12 @@ SourceEditor::SourceEditor(QWidget *parent) : QWidget(parent)
     mapper->setSubmitPolicy(QDataWidgetMapper::ManualSubmit);
 
     // Layout
-    geometryStack = new QStackedLayout;
-    geometryStack->setContentsMargins(0, 0, 0, 0);
-    geometryStack->addWidget(statusLabel);
-    geometryStack->addWidget(areaEditor);
-    geometryStack->addWidget(areaCircEditor);
-    geometryStack->addWidget(areaPolyEditor);
+    stack = new QStackedLayout;
+    stack->setContentsMargins(0, 0, 0, 0);
+    stack->addWidget(statusLabel);
+    stack->addWidget(areaEditor);
+    stack->addWidget(areaCircEditor);
+    stack->addWidget(areaPolyEditor);
 
     QHBoxLayout *buttonBox = new QHBoxLayout;
     buttonBox->setContentsMargins(0, 0, 0, 0);
@@ -104,7 +101,7 @@ SourceEditor::SourceEditor(QWidget *parent) : QWidget(parent)
 
     QVBoxLayout *geometryLayout = new QVBoxLayout;
     geometryLayout->setContentsMargins(24, 16, 24, 16);
-    geometryLayout->addLayout(geometryStack);
+    geometryLayout->addLayout(stack);
     geometryLayout->addSpacing(5);
     geometryLayout->addLayout(buttonBox);
 
@@ -123,11 +120,11 @@ SourceEditor::SourceEditor(QWidget *parent) : QWidget(parent)
     //depositionLayout->setColumnStretch(1, 2);
     //depositionLayout->setContentsMargins(24, 16, 24, 16);
 
-    ctkCollapsibleGroupBox *gbGeometry = new ctkCollapsibleGroupBox(tr("Geometry"));
+    QGroupBox *gbGeometry = new QGroupBox(tr("Geometry"));
     gbGeometry->setLayout(geometryLayout);
     gbGeometry->setFlat(true);
 
-    //ctkCollapsibleGroupBox *gbApplication = new ctkCollapsibleGroupBox(tr("Application"));
+    //QGroupBox *gbApplication = new QGroupBox(tr("Application"));
     //gbApplication->setLayout(applicationLayout);
     //gbApplication->setFlat(true);
 
@@ -136,7 +133,7 @@ SourceEditor::SourceEditor(QWidget *parent) : QWidget(parent)
     //mainLayout->addWidget(gbApplication);
     mainLayout->addStretch(1);
 
-    geometryStack->setCurrentIndex(0);
+    stack->setCurrentIndex(0);
 
     connect(btnUpdate, &QPushButton::pressed, mapper, &QDataWidgetMapper::submit);
 
@@ -144,7 +141,7 @@ SourceEditor::SourceEditor(QWidget *parent) : QWidget(parent)
     btnUpdate->setVisible(false);
 }
 
-void SourceEditor::setModel(QAbstractItemModel *model)
+void SourceGeometryEditor::setModel(QAbstractItemModel *model)
 {
     if (model == nullptr)
         return;
@@ -153,12 +150,22 @@ void SourceEditor::setModel(QAbstractItemModel *model)
     mapper->setModel(model);
 }
 
-void SourceEditor::setCurrentModelIndex(const QModelIndex& index)
+void SourceGeometryEditor::setIndexes(const QModelIndexList& indexes)
 {
     if (!sourceModel) {
         setStatusText("Invalid source data.");
         return;
     }
+    if (indexes.empty()) {
+        setStatusText("No sources selected.");
+        return;
+    }
+    else if (indexes.size() > 1) {
+        setStatusText("Multiple sources selected.");
+        return;
+    }
+
+    QModelIndex index = indexes.front();
 
     if (!index.isValid() || index.model() == nullptr) {
         setStatusText("Invalid source selected.");
@@ -171,12 +178,10 @@ void SourceEditor::setCurrentModelIndex(const QModelIndex& index)
         return;
     }
 
-    int prevStackIndex = geometryStack->currentIndex();
-
     SourceType sourceType = qvariant_cast<SourceType>(sourceTypeVar);
     switch (sourceType) {
     case SourceType::AREA:
-        if (prevStackIndex != 1) {
+        if (stack->currentWidget() != areaEditor) {
             mapper->clearMapping();
             mapper->addMapping(areaEditor->sbXCoord, SourceModel::Column::X);
             mapper->addMapping(areaEditor->sbYCoord, SourceModel::Column::Y);
@@ -185,12 +190,12 @@ void SourceEditor::setCurrentModelIndex(const QModelIndex& index)
             mapper->addMapping(areaEditor->sbAngle, SourceModel::Column::Angle);
             mapper->toFirst();
         }
-        geometryStack->setCurrentIndex(1);
+        stack->setCurrentWidget(areaEditor);
         mapper->setCurrentIndex(index.row());
         btnUpdate->setVisible(true);
         break;
     case SourceType::AREACIRC:
-        if (prevStackIndex != 2) {
+        if (stack->currentWidget() != areaCircEditor) {
             mapper->clearMapping();
             mapper->addMapping(areaCircEditor->sbXCoord, SourceModel::Column::X);
             mapper->addMapping(areaCircEditor->sbYCoord, SourceModel::Column::Y);
@@ -198,18 +203,18 @@ void SourceEditor::setCurrentModelIndex(const QModelIndex& index)
             mapper->addMapping(areaCircEditor->sbVertexCount, SourceModel::Column::VertexCount);
             mapper->toFirst();
         }
-        geometryStack->setCurrentIndex(2);
+        stack->setCurrentWidget(areaCircEditor);
         mapper->setCurrentIndex(index.row());
         btnUpdate->setVisible(true);
         break;
     case SourceType::AREAPOLY:
-        if (prevStackIndex != 3) {
+        if (stack->currentWidget() != areaPolyEditor) {
             mapper->clearMapping();
-            mapper->addMapping(areaPolyEditor, 0);
-            mapper->setItemDelegate(areaPolyEditorDelegate);
+            mapper->addMapping(areaPolyEditor->vertexEditor, 0);
+            mapper->setItemDelegate(areaPolyEditor->vertexEditorDelegate);
             mapper->toFirst();
         }
-        geometryStack->setCurrentIndex(3);
+        stack->setCurrentWidget(areaPolyEditor);
         mapper->setCurrentIndex(index.row());
         btnUpdate->setVisible(true);
         break;
@@ -246,50 +251,52 @@ void SourceEditor::setCurrentModelIndex(const QModelIndex& index)
     }
 }
 
-void SourceEditor::setStatusText(const QString& text)
+void SourceGeometryEditor::setStatusText(const QString& text)
 {
     statusLabel->setText(text);
     btnUpdate->setVisible(false);
     mapper->clearMapping();
-    geometryStack->setCurrentIndex(0);
+    stack->setCurrentIndex(0);
 }
 
 //-----------------------------------------------------------------------------
-// AreaSourceEditor
+// AreaSourceGeometryEditor
 //-----------------------------------------------------------------------------
 
-AreaSourceEditor::AreaSourceEditor(QWidget *parent) : QWidget(parent)
+AreaSourceGeometryEditor::AreaSourceGeometryEditor(QWidget *parent) : QWidget(parent)
 {
+    using namespace sofea::constants;
+
     sbXCoord = new QDoubleSpinBox();
-    sbXCoord->setRange(-10000000, 10000000);
-    sbXCoord->setDecimals(2);
+    sbXCoord->setRange(MIN_X_COORDINATE, MAX_X_COORDINATE);
+    sbXCoord->setDecimals(X_COORDINATE_PRECISION);
     sbXCoord->setButtonSymbols(QAbstractSpinBox::NoButtons);
 
     sbYCoord = new QDoubleSpinBox();
-    sbYCoord->setRange(-10000000, 10000000);
-    sbYCoord->setDecimals(2);
+    sbYCoord->setRange(MIN_Y_COORDINATE, MAX_Y_COORDINATE);
+    sbYCoord->setDecimals(Y_COORDINATE_PRECISION);
     sbYCoord->setButtonSymbols(QAbstractSpinBox::NoButtons);
 
     sbXInit = new QDoubleSpinBox();
-    sbXInit->setRange(0, 10000);
-    sbXInit->setDecimals(2);
+    sbXInit->setRange(MIN_X_DIMENSION, MAX_X_DIMENSION);
+    sbXInit->setDecimals(Y_DIMENSION_PRECISION);
     sbXInit->setButtonSymbols(QAbstractSpinBox::NoButtons);
 
     sbYInit = new QDoubleSpinBox();
-    sbYInit->setRange(0, 10000);
-    sbYInit->setDecimals(2);
+    sbYInit->setRange(MIN_Y_DIMENSION, MAX_Y_DIMENSION);
+    sbYInit->setDecimals(Y_DIMENSION_PRECISION);
     sbYInit->setButtonSymbols(QAbstractSpinBox::NoButtons);
 
     sbAngle = new QDoubleSpinBox;
-    sbAngle->setMinimum(0);
-    sbAngle->setMaximum(359.9);
+    sbAngle->setMinimum(MIN_ROTATION_ANGLE);
+    sbAngle->setMaximum(MAX_ROTATION_ANGLE);
     sbAngle->setSingleStep(1);
-    sbAngle->setDecimals(1);
+    sbAngle->setDecimals(ROTATION_ANGLE_PRECISION);
     sbAngle->setWrapping(true);
 
     // Layout
     QGridLayout *layout1 = new QGridLayout;
-    layout1->setContentsMargins(0,0,0,0);
+    layout1->setContentsMargins(0, 0, 0, 0);
     layout1->setColumnMinimumWidth(0, 120);
     layout1->addWidget(new QLabel(tr("Coordinates:")), 0, 0);
     layout1->addWidget(sbXCoord, 0, 1);
@@ -301,7 +308,7 @@ AreaSourceEditor::AreaSourceEditor(QWidget *parent) : QWidget(parent)
     layout1->addWidget(sbAngle, 2, 1, 1, 2);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->setContentsMargins(0,0,0,0);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->addLayout(layout1);
     mainLayout->addStretch(1);
 
@@ -309,24 +316,26 @@ AreaSourceEditor::AreaSourceEditor(QWidget *parent) : QWidget(parent)
 }
 
 //-----------------------------------------------------------------------------
-// AreaCircSourceEditor
+// AreaCircSourceGeometryEditor
 //-----------------------------------------------------------------------------
 
-AreaCircSourceEditor::AreaCircSourceEditor(QWidget *parent) : QWidget(parent)
+AreaCircSourceGeometryEditor::AreaCircSourceGeometryEditor(QWidget *parent) : QWidget(parent)
 {
+    using namespace sofea::constants;
+
     sbXCoord = new QDoubleSpinBox();
-    sbXCoord->setRange(-10000000, 10000000);
-    sbXCoord->setDecimals(2);
+    sbXCoord->setRange(MIN_X_COORDINATE, MAX_X_COORDINATE);
+    sbXCoord->setDecimals(X_COORDINATE_PRECISION);
     sbXCoord->setButtonSymbols(QAbstractSpinBox::NoButtons);
 
     sbYCoord = new QDoubleSpinBox();
-    sbYCoord->setRange(-10000000, 10000000);
-    sbYCoord->setDecimals(2);
+    sbYCoord->setRange(MIN_Y_COORDINATE, MAX_Y_COORDINATE);
+    sbYCoord->setDecimals(Y_COORDINATE_PRECISION);
     sbYCoord->setButtonSymbols(QAbstractSpinBox::NoButtons);
 
     sbRadius = new QDoubleSpinBox();
-    sbRadius->setRange(0, 10000);
-    sbRadius->setDecimals(2);
+    sbRadius->setRange(MIN_RADIUS, MAX_RADIUS);
+    sbRadius->setDecimals(RADIUS_PRECISION);
     sbRadius->setButtonSymbols(QAbstractSpinBox::NoButtons);
 
     sbVertexCount = new QSpinBox;
@@ -334,7 +343,7 @@ AreaCircSourceEditor::AreaCircSourceEditor(QWidget *parent) : QWidget(parent)
 
     // Layout
     QGridLayout *layout1 = new QGridLayout;
-    layout1->setContentsMargins(0,0,0,0);
+    layout1->setContentsMargins(0, 0, 0, 0);
     layout1->setColumnMinimumWidth(0, 120);
     layout1->addWidget(new QLabel(tr("Coordinates:")), 0, 0);
     layout1->addWidget(sbXCoord, 0, 1);
@@ -345,10 +354,27 @@ AreaCircSourceEditor::AreaCircSourceEditor(QWidget *parent) : QWidget(parent)
     layout1->addWidget(sbVertexCount, 2, 1, 1, 2);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->setContentsMargins(0,0,0,0);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->addLayout(layout1);
     mainLayout->addStretch(1);
 
     setLayout(mainLayout);
 }
 
+//-----------------------------------------------------------------------------
+// AreaPolySourceGeometryEditor
+//-----------------------------------------------------------------------------
+
+AreaPolySourceGeometryEditor::AreaPolySourceGeometryEditor(QWidget *parent) : QWidget(parent)
+{
+    vertexEditorDelegate = new VertexEditorDelegate(this);
+    vertexEditor = qobject_cast<VertexEditor *>(
+        vertexEditorDelegate->createEditor(nullptr, QStyleOptionViewItem(), QModelIndex()));
+
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->addWidget(vertexEditor);
+    mainLayout->addStretch(1);
+
+    setLayout(mainLayout);
+}

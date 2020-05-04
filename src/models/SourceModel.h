@@ -16,13 +16,16 @@
 #ifndef SOURCEMODEL_H
 #define SOURCEMODEL_H
 
+#include "core/Scenario.h"
+#include "core/SourceGroup.h"
+#include "core/Projection.h"
+
 #include <QAbstractTableModel>
 #include <QVariant>
 #include <QMap>
 
-#include "core/Scenario.h"
-#include "core/SourceGroup.h"
-#include "core/Projection.h"
+#include <memory>
+#include <string>
 
 class SourceModel : public QAbstractTableModel
 {
@@ -67,12 +70,16 @@ public:
 
     void reset();
     void import();
-    void setProjection(const Projection::Generic& p);
+
+    void setProjection(const std::string& conversionCode,
+                       const std::string& hDatumCode,
+                       const std::string& hUnitsCode);
+
     void setColumnHidden(int column, bool hidden);
     bool isColumnHidden(int column) const;
+
     Source* sourceFromIndex(const QModelIndex &index) const;
     QModelIndex vertexIndex(int row, int i) const;
-    void emitDataChanged(const QModelIndex& index);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -93,7 +100,7 @@ private:
     Scenario *sPtr;
     SourceGroup *sgPtr;
     QMap<int, bool> columnHidden;
-    Projection::Transform transform;
+    std::unique_ptr<Projection::Pipeline> pipeline;
 };
 
 #endif // SOURCEMODEL_H

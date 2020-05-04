@@ -27,10 +27,6 @@
 #include <utility>
 #include <vector>
 
-// FIXME: use std::function callback
-#include <QProgressDialog>
-#include <QDebug>
-
 // TODO: replace Boost.Accumulators with MKL
 // https://software.intel.com/en-us/mkl-ssnotes-computing-quantiles-for-streaming-data
 
@@ -86,7 +82,7 @@ bool equal_length(const std::vector<Args>&... args) {
 analysis::analysis(const std::string& filepath)
     : file_(filepath, ncpp::file::read), ds_(file_)
 {
-    static progress_function_type fn = [](std::size_t){};
+    static auto fn = [](std::size_t){};
     progressfn_ = fn;
 }
 
@@ -323,7 +319,7 @@ private:
 } // namespace accumulators
 
 
-void analysis::set_progress_function(const progress_function_type& fn)
+void analysis::set_progress_function(const std::function<void(std::size_t)>& fn)
 {
     progressfn_ = fn;
 }

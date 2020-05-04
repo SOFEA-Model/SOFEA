@@ -83,6 +83,14 @@ QFileDialog::FileMode PathEdit::dialogFileMode() const {
     return dialogFileMode_;
 }
 
+QFileDialog::AcceptMode PathEdit::dialogAcceptMode() const {
+    return dialogAcceptMode_;
+}
+
+QString PathEdit::dialogDefaultSuffix() const {
+    return dialogDefaultSuffix_;
+}
+
 void PathEdit::setCurrentPath(const QString& path)
 {
     lePath->setText(path);
@@ -103,6 +111,14 @@ void PathEdit::setDialogFilter(const QString& filter) {
 
 void PathEdit::setDialogFileMode(QFileDialog::FileMode mode) {
     dialogFileMode_ = mode;
+}
+
+void PathEdit::setDialogAcceptMode(QFileDialog::AcceptMode mode) {
+    dialogAcceptMode_ = mode;
+}
+
+void PathEdit::setDialogDefaultSuffix(const QString& suffix) {
+    dialogDefaultSuffix_ = suffix;
 }
 
 void PathEdit::setReadOnly(bool readOnly)
@@ -128,6 +144,8 @@ void PathEdit::browse()
 
     QFileDialog dialog(nullptr, dialogCaption_, initDir, dialogFilter_);
     dialog.setFileMode(dialogFileMode_);
+    dialog.setAcceptMode(dialogAcceptMode_);
+    dialog.setDefaultSuffix(dialogDefaultSuffix_);
     if (dialog.exec())
         setCurrentPath(dialog.selectedFiles().front());
 }

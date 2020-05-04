@@ -17,13 +17,13 @@
 
 #include "AppStyle.h"
 #include "ScenarioPages.h"
-#include "MetFileParser.h"
-#include "MetFileInfoDialog.h"
+#include "MeteorologyInfoDialog.h"
 #include "MagneticDeclinationDialog.h"
 
 #include "ctk/ctkCollapsibleGroupBox.h"
+#include "utilities/DateTimeConversion.h"
 #include "widgets/GridLayout.h"
-#include "widgets/BackgroundFrame.h"
+#include "widgets/TabWidgetFrame.h"
 
 /****************************************************************************
 ** General
@@ -56,7 +56,7 @@ GeneralPage::GeneralPage(Scenario *s, QWidget *parent)
     mainLayout->addWidget(new QLabel(tr("Averaging periods (hr): ")), 2, 0);
     mainLayout->addWidget(periodEditor, 2, 1, 2, 1);
 
-    BackgroundFrame *frame = new BackgroundFrame;
+    TabWidgetFrame *frame = new TabWidgetFrame;
     frame->setLayout(mainLayout);
 
     QVBoxLayout *frameLayout = new QVBoxLayout;
@@ -118,7 +118,7 @@ ProjectionPage::ProjectionPage(Scenario *s, QWidget *parent)
     mainLayout->setAlignment(Qt::AlignTop);
     mainLayout->addWidget(editor);
 
-    BackgroundFrame *frame = new BackgroundFrame;
+    TabWidgetFrame *frame = new TabWidgetFrame;
     frame->setLayout(mainLayout);
 
     QVBoxLayout *frameLayout = new QVBoxLayout;
@@ -255,7 +255,7 @@ MetDataPage::MetDataPage(Scenario *s, QWidget *parent)
     mainLayout->addLayout(buttonLayout);
     mainLayout->addStretch(1);
 
-    BackgroundFrame *frame = new BackgroundFrame;
+    TabWidgetFrame *frame = new TabWidgetFrame;
     frame->setLayout(mainLayout);
     QVBoxLayout *frameLayout = new QVBoxLayout;
     frameLayout->addWidget(frame);
@@ -282,28 +282,31 @@ void MetDataPage::init()
 
 void MetDataPage::save()
 {
-    scenario->surfaceFile = leSurfaceDataFile->text().toStdString();
-    scenario->upperAirFile = leUpperAirDataFile->text().toStdString();
-    scenario->anemometerHeight = sbAnemometerHeight->value();
-    scenario->windRotation = sbWindRotation->value();
+    std::string sfpath = leSurfaceDataFile->text().toStdString();
+    std::string uapath = leUpperAirDataFile->text().toStdString();
 
-    // Input:   surfaceFile
-    // Output:  minTime, maxTime, surfaceId, upperAirId
-    scenario->resetSurfaceFileInfo();
+    scenario->meteorology.surfaceFile = SurfaceFile(sfpath);
+    scenario->meteorology.upperAirFile = UpperAirFile(uapath);
+    scenario->meteorology.anemometerHeight = sbAnemometerHeight->value();
+    scenario->meteorology.windRotation = sbWindRotation->value();
 }
 
 void MetDataPage::load()
 {
-    leSurfaceDataFile->setText(QString::fromStdString(scenario->surfaceFile));
-    leUpperAirDataFile->setText(QString::fromStdString(scenario->upperAirFile));
-    sbAnemometerHeight->setValue(scenario->anemometerHeight);
-    sbWindRotation->setValue(scenario->windRotation);
-    leSurfaceStationId->setText(QString::fromStdString(scenario->surfaceId));
-    leUpperAirStationId->setText(QString::fromStdString(scenario->upperAirId));
+    std::string sfpath = scenario->meteorology.surfaceFile.path();
+    std::string uapath = scenario->meteorology.upperAirFile.path();
+    auto header = scenario->meteorology.surfaceFile.header();
+
+    leSurfaceDataFile->setText(QString::fromStdString(sfpath));
+    leUpperAirDataFile->setText(QString::fromStdString(uapath));
+    sbAnemometerHeight->setValue(scenario->meteorology.anemometerHeight);
+    sbWindRotation->setValue(scenario->meteorology.windRotation);
+    leSurfaceStationId->setText(QString::fromStdString(header.sfloc));
+    leUpperAirStationId->setText(QString::fromStdString(header.ualoc));
 
     lwIntervals->clear();
-    for (const std::string& i : scenario->sfInfo.intervals) {
-        QString is = QString::fromStdString(i);
+    for (const auto& i : scenario->meteorology.surfaceFile.intervals()) {
+        QString is = sofea::utilities::convert<QString>(i);
         lwIntervals->addItem(is);
     }
 }
@@ -316,7 +319,6 @@ void MetDataPage::browseMetDataFile()
     QString metFileCurrentPath;
     QString metFileFilter;
     QString defaultDirectory;
-    QString settingsKey = "DefaultMetFileDirectory";
 
     // determine current path and filter from sender
     QObject* obj = sender();
@@ -339,7 +341,7 @@ void MetDataPage::browseMetDataFile()
     if (fi.exists())
         defaultDirectory = fi.canonicalPath();
     else
-        defaultDirectory = settings.value(settingsKey, QDir::currentPath()).toString();
+        defaultDirectory = settings.value("DefaultMetFileDirectory", QDir::currentPath()).toString();
 
     // execute the dialog
     const QString metFile = QFileDialog::getOpenFileName(this,
@@ -349,9 +351,9 @@ void MetDataPage::browseMetDataFile()
 
     if (!metFile.isEmpty()) {
         // save selection as new default
-        QFileInfo mfi(metFile);
-        QString dir = mfi.absoluteDir().absolutePath();
-        settings.setValue(settingsKey, dir);
+        QFileInfo fi(metFile);
+        QString dir = fi.absoluteDir().absolutePath();
+        settings.setValue("DefaultMetFileDirectory", dir);
 
         // update line edit
         metFileLineEdit->setText(metFile);
@@ -360,16 +362,10 @@ void MetDataPage::browseMetDataFile()
 
 void MetDataPage::showInfoDialog()
 {
-    QString surfaceFile = leSurfaceDataFile->text();
-
-    std::string path = absolutePath(surfaceFile.toStdString());
-    MetFileParser parser(path);
-    std::shared_ptr<SurfaceData> sd = parser.getSurfaceData();
-
-    if (sd == nullptr)
-        return;
-
-    MetFileInfoDialog dialog(sd, this);
+    std::string sfpath = leSurfaceDataFile->text().toStdString();
+    std::string uapath = leUpperAirDataFile->text().toStdString();
+    Meteorology m(sfpath, uapath);
+    MeteorologyInfoDialog dialog(m, this);
     dialog.exec();
 }
 
@@ -391,18 +387,16 @@ void MetDataPage::showDeclinationCalc()
 
 void MetDataPage::update()
 {
-    QString surfaceFile = leSurfaceDataFile->text();
+    std::string sfpath = leSurfaceDataFile->text().toStdString();
+    SurfaceFile sf(sfpath);
+    auto header = sf.header();
 
-    std::string path = absolutePath(surfaceFile.toStdString());
-    MetFileParser parser(path);
-    SurfaceInfo sfInfo = parser.getSurfaceInfo();
-
-    leSurfaceStationId->setText(QString::fromStdString(sfInfo.sfloc));
-    leUpperAirStationId->setText(QString::fromStdString(sfInfo.ualoc));
+    leSurfaceStationId->setText(QString::fromStdString(header.sfloc));
+    leUpperAirStationId->setText(QString::fromStdString(header.ualoc));
 
     lwIntervals->clear();
-    for (const std::string& i : sfInfo.intervals) {
-        QString is = QString::fromStdString(i);
+    for (const auto& i : sf.intervals()) {
+        QString is = sofea::utilities::convert<QString>(i);
         lwIntervals->addItem(is);
     }
 }
@@ -443,7 +437,7 @@ FluxProfilesPage::FluxProfilesPage(Scenario *s, QWidget *parent)
     mainLayout->addWidget(table);
     mainLayout->addWidget(editor);
 
-    BackgroundFrame *frame = new BackgroundFrame;
+    TabWidgetFrame *frame = new TabWidgetFrame;
     frame->setLayout(mainLayout);
     QVBoxLayout *frameLayout = new QVBoxLayout;
     frameLayout->addWidget(frame);

@@ -61,6 +61,7 @@ struct kvp {
     kvp(QString srcid, variant var) : srcid(srcid), var(var) {}
     QString srcid;
     variant var;
+    bool complete = false;
 };
 
 using container = boost::multi_index_container<
@@ -237,7 +238,7 @@ bool parseInternalSrcParam(QTextStream& is, runstream::source::container& sc, in
             is >> s.angle;
         if (!is.atEnd())
             is >> s.szinit;
-        s.complete = true; // terminal parse
+        kvp.complete = true; // terminal parse
         kvp.var = s;
         v.replace(it, kvp);
         break;
@@ -250,7 +251,7 @@ bool parseInternalSrcParam(QTextStream& is, runstream::source::container& sc, in
         is.skipWhiteSpace();
         if (!is.atEnd())
             is >> s.szinit;
-        s.complete = false; // non-terminal parse
+        kvp.complete = false; // non-terminal parse
         kvp.var = s;
         v.replace(it, kvp); // update record
         break;
@@ -265,7 +266,7 @@ bool parseInternalSrcParam(QTextStream& is, runstream::source::container& sc, in
             is >> s.nverts;
         if (!is.atEnd())
             is >> s.szinit;
-        s.complete = true; // terminal parse
+        kvp.complete = true; // terminal parse
         kvp.var = s;
         v.replace(it, kvp); // update record
         break;
@@ -308,7 +309,7 @@ bool parseInternalAreaVert(QTextStream& is, runstream::source::container& sc, in
     }
 
     if (s.areavert.size() == s.nverts) {
-        s.complete = true; // terminal parse    
+        kvp.complete = true; // terminal parse
     }
 
     kvp.var = s;
@@ -415,7 +416,7 @@ void RunstreamParser::parseSources(const QString& filename, SourceGroup *sgPtr)
         }
         case 4: { // AREA
             auto rs = boost::get<runstream::source::area>(sv);
-            if (!rs.complete) {
+            if (!kvp.complete) {
                 BOOST_LOG_TRIVIAL(error) << "Incomplete parse for SRCID '" << kvp.srcid.toStdString() << "'";
                 break;
             }
@@ -433,7 +434,7 @@ void RunstreamParser::parseSources(const QString& filename, SourceGroup *sgPtr)
         }
         case 5: { // AREAPOLY
             auto rs = boost::get<runstream::source::areapoly>(sv);
-            if (!rs.complete) {
+            if (!kvp.complete) {
                 BOOST_LOG_TRIVIAL(error) << "Incomplete parse for SRCID '" << kvp.srcid.toStdString() << "'";
                 break;
             }
@@ -447,7 +448,7 @@ void RunstreamParser::parseSources(const QString& filename, SourceGroup *sgPtr)
         }
         case 6: { // AREACIRC
             auto rs = boost::get<runstream::source::areacirc>(sv);
-            if (!rs.complete) {
+            if (!kvp.complete) {
                 BOOST_LOG_TRIVIAL(error) << "Incomplete parse for SRCID '" << kvp.srcid.toStdString() << "'";
                 break;
             }

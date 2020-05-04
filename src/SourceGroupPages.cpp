@@ -22,7 +22,7 @@
 #include "delegates/SpinBoxDelegate.h"
 #include "models/BufferZoneModel.h"
 #include "models/FluxProfileModel.h"
-#include "widgets/BackgroundFrame.h"
+#include "widgets/TabWidgetFrame.h"
 #include "widgets/GridLayout.h"
 #include "widgets/StandardTableView.h"
 #include "widgets/StatusLabel.h"
@@ -118,7 +118,7 @@ ApplicationPage::ApplicationPage(SourceGroup *sg, QWidget *parent)
     mainLayout->addWidget(gbMonteCarlo);
     mainLayout->addStretch(1);
 
-    BackgroundFrame *frame = new BackgroundFrame;
+    TabWidgetFrame *frame = new TabWidgetFrame;
     frame->setLayout(mainLayout);
     QVBoxLayout *frameLayout = new QVBoxLayout;
     frameLayout->addWidget(frame);
@@ -217,7 +217,7 @@ DepositionPage::DepositionPage(SourceGroup *sg, QWidget *parent)
     mainLayout->addWidget(lblDepoUserVelocity);
     mainLayout->addSpacing(5);
 
-    BackgroundFrame *frame = new BackgroundFrame;
+    TabWidgetFrame *frame = new TabWidgetFrame;
     frame->setLayout(mainLayout);
     QVBoxLayout *frameLayout = new QVBoxLayout;
     frameLayout->addWidget(frame);
@@ -290,7 +290,7 @@ FluxProfilePage::FluxProfilePage(Scenario *s, SourceGroup *sg, QWidget *parent)
     mainLayout->addWidget(lblNoFluxProfile);
     mainLayout->addSpacing(5);
 
-    BackgroundFrame *frame = new BackgroundFrame;
+    TabWidgetFrame *frame = new TabWidgetFrame;
     frame->setLayout(mainLayout);
     QVBoxLayout *frameLayout = new QVBoxLayout;
     frameLayout->addWidget(frame);
@@ -354,7 +354,7 @@ BufferZonePage::BufferZonePage(SourceGroup *sg, QWidget *parent)
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->addWidget(editor);
 
-    BackgroundFrame *frame = new BackgroundFrame;
+    TabWidgetFrame *frame = new TabWidgetFrame;
     frame->setLayout(mainLayout);
     QVBoxLayout *frameLayout = new QVBoxLayout;
     frameLayout->setContentsMargins(0, 0, 0, 0);

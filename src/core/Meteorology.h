@@ -86,15 +86,12 @@ struct SurfaceRecord
     bool calm;              //          derived
     bool missing;           //          derived
 
-    friend std::istream& operator>>(std::istream&, SurfaceRecord&);
+    boost::posix_time::ptime ptime;
 
     friend bool operator<(const SurfaceRecord& lhs, const SurfaceRecord& rhs) {
         return std::tie(lhs.mpyr, lhs.mpcmo, lhs.mpcdy, lhs.j)
              < std::tie(rhs.mpyr, rhs.mpcmo, rhs.mpcdy, rhs.j);
     }
-
-    friend bool operator==(const SurfaceRecord& lhs, const UpperAirRecord& rhs);
-    friend bool operator==(const SurfaceRecord& lhs, const UpperAirRecord& rhs);
 };
 
 struct UpperAirRecord
@@ -111,7 +108,7 @@ struct UpperAirRecord
     double sa;              // F6.1,1X  sigma-A (degrees)
     double sw;              // F7.2     sigma-W (m/s)
 
-    friend std::istream& operator>>(std::istream&, UpperAirRecord&);
+    boost::posix_time::ptime ptime;
 
     friend bool operator<(const UpperAirRecord& lhs, const UpperAirRecord& rhs) {
         return std::tie(lhs.mpyr, lhs.mpcmo, lhs.mpcdy, lhs.j)
@@ -155,28 +152,35 @@ inline std::ostream& operator<<(std::ostream& os, const boost::icl::discrete_int
     return os;
 }
 
-struct MetFile
-{
-    MetFile(const std::filesystem::path& p) : path_(p) {}
+//-----------------------------------------------------------------------------
+// SurfaceFile
+//-----------------------------------------------------------------------------
 
-    bool isValid() const {
-        namespace fs = std::filesystem;
-        std::error_code ec;
-        bool exists = fs::exists(path_, ec);
-        if (ec.value()) return false;
-        bool isfile = fs::is_regular_file(path_, ec);
-        if (ec.value()) return false;
-        return exists && isfile;
-    }
+struct SurfaceFile
+{
+    SurfaceFile() {}
+    SurfaceFile(const std::filesystem::path& p);
 
     std::string path() const {
         return path_.string();
     }
 
-    std::filesystem::file_time_type lastWriteTime() const {
-        namespace fs = std::filesystem;
+    std::string absolutePath() const {
         std::error_code ec;
-        return fs::last_write_time(path_, ec);
+        auto ap = std::filesystem::absolute(path_, ec);
+        return ec.value() ? std::string() : ap.string();
+    }
+
+    std::size_t calmHours() const {
+        return ncalm_;
+    }
+
+    std::size_t missingHours() const {
+        return nmissing_;
+    }
+
+    std::size_t totalHours() const {
+        return nhours_;
     }
 
     boost::posix_time::ptime minTime() const {
@@ -195,24 +199,6 @@ struct MetFile
         return intervals_;
     }
 
-protected:
-    std::size_t nrows_ = 0;
-    std::filesystem::path path_;
-    boost::icl::interval_set<boost::posix_time::ptime> intervals_;
-};
-
-struct SurfaceFile : MetFile
-{
-    SurfaceFile(const std::filesystem::path& p);
-
-    std::size_t calmHours() const {
-        return ncalm_;
-    }
-
-    std::size_t missingHours() const {
-        return nmissing_;
-    }
-
     const SurfaceHeader& header() const {
         return header_;
     }
@@ -220,22 +206,70 @@ struct SurfaceFile : MetFile
     std::vector<SurfaceRecord> records() const;
 
 private:
+    std::filesystem::path path_;
     SurfaceHeader header_;
+    std::size_t nhours_ = 0;
     std::size_t ncalm_ = 0;
     std::size_t nmissing_ = 0;
+    boost::icl::interval_set<boost::posix_time::ptime> intervals_;
 };
 
-struct UpperAirFile : MetFile
+//-----------------------------------------------------------------------------
+// UpperAirFile
+//-----------------------------------------------------------------------------
+
+struct UpperAirFile
 {
+    UpperAirFile() {}
     UpperAirFile(const std::filesystem::path& p);
 
+    std::string path() const {
+        return path_.string();
+    }
+
+    std::string absolutePath() const {
+        std::error_code ec;
+        auto ap = std::filesystem::absolute(path_, ec);
+        return ec.value() ? std::string() : ap.string();
+    }
+
+    std::size_t totalHours() const {
+        return nhours_;
+    }
+
+    boost::posix_time::ptime minTime() const {
+        if (intervals_.empty())
+            return boost::posix_time::ptime();
+        return boost::icl::first(intervals_);
+    }
+
+    boost::posix_time::ptime maxTime() const {
+        if (intervals_.empty())
+            return boost::posix_time::ptime();
+        return boost::icl::last(intervals_);
+    }
+
+    boost::icl::interval_set<boost::posix_time::ptime> intervals() const {
+        return intervals_;
+    }
+
     std::vector<UpperAirRecord> records() const;
+
+private:
+    std::filesystem::path path_;
+    std::size_t nhours_ = 0;
+    boost::icl::interval_set<boost::posix_time::ptime> intervals_;
 };
+
+//-----------------------------------------------------------------------------
+// Meteorology
+//-----------------------------------------------------------------------------
 
 struct Meteorology
 {
-    Meteorology(const std::filesystem::path& sfc,
-                const std::filesystem::path& pfl);
+    Meteorology() {}
+    Meteorology(const std::filesystem::path& sfc, const std::filesystem::path& pfl)
+        : surfaceFile(sfc), upperAirFile(pfl) {}
 
     std::string name;
     SurfaceFile surfaceFile;

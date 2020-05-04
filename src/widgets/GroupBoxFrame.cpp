@@ -13,24 +13,30 @@
 // limitations under the License.
 //
 
-#include "BackgroundFrame.h"
+#include "GroupBoxFrame.h"
 
 #include <QPaintEvent>
 #include <QStyle>
 #include <QStylePainter>
-#include <QStyleOptionTabWidgetFrame>
+#include <QStyleOptionGroupBox>
 #include <QWidget>
 
-BackgroundFrame::BackgroundFrame(QWidget *parent)
+GroupBoxFrame::GroupBoxFrame(QWidget *parent)
     : QFrame(parent)
 {
     setAutoFillBackground(true);
 }
 
-void BackgroundFrame::paintEvent(QPaintEvent* event)
+void GroupBoxFrame::paintEvent(QPaintEvent* event)
 {
     QStylePainter p(this);
-    QStyleOptionTabWidgetFrame opt;
+    QStyleOptionGroupBox opt;
     opt.rect = rect();
-    p.drawPrimitive(QStyle::PE_FrameTabWidget, opt);
+
+    // Remove top margin.
+    int indicatorHeight = style()->pixelMetric(QStyle::PM_ExclusiveIndicatorHeight);
+    int topMargin = qMax(indicatorHeight, opt.fontMetrics.height()) + 3; // qfusionstyle.cpp
+    opt.rect.adjust(0, -topMargin, 0, 0);
+
+    p.drawPrimitive(QStyle::PE_FrameGroupBox, opt);
 }

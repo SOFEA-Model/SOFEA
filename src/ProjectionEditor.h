@@ -22,6 +22,7 @@
 
 class DoubleLineEdit;
 class ExtendedComboBox;
+class ReadOnlyLineEdit;
 class PlainTextEdit;
 class ZoneModel;
 
@@ -56,7 +57,7 @@ private slots:
 
 private:
     void setupConnections();
-    void updatePreview();
+    void updateProjectionInfo();
 
     ZoneModel *zoneModel;
     QComboBox *cboProjection;
@@ -66,4 +67,8 @@ private:
     QComboBox *cboVDatum;
     QComboBox *cboVUnits;
     PlainTextEdit *textPreview;
+    ReadOnlyLineEdit *leYMax;
+    ReadOnlyLineEdit *leXMin;
+    ReadOnlyLineEdit *leYMin;
+    ReadOnlyLineEdit *leXMax;
 };

@@ -18,6 +18,7 @@
 #include <QColor>
 #include <QImage>
 #include <QPainter>
+#include <QStyle>
 
 QPixmap PixmapUtilities::brushValuePixmap(const QBrush& brush)
 {

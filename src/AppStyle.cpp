@@ -94,6 +94,7 @@ QIcon AppStyle::standardIcon(QStyle::StandardPixmap sp,
     static const QIcon statusOkIcon          = smallIconResource("StatusOK");
     static const QIcon statusInfoTipIcon     = smallIconResource("StatusInfoTip");
     static const QIcon statusRequiredIcon    = smallIconResource("StatusRequired");
+    static const QIcon statusDebugIcon       = smallIconResource("StatusInformation_grey");
     static const QIcon statusInformationIcon = smallIconResource("StatusInformation");
     static const QIcon statusAlertIcon       = smallIconResource("StatusAlert");
     static const QIcon statusWarningIcon     = smallIconResource("StatusWarning");
@@ -179,7 +180,7 @@ QIcon AppStyle::standardIcon(QStyle::StandardPixmap sp,
     case AppStyle::CP_StatusRequired:
         return statusRequiredIcon;
     case AppStyle::CP_StatusDebug:
-        return statusInformationIcon;
+        return statusDebugIcon;
     case AppStyle::CP_StatusInformation:
         return statusInformationIcon;
     case AppStyle::CP_StatusAlert:

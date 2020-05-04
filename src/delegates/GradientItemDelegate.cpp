@@ -15,9 +15,10 @@
 
 #include "GradientItemDelegate.h"
 
-#include <QImage>
+#include <QApplication>
 #include <QModelIndex>
 #include <QPainter>
+#include <QPixmap>
 #include <QStyleOptionViewItem>
 
 GradientItemDelegate::GradientItemDelegate(QObject *parent)
@@ -27,37 +28,35 @@ GradientItemDelegate::GradientItemDelegate(QObject *parent)
 void GradientItemDelegate::paint(QPainter *painter,
     const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-    if (index.data(Qt::DecorationRole).canConvert<QLinearGradient>()) {
-        QLinearGradient gradient = qvariant_cast<QLinearGradient>(index.data(Qt::DecorationRole));
-        QPixmap pixmap = gradientPixmap(gradient);
-
-        if (option.state & QStyle::State_Selected)
-            painter->fillRect(option.rect, option.palette.highlight());
-
-        const int x = option.rect.x();
-        const int y = option.rect.y();
-
-        painter->drawPixmap(QRect(x, y, pixmap.rect().width(), pixmap.rect().height()), pixmap);
-    }
-    else {
+    if (!index.data(Qt::DecorationRole).canConvert<QLinearGradient>()) {
         QStyledItemDelegate::paint(painter, option, index);
+        return;
     }
+
+    QLinearGradient gradient = qvariant_cast<QLinearGradient>(index.data(Qt::DecorationRole));
+
+    // Draw background when selected.
+    if (option.state & QStyle::State_Selected)
+        painter->fillRect(option.rect, option.palette.highlight());
+
+    QRect rect = option.rect;
+    int width = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * 3;
+    rect.setWidth(width);
+    rect.adjust(3, 3, -3, -3);
+
+    QPen pen(QApplication::palette().text().color());
+    pen.setCosmetic(true);
+
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing, true);
+    painter->setPen(pen);
+    painter->setBrush(gradient);
+    painter->drawRect(rect);
+    painter->restore();
 }
 
-QSize GradientItemDelegate::sizeHint(const QStyleOptionViewItem &, const QModelIndex &) const
+QSize GradientItemDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex &) const
 {
-    return QSize(48, 16);
-}
-
-QPixmap GradientItemDelegate::gradientPixmap(const QLinearGradient &gradient)
-{
-    QImage img(48, 16, QImage::Format_ARGB32_Premultiplied);
-    img.fill(0);
-
-    QPainter painter(&img);
-    painter.setCompositionMode(QPainter::CompositionMode_Source);
-    painter.fillRect(0, 0, img.width(), img.height(), gradient);
-    painter.end();
-
-    return QPixmap::fromImage(img);
+    int smallIconSize = qApp->style()->pixelMetric(QStyle::PM_SmallIconSize, &option);
+    return QSize(smallIconSize * 3, smallIconSize);
 }

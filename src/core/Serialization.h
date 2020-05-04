@@ -73,8 +73,9 @@ CEREAL_CLASS_VERSION(BufferZone, 1)
 CEREAL_CLASS_VERSION(AreaSource, 4)
 CEREAL_CLASS_VERSION(AreaCircSource, 4)
 CEREAL_CLASS_VERSION(AreaPolySource, 4)
+CEREAL_CLASS_VERSION(Meteorology, 1)
 CEREAL_CLASS_VERSION(SourceGroup, 7)
-CEREAL_CLASS_VERSION(Scenario, 6)
+CEREAL_CLASS_VERSION(Scenario, 7)
 
 
 namespace traits {
@@ -603,7 +604,7 @@ void serialize(Archive& archive, ReceptorNode& rn, const std::uint32_t version)
 }
 
 // External serialize function for ReceptorRing
-// *** Depreciated, For Serialization Only ***
+// *** DEPRECIATED, FOR SERIALIZATION ONLY ***
 template <class Archive>
 void serialize(Archive& archive, ReceptorRing& rr, const std::uint32_t version)
 {
@@ -624,7 +625,7 @@ void serialize(Archive& archive, ReceptorRing& rr, const std::uint32_t version)
 }
 
 // External serialize function for ReceptorGrid
-// *** Depreciated, For Serialization Only ***
+// *** DEPRECIATED, FOR SERIALIZATION ONLY ***
 template <class Archive>
 void serialize(Archive& archive, ReceptorGrid& rg, const std::uint32_t version)
 {
@@ -705,6 +706,9 @@ void serialize(Archive& archive, ReceptorGridGroup& rg, const std::uint32_t vers
 template <class Archive>
 void serialize(Archive& archive, BufferZone& z, const std::uint32_t version)
 {
+    // VERSION HISTORY:
+    // -
+
     if (version >= 1) {
         archive(cereal::make_nvp("area_threshold", z.areaThreshold),
                 cereal::make_nvp("app_rate_threshold", z.appRateThreshold),
@@ -879,6 +883,38 @@ void serialize(Archive& archive, SourceGroup& sg, const std::uint32_t version)
     }
 }
 
+// External save function for Meteorology
+template <class Archive>
+void save(Archive& archive, const Meteorology& m, const std::uint32_t version)
+{
+    if (version >= 1) {
+        archive(cereal::make_nvp("name", m.name),
+                cereal::make_nvp("surface_file_path", m.surfaceFile.path()),
+                cereal::make_nvp("upper_air_file_path", m.upperAirFile.path()),
+                cereal::make_nvp("terrain_elevation", m.terrainElevation),
+                cereal::make_nvp("anemometer_height", m.anemometerHeight),
+                cereal::make_nvp("wind_rotation", m.windRotation));
+    }
+}
+
+// External load function for Meteorology
+template <class Archive>
+void load(Archive& archive, Meteorology& m, const std::uint32_t version)
+{
+    if (version >= 1) {
+        std::string sfpath, uapath;
+        archive(cereal::make_nvp("name", m.name),
+                cereal::make_nvp("surface_file_path", sfpath),
+                cereal::make_nvp("upper_air_file_path", uapath),
+                cereal::make_nvp("terrain_elevation", m.terrainElevation),
+                cereal::make_nvp("anemometer_height", m.anemometerHeight),
+                cereal::make_nvp("wind_rotation", m.windRotation));
+
+        m.surfaceFile = SurfaceFile(sfpath);
+        m.upperAirFile = UpperAirFile(uapath);
+    }
+}
+
 // External serialize function for Scenario
 template <class Archive>
 void serialize(Archive& archive, Scenario& s, const std::uint32_t version)
@@ -891,6 +927,7 @@ void serialize(Archive& archive, Scenario& s, const std::uint32_t version)
     //        boost::ptr_vector<SourceGroup> replaced with std::vector<std::shared_ptr<SourceGroup>>
     // - V6:  remove flagpole height from scenario, assign directly to receptors
     //        adds support for projections
+    // - V7:  move meteorological data to Meteorology class
 
     if (version >= 1) {
         archive(cereal::make_nvp("title", s.name),
@@ -903,16 +940,26 @@ void serialize(Archive& archive, Scenario& s, const std::uint32_t version)
     if (version >= 4) {
         archive(cereal::make_nvp("flux_profiles", s.fluxProfiles));
     }
+
+    if (version >= 7) {
+        archive(cereal::make_nvp("meteorology", s.meteorology));
+    }
+    else {
+        // Move meteorological parameters from scenario when loading earlier class versions.
+        if constexpr (std::is_base_of_v<cereal::detail::InputArchiveBase, Archive>) {
+            std::string sfpath, uapath;
+            archive(cereal::make_nvp("aermet_sf_file", sfpath),
+                    cereal::make_nvp("aermet_ua_file", uapath),
+                    cereal::make_nvp("anemometer_height", s.meteorology.anemometerHeight),
+                    cereal::make_nvp("wind_rotation", s.meteorology.windRotation));
+
+            s.meteorology.surfaceFile = SurfaceFile(sfpath);
+            s.meteorology.upperAirFile = UpperAirFile(uapath);
+        }
+    }
+
     if (version >= 1) {
-        archive(cereal::make_nvp("aermet_sf_file", s.surfaceFile),
-                cereal::make_nvp("aermet_ua_file", s.upperAirFile),
-                cereal::make_nvp("aermet_sf_id", s.surfaceId),
-                cereal::make_nvp("aermet_ua_id", s.upperAirId),
-                cereal::make_nvp("min_time", s.minTime),
-                cereal::make_nvp("max_time", s.maxTime),
-                cereal::make_nvp("anemometer_height", s.anemometerHeight),
-                cereal::make_nvp("wind_rotation", s.windRotation),
-                cereal::make_nvp("aermod_flat", s.aermodFlat),
+        archive(cereal::make_nvp("aermod_flat", s.aermodFlat),
                 cereal::make_nvp("aermod_fast_area", s.aermodFastArea));
     }
     if (version >= 3) {
@@ -931,16 +978,15 @@ void serialize(Archive& archive, Scenario& s, const std::uint32_t version)
                 cereal::make_nvp("aermod_low_wind_svmin", s.aermodSVmin),
                 cereal::make_nvp("aermod_low_wind_wsmin", s.aermodWSmin),
                 cereal::make_nvp("aermod_low_wind_franmax", s.aermodFRANmax));
-
     }
+
 
     if (version >= 5) {
         archive(cereal::make_nvp("source_groups", s.sourceGroups));
     }
     else {
         // Move source groups from boost::ptr_vector when loading earlier class versions.
-        if constexpr (std::is_base_of_v<cereal::detail::InputArchiveBase, Archive>)
-        {
+        if constexpr (std::is_base_of_v<cereal::detail::InputArchiveBase, Archive>) {
             boost::ptr_vector<SourceGroup> pv;
             archive(cereal::make_nvp("source_groups", pv));
             s.sourceGroups.clear();

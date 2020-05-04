@@ -42,23 +42,19 @@ void AreaSource::setGeometry()
 
     // Check geometry and rotate
     if (GeometryOp::is_simple(p) && GeometryOp::is_valid(p)) {
-        if (angle == 0) geometry = p;
-        else {
-            QPolygonF rotated;
-            GeometryOp::rotate(p, rotated, QPointF(xs, ys), angle);
-            geometry = rotated;
-        }
+        if (angle == 0)
+            geometry = p;
+        else
+            geometry = GeometryOp::rotate(p, QPointF(xs, ys), angle);
         xs = p.first().x();
         ys = p.first().y();
         return;
     }
     else if (GeometryOp::correct(p)) {
-        if (angle == 0) geometry = p;
-        else {
-            QPolygonF rotated;
-            GeometryOp::rotate(p, rotated, QPointF(xs, ys), angle);
-            geometry = rotated;
-        }
+        if (angle == 0)
+            geometry = p;
+        else
+            geometry = GeometryOp::rotate(p, QPointF(xs, ys), angle);
         xs = p.first().x();
         ys = p.first().y();
         return;

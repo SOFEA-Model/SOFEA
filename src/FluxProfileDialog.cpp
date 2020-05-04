@@ -21,8 +21,8 @@
 #include "FluxProfilePlot.h"
 #include "delegates/DoubleItemDelegate.h"
 #include "delegates/SpinBoxDelegate.h"
-#include "widgets/BackgroundFrame.h"
 #include "widgets/GridLayout.h"
+#include "widgets/TabWidgetFrame.h"
 
 #include <boost/log/trivial.hpp>
 #include <boost/log/attributes/scoped_attribute.hpp>
@@ -608,7 +608,7 @@ void FluxProfileDialog::plotTemporalScaling()
     plot->addRefVLine(xref, 0, " Field Study");
 
     // Layout
-    BackgroundFrame *plotFrame = new BackgroundFrame;
+    TabWidgetFrame *plotFrame = new TabWidgetFrame;
     QVBoxLayout *plotLayout = new QVBoxLayout;
     plotLayout->addWidget(plot);
     plotFrame->setLayout(plotLayout);
@@ -670,7 +670,7 @@ void FluxProfileDialog::plotDepthScaling()
     plot->addRefVLine(fp.refDepth, 0, " Field Study");
 
     // Layout
-    BackgroundFrame *plotFrame = new BackgroundFrame;
+    TabWidgetFrame *plotFrame = new TabWidgetFrame;
     QVBoxLayout *plotLayout = new QVBoxLayout;
     plotLayout->addWidget(plot);
     plotFrame->setLayout(plotLayout);

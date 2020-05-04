@@ -13,7 +13,6 @@
 // limitations under the License.
 //
 
-#include <QApplication>
 #include <QIcon>
 #include <QLineEdit>
 #include <QToolButton>
@@ -66,16 +65,16 @@ void MonteCarloDateTimeEdit::reset()
     if (currentDist.which() == 0) {
         auto d = boost::get<Distribution::ConstantDateTime>(currentDist);
         setDateTime(QDateTime(d.date(), d.time(), Qt::UTC));
-        QPalette palette = QApplication::palette(this);
-        setPalette(palette);
+        QPalette p = QDateTimeEdit::palette();
+        setPalette(p);
         setSelectedSection(QDateTimeEdit::NoSection);
     }
     else {
         previousValue = dateTime();
         setDateTime(minimumDateTime());
-        QPalette palette = this->palette();
-        palette.setColor(QPalette::Text, Qt::blue);
-        setPalette(palette);
+        QPalette p = this->palette();
+        p.setColor(QPalette::Text, Qt::blue);
+        setPalette(p);
     }
 }
 

@@ -51,7 +51,6 @@ namespace detail {
         double stktmp; // stack gas exit temperature in degrees K; 0.0 for ambient
         double stkvel; // stack gas exit velocity in m/s
         double stkdia; // stack inside diameter in meters
-        bool complete;
     };
 
     template <> struct generic<tag::pointcap> {
@@ -63,7 +62,6 @@ namespace detail {
         double stktmp; // stack gas exit temperature in degrees K; 0.0 for ambient
         double stkvel; // stack gas exit velocity in m/s
         double stkdia; // stack inside diameter in meters
-        bool complete;
     };
 
     template <> struct generic<tag::pointhor> {
@@ -75,7 +73,6 @@ namespace detail {
         double stktmp; // stack gas exit temperature in degrees K; 0.0 for ambient
         double stkvel; // stack gas exit velocity in m/s
         double stkdia; // stack inside diameter in meters
-        bool complete;
     };
 
     template <> struct generic<tag::volume> {
@@ -86,7 +83,6 @@ namespace detail {
         double relhgt; // release height (center of volume) above ground, in meters
         double syinit; // initial lateral dimension of the volume in meters
         double szinit; // initial vertical dimension of the volume in meters
-        bool complete;
     };
 
     template <> struct generic<tag::area> {
@@ -99,7 +95,6 @@ namespace detail {
         double yinit;      // length of Y side of the area (in the north-south direction if Angle is 0 degrees) in meters
         double angle = 0;  // orientation angle for the rectangular area in degrees from North, measured positive in the clockwise direction
         double szinit = 0; // initial vertical dimension of the area source plume in meters
-        bool complete;
     };
 
     template <> struct generic<tag::areapoly> {
@@ -111,7 +106,6 @@ namespace detail {
         int nverts;        // number of vertices (or sides) of the area source polygon
         double szinit = 0; // initial vertical dimension of the area source plume in meters
         QPolygonF areavert;
-        bool complete;
     };
 
     template <> struct generic<tag::areacirc> {
@@ -123,7 +117,6 @@ namespace detail {
         double radius;     // radius of the circular area in meters
         int nverts = 20;   // number of vertices (or sides) of the area source polygon
         double szinit = 0; // initial vertical dimension of the area source plume in meters
-        bool complete;
     };
 
     template <> struct generic<tag::openpit> {
@@ -136,7 +129,6 @@ namespace detail {
         double yinit;  // length of Y side of the open pit (in the north-south direction if Angle is 0 degrees) in meters
         double pitvol; // volume of open pit in cubic meters
         double angle;  // orientation angle for the rectangular open pit in degrees from North, measured positive in the clockwise direction
-        bool complete;
     };
 
     template <> struct generic<tag::line> {
@@ -149,7 +141,6 @@ namespace detail {
         double relhgt;     // average release height above ground in meters
         double width;      // width of the source in meters (with a minimum width of 1m)
         double szinit = 0; // initial vertical dimension of the line source in meters
-        bool complete;
     };
 
     template <> struct generic<tag::buoyline> {
@@ -160,7 +151,6 @@ namespace detail {
         double zs = 0;
         double blemis;    // buoyant line emission rate in g/(s-m2) for the individual line
         double relhgt;    // average release height of the individual line above ground in meters
-        bool complete;
     };
 
     template <> struct generic<tag::rline> {
@@ -173,7 +163,6 @@ namespace detail {
         double relhgt;     // average release height above ground in meters
         double width;      // width of the source in meters (with a minimum width of 1m)
         double szinit = 0; // initial vertical dimension of the line source in meters
-        bool complete;
     };
 
     template <> struct generic<tag::rlinext> {
@@ -188,7 +177,6 @@ namespace detail {
         double dcl;        // distance from the roadway centerline to the center of the source in meters
         double width;      // width for each source in meters
         double szinit;     // initial vertical dimension of the line source in meters
-        bool complete;
     };
 
 } // namespace detail

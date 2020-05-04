@@ -21,7 +21,7 @@
 
 class FilterProxyModel;
 class FluxProfileModel;
-class SourceEditor;
+class SourceGeometryEditor;
 class SourceModel;
 class StandardTableView;
 
@@ -68,7 +68,7 @@ private:
     QLabel *massLabel;
     StandardTableView *table;
     SourceModel *model;
-    SourceEditor *sourceEditor;
+    SourceGeometryEditor *geometryEditor;
     FilterProxyModel *proxyModel;
     FluxProfileModel *fpEditorModel;
 

@@ -42,11 +42,15 @@ public:
     QString dialogDirectory() const;
     QString dialogFilter() const;
     QFileDialog::FileMode dialogFileMode() const;
+    QFileDialog::AcceptMode dialogAcceptMode() const;
+    QString dialogDefaultSuffix() const;
 
     void setDialogCaption(const QString& caption);
     void setDialogDirectory(const QString& dir);
     void setDialogFilter(const QString& filter);
     void setDialogFileMode(QFileDialog::FileMode mode);
+    void setDialogAcceptMode(QFileDialog::AcceptMode mode);
+    void setDialogDefaultSuffix(const QString& suffix);
     void setReadOnly(bool readOnly);
 
 signals:
@@ -74,4 +78,6 @@ private:
     QString dialogDirectory_;
     QString dialogFilter_;
     QFileDialog::FileMode dialogFileMode_ = QFileDialog::ExistingFile;
+    QFileDialog::AcceptMode dialogAcceptMode_ = QFileDialog::AcceptOpen;
+    QString dialogDefaultSuffix_;
 };

@@ -13,17 +13,14 @@
 // limitations under the License.
 //
 
-#ifndef SOURCEEDITOR_H
-#define SOURCEEDITOR_H
-
-#include <vector>
+#pragma once
 
 #include <QWidget>
+#include <QModelIndexList>
 
-#include "core/SourceGroup.h"
-
-class AreaSourceEditor;
-class AreaCircSourceEditor;
+class AreaSourceGeometryEditor;
+class AreaCircSourceGeometryEditor;
+class AreaPolySourceGeometryEditor;
 class DoubleLineEdit;
 class VertexEditor;
 class VertexEditorDelegate;
@@ -41,23 +38,20 @@ class QSpinBox;
 class QStackedLayout;
 QT_END_NAMESPACE
 
-class SourceEditor : public QWidget
+class SourceGeometryEditor : public QWidget
 {
-    Q_OBJECT
-
 public:
-    SourceEditor(QWidget *parent = nullptr);
+    explicit SourceGeometryEditor(QWidget *parent = nullptr);
     void setModel(QAbstractItemModel *model);
-    void setCurrentModelIndex(const QModelIndex& index);
+    void setIndexes(const QModelIndexList& indexes);
     void setEditorIndex(int index);
     void setStatusText(const QString& text);
 
 private:
     QLabel *statusLabel;
-    AreaSourceEditor *areaEditor;
-    AreaCircSourceEditor *areaCircEditor;
-    VertexEditorDelegate *areaPolyEditorDelegate;
-    VertexEditor *areaPolyEditor;
+    AreaSourceGeometryEditor *areaEditor;
+    AreaCircSourceGeometryEditor *areaCircEditor;
+    AreaPolySourceGeometryEditor *areaPolyEditor;
     QPushButton *btnUpdate;
 
     //QDateTimeEdit *deAppStart;
@@ -71,21 +65,19 @@ private:
 
     QDataWidgetMapper *mapper;
     QAbstractItemModel *sourceModel = nullptr;
-    QStackedLayout *geometryStack;
+    QStackedLayout *stack;
 };
 
 //-----------------------------------------------------------------------------
-// AreaSourceEditor
+// AreaSourceGeometryEditor
 //-----------------------------------------------------------------------------
 
-class AreaSourceEditor : public QWidget
+class AreaSourceGeometryEditor : public QWidget
 {
-    Q_OBJECT
-
-friend class SourceEditor;
+friend class SourceGeometryEditor;
 
 public:
-    AreaSourceEditor(QWidget *parent = nullptr);
+    explicit AreaSourceGeometryEditor(QWidget *parent = nullptr);
 
 private:
     QDoubleSpinBox *sbXCoord;
@@ -96,17 +88,15 @@ private:
 };
 
 //-----------------------------------------------------------------------------
-// AreaCircSourceEditor
+// AreaCircSourceGeometryEditor
 //-----------------------------------------------------------------------------
 
-class AreaCircSourceEditor : public QWidget
+class AreaCircSourceGeometryEditor : public QWidget
 {
-    Q_OBJECT
-
-friend class SourceEditor;
+friend class SourceGeometryEditor;
 
 public:
-    AreaCircSourceEditor(QWidget *parent = nullptr);
+    explicit AreaCircSourceGeometryEditor(QWidget *parent = nullptr);
 
 private:
     QDoubleSpinBox *sbXCoord;
@@ -115,4 +105,18 @@ private:
     QSpinBox *sbVertexCount;
 };
 
-#endif // SOURCEEDITOR_H
+//-----------------------------------------------------------------------------
+// AreaCircSourceGeometryEditor
+//-----------------------------------------------------------------------------
+
+class AreaPolySourceGeometryEditor : public QWidget
+{
+friend class SourceGeometryEditor;
+
+public:
+    explicit AreaPolySourceGeometryEditor(QWidget *parent = nullptr);
+
+private:
+    VertexEditorDelegate *vertexEditorDelegate;
+    VertexEditor *vertexEditor;
+};

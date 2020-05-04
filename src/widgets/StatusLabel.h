@@ -42,6 +42,7 @@ public:
 
     void setStatusType(StatusType type);
     void setText(const QString& text);
+    QLabel * label();
 
 private:
     QLabel *m_iconLabel;

@@ -15,7 +15,7 @@
 
 #include "MeteorologyModel.h"
 #include "MeteorologyStationData.h"
-#include "core/DateTimeConversion.h"
+#include "utilities/DateTimeConversion.h"
 
 #include <QApplication>
 #include <QColor>
@@ -193,10 +193,8 @@ QVariant MeteorologyModel::data(const QModelIndex &index, int role) const
         case Column::SurfaceStation:
         case Column::UpperAirStation:
         case Column::OnSiteStation:
-            return Qt::AlignCenter;
         case Column::StartTime:
         case Column::EndTime:
-            return Qt::AlignLeft;
         case Column::TotalHours:
         case Column::CalmHours:
         case Column::MissingHours:

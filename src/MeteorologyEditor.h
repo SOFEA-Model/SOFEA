@@ -43,17 +43,18 @@ public:
     MeteorologyEditor(MeteorologyModel *m, QWidget *parent = nullptr);
 
 private slots:
-    void onCurrentPathChanged(const QString& path);
+    void onSelectionChanged(const QItemSelection&, const QItemSelection&);
     void onAddClicked();
+    void onWindRoseClicked();
     void onDeclinationCalcClicked();
-    //void onSelectionChanged(const QItemSelection&, const QItemSelection&);
+    void onCurrentPathChanged(const QString& path);
 
 private:
     MeteorologyModel *model;
     MeteorologyTableView *table;
     StandardTableEditor *tableEditor;
-
     StatusLabel *lblInfoTip;
+    QPushButton *btnWindRose;
     PathEdit *leSurfaceFile;
     PathEdit *leUpperAirFile;
     QDoubleSpinBox *sbTerrainElevation;
@@ -61,7 +62,6 @@ private:
     QDoubleSpinBox *sbWindRotation;
     QToolButton *btnDeclinationCalc;
     QPushButton *btnUpdate;
-
     QDataWidgetMapper *mapper;
 };
 

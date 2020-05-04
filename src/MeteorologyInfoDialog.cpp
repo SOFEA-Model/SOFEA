@@ -20,6 +20,7 @@
 
 #include <QBoxLayout>
 #include <QButtonGroup>
+#include <QComboBox>
 #include <QDateTimeEdit>
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -40,10 +41,11 @@
 #include <qwt_scale_engine.h>
 #include <qwt_painter.h>
 
-#include "MetFileInfoDialog.h"
-#include "PixmapUtilities.h"
+#include "MeteorologyInfoDialog.h"
+
 #include "ctk/ctkRangeSlider.h"
-//#include "delegates/GradientItemDelegate.h"
+#include "utilities/DateTimeConversion.h"
+#include "utilities/PixmapUtilities.h"
 #include "widgets/ReadOnlyLineEdit.h"
 #include "widgets/StandardTableView.h"
 
@@ -131,7 +133,6 @@ WindRosePlot::WindRosePlot(QWidget *parent) : QwtPolarPlot(parent)
 {
     setAutoReplot(false);
     setMinimumSize(600, 600);
-    setPlotBackground(Qt::white);
 
     const QwtInterval radialInterval(-0.01, 0.2);
     const QwtInterval azimuthInterval(0.0, 360.0);
@@ -204,11 +205,11 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-// MetFileInfoDialog
+// MeteorologyInfoDialog
 //-----------------------------------------------------------------------------
 
-MetFileInfoDialog::MetFileInfoDialog(std::shared_ptr<SurfaceData> sd, QWidget *parent)
-    : QDialog(parent), sd(sd)
+MeteorologyInfoDialog::MeteorologyInfoDialog(const Meteorology& m, QWidget *parent)
+    : QDialog(parent), surfaceData(m.surfaceFile.records())
 {
     setWindowTitle("Diagnostics");
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
@@ -232,7 +233,9 @@ MetFileInfoDialog::MetFileInfoDialog(std::shared_ptr<SurfaceData> sd, QWidget *p
     leMissingHours = new ReadOnlyLineEdit;
 
     // Plot Widget
-    wrPlot = new WindRosePlot;
+    wrPlot = new WindRosePlot(this);
+    wrPlot->setBackgroundRole(QPalette::Window);
+    wrPlot->setAutoFillBackground(true);
 
     // Plot Controls
     rbSectorSize10 = new QRadioButton(QLatin1String("10\x00b0"));
@@ -247,29 +250,29 @@ MetFileInfoDialog::MetFileInfoDialog(std::shared_ptr<SurfaceData> sd, QWidget *p
     sbBinCount->setValue(6);
 
     // TEST: Gradient Selector
-    /*
-    QComboBox *cboGradient = new QComboBox;
-    cboGradient->setIconSize(QSize(48, 16));
-    QStandardItemModel *gradientModel = new QStandardItemModel;
-    cboGradient->setModel(gradientModel);
-    cboGradient->setItemDelegate(new GradientItemDelegate);
 
-    QStandardItem *item1 = new QStandardItem;
-    QLinearGradient fade1(0, 0, 48, 16);
-    fade1.setColorAt(0, QColor(0, 0, 0, 255));
-    fade1.setColorAt(1, QColor(0, 0, 0, 0));
-    item1->setData("TEST", Qt::DisplayRole);
-    item1->setData(QVariant::fromValue(fade1), Qt::DecorationRole);
-    gradientModel->setItem(0, 0, item1);
+    //QComboBox *cboGradient = new QComboBox;
+    //cboGradient->setIconSize(QSize(48, 16));
+    //QStandardItemModel *gradientModel = new QStandardItemModel;
+    //cboGradient->setModel(gradientModel);
+    //cboGradient->setItemDelegate(new GradientItemDelegate);
+    //
+    //QStandardItem *item1 = new QStandardItem;
+    //QLinearGradient fade1(0, 0, 48, 16);
+    //fade1.setColorAt(0, QColor(0, 0, 0, 255));
+    //fade1.setColorAt(1, QColor(0, 0, 0, 0));
+    //item1->setData("TEST", Qt::DisplayRole);
+    //item1->setData(QVariant::fromValue(fade1), Qt::DecorationRole);
+    //gradientModel->setItem(0, 0, item1);
+    //
+    //QStandardItem *item2 = new QStandardItem;
+    //QLinearGradient fade2(0, 0, 48, 16);
+    //fade2.setColorAt(0, QColor(255, 0, 0, 255));
+    //fade2.setColorAt(1, QColor(0, 0, 255, 255));
+    //item2->setData("TEST", Qt::DisplayRole);
+    //item2->setData(QVariant::fromValue(fade2), Qt::DecorationRole);
+    //gradientModel->setItem(1, 0, item2);
 
-    QStandardItem *item2 = new QStandardItem;
-    QLinearGradient fade2(0, 0, 48, 16);
-    fade2.setColorAt(0, QColor(255, 0, 0, 255));
-    fade2.setColorAt(1, QColor(0, 0, 255, 255));
-    item2->setData("TEST", Qt::DisplayRole);
-    item2->setData(QVariant::fromValue(fade2), Qt::DecorationRole);
-    gradientModel->setItem(1, 0, item2);
-    */
 
     // Bin Editor Model
     binModel = new QStandardItemModel;
@@ -361,35 +364,29 @@ MetFileInfoDialog::MetFileInfoDialog(std::shared_ptr<SurfaceData> sd, QWidget *p
     init();
 }
 
-void MetFileInfoDialog::init()
+void MeteorologyInfoDialog::init()
 {
-    if (sd == nullptr)
-        return;
-
-    if (sd->records.size() == 0)
+    if (surfaceData.size() == 0)
         return;
 
     connect(timeRangeSlider, &ctkRangeSlider::valuesChanged,
-            this, &MetFileInfoDialog::onSliderChanged);
+            this, &MeteorologyInfoDialog::onSliderChanged);
 
     connect(bgSectorSize, QOverload<int>::of(&QButtonGroup::buttonClicked),
-            this, &MetFileInfoDialog::onSectorSizeChanged);
+            this, &MeteorologyInfoDialog::onSectorSizeChanged);
 
     connect(sbBinCount, QOverload<int>::of(&QSpinBox::valueChanged),
-            this, &MetFileInfoDialog::onBinCountChanged);
+            this, &MeteorologyInfoDialog::onBinCountChanged);
 
     // Slider Configuration
-    timeRangeSlider->setRange(1, sd->nrec);
-    timeRangeSlider->setPositions(1, sd->nrec);
+    timeRangeSlider->setRange(1, (int)surfaceData.size());
+    timeRangeSlider->setPositions(1, (int)surfaceData.size());
     timeRangeSlider->setEnabled(true);
 
-    auto sr0 = sd->records.front();
-    auto sr1 = sd->records.back();
-
-    QDateTime minTime = QDateTime(QDate(sr0.mpyr, sr0.mpcmo, sr0.mpcdy),
-                                  QTime(sr0.j - 1, 0, 0), Qt::UTC);
-    QDateTime maxTime = QDateTime(QDate(sr1.mpyr, sr1.mpcmo, sr1.mpcdy),
-                                  QTime(sr1.j - 1, 0, 0), Qt::UTC);
+    auto& sr0 = surfaceData.front();
+    auto& sr1 = surfaceData.back();
+    QDateTime minTime = sofea::utilities::convert<QDateTime>(sr0.ptime);
+    QDateTime maxTime = sofea::utilities::convert<QDateTime>(sr1.ptime);
 
     dteMinTime->setDateTime(minTime);
     dteMinTime->setDateTimeRange(minTime, maxTime);
@@ -400,18 +397,18 @@ void MetFileInfoDialog::init()
     dteMaxTime->setEnabled(true);
 
     connect(dteMinTime, &QDateTimeEdit::dateTimeChanged,
-            this, &MetFileInfoDialog::onDateTimeChanged);
+            this, &MeteorologyInfoDialog::onDateTimeChanged);
 
     connect(dteMaxTime, &QDateTimeEdit::dateTimeChanged,
-            this, &MetFileInfoDialog::onDateTimeChanged);
+            this, &MeteorologyInfoDialog::onDateTimeChanged);
 }
 
-void MetFileInfoDialog::onSliderChanged(const int min, const int max)
+void MeteorologyInfoDialog::onSliderChanged(const int min, const int max)
 {
     const QSignalBlocker blocker1(dteMinTime);
     const QSignalBlocker blocker2(dteMaxTime);
 
-    if (min < 1 || max < min || max > sd->records.size())
+    if (min < 1 || max < min || max > surfaceData.size())
         return;
 
     // Update member variables.
@@ -423,9 +420,9 @@ void MetFileInfoDialog::onSliderChanged(const int min, const int max)
     int ncalm = 0;
     int nmiss = 0;
     for (int i=idxMin-1; i < idxMax; ++i) {
-        if (sd->records[i].calm)
+        if (surfaceData[i].calm)
             ncalm++;
-        else if (sd->records[i].miss)
+        else if (surfaceData[i].missing)
             nmiss++;
     }
 
@@ -433,12 +430,10 @@ void MetFileInfoDialog::onSliderChanged(const int min, const int max)
     leCalmHours->setText(QString::number(ncalm));
     leMissingHours->setText(QString::number(nmiss));
 
-    auto sr0 = sd->records[idxMin - 1];
-    auto sr1 = sd->records[idxMax - 1];
-    QDateTime minTime = QDateTime(QDate(sr0.mpyr, sr0.mpcmo, sr0.mpcdy),
-                                  QTime(sr0.j - 1, 0, 0), Qt::UTC);
-    QDateTime maxTime = QDateTime(QDate(sr1.mpyr, sr1.mpcmo, sr1.mpcdy),
-                                  QTime(sr1.j - 1, 0, 0), Qt::UTC);
+    auto& sr0 = surfaceData[idxMin - 1];
+    auto& sr1 = surfaceData[idxMax - 1];
+    QDateTime minTime = sofea::utilities::convert<QDateTime>(sr0.ptime);
+    QDateTime maxTime = sofea::utilities::convert<QDateTime>(sr1.ptime);
 
     dteMinTime->setDateTime(minTime);
     dteMaxTime->setDateTime(maxTime);
@@ -446,7 +441,7 @@ void MetFileInfoDialog::onSliderChanged(const int min, const int max)
     drawSectors();
 }
 
-void MetFileInfoDialog::onDateTimeChanged(const QDateTime& datetime)
+void MeteorologyInfoDialog::onDateTimeChanged(const QDateTime& datetime)
 {
     const QSignalBlocker blocker1(dteMinTime);
     const QSignalBlocker blocker2(dteMaxTime);
@@ -476,34 +471,26 @@ void MetFileInfoDialog::onDateTimeChanged(const QDateTime& datetime)
         return;
     }
 
-    SurfaceData::SurfaceRecord minCompare;
-    const QDate minDate = minDT.date();
-    minCompare.mpyr = minDate.year();
-    minCompare.mpcmo = minDate.month();
-    minCompare.mpcdy = minDate.day();
-    minCompare.j = minDT.time().hour() + 1;
-
-    SurfaceData::SurfaceRecord maxCompare;
-    const QDate maxDate = maxDT.date();
-    maxCompare.mpyr = maxDate.year();
-    maxCompare.mpcmo = maxDate.month();
-    maxCompare.mpcdy = maxDate.day();
-    maxCompare.j = maxDT.time().hour() + 1;
+    auto ptime0 = sofea::utilities::convert<boost::posix_time::ptime>(minDT);
+    auto ptime1 = sofea::utilities::convert<boost::posix_time::ptime>(maxDT);
 
     // Get iterators to the range inside the requested bounds.
-    auto lower = std::upper_bound(sd->records.begin(), sd->records.end(), minCompare);
-    auto upper = std::lower_bound(sd->records.begin(), sd->records.end(), maxCompare);
-    if (lower == sd->records.end() || upper == sd->records.end()) {
+    auto lower = std::upper_bound(surfaceData.begin(), surfaceData.end(), ptime0,
+        [&](const auto& x, const auto& record) { return x < record.ptime; });
+
+    auto upper = std::lower_bound(surfaceData.begin(), surfaceData.end(), ptime1,
+        [&](const auto& record, const auto& x) { return record.ptime < x; });
+
+    if (lower == surfaceData.end() || upper == surfaceData.end())
         return;
-    }
 
     // Update the slider.
-    int pos0 = std::distance(sd->records.begin(), lower);
-    int pos1 = std::distance(sd->records.begin(), upper) + 1;
+    int pos0 = std::distance(surfaceData.begin(), lower);
+    int pos1 = std::distance(surfaceData.begin(), upper) + 1;
     timeRangeSlider->setPositions(pos0, pos1);
 }
 
-void MetFileInfoDialog::onSectorSizeChanged(int id)
+void MeteorologyInfoDialog::onSectorSizeChanged(int id)
 {
     Q_UNUSED(id);
 
@@ -517,12 +504,12 @@ void MetFileInfoDialog::onSectorSizeChanged(int id)
     drawSectors();
 }
 
-void MetFileInfoDialog::onBinCountChanged(int value)
+void MeteorologyInfoDialog::onBinCountChanged(int value)
 {
     // TODO
 }
 
-void MetFileInfoDialog::drawSectors()
+void MeteorologyInfoDialog::drawSectors()
 {
     namespace bh = boost::histogram;
     using namespace bh::literals; // enables _c suffix
@@ -531,7 +518,7 @@ void MetFileInfoDialog::drawSectors()
     wrSectors.clear();
     wrPlot->detachItems(QwtPolarItem::Rtti_PolarCurve, true);
 
-    if (idxMin < 1 || idxMax > sd->records.size())
+    if (idxMin < 1 || idxMax > surfaceData.size())
         return;
 
     // Number of valid observations (denominator).
@@ -544,8 +531,8 @@ void MetFileInfoDialog::drawSectors()
     );
 
     for (int i = idxMin-1; i < idxMax; ++i) {
-        auto sr = sd->records[i];
-        if (!sr.calm && !sr.miss) {
+        auto& sr = surfaceData[i];
+        if (!sr.calm && !sr.missing) {
             nvalid++;
             hist(sr.wdir, sr.wspd);
         }

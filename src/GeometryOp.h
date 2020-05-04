@@ -40,6 +40,8 @@ public:
     static bool is_simple(QPolygonF const& polygon);
     static bool is_valid(QPolygonF const& polygon);
     static bool correct(QPolygonF& polygon);
+
+    static QPolygonF rotate(const QPolygonF& polygon, const QPointF& pivot, double angle);
     static void rotate(const QPolygonF& polygon, QPolygonF& result, const QPointF& pivot, double angle);
 
     static void buffer(std::vector<QPolygonF> const& mpolygon, std::vector<QPolygonF>& result, double distance, double min_length, std::size_t points_per_circle);

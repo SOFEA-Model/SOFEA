@@ -18,6 +18,7 @@
 
 #include <QDir>
 #include <QFileInfo>
+#include <QHeaderView>
 #include <QList>
 #include <QMessageBox>
 #include <QMimeData>
@@ -30,6 +31,33 @@ MeteorologyTableView::MeteorologyTableView(MeteorologyModel *model, QWidget *par
     setSelectionBehavior(QAbstractItemView::SelectRows);
     setSelectionMode(QAbstractItemView::ExtendedSelection);
     setAcceptDrops(true);
+
+    QHeaderView *header = horizontalHeader();
+    header->setStretchLastSection(false);
+    header->setSectionResizeMode(QHeaderView::Interactive);
+
+    header->setSectionResizeMode(MeteorologyModel::Name,            QHeaderView::Stretch);
+    header->setSectionResizeMode(MeteorologyModel::SurfaceStation,  QHeaderView::Fixed);
+    header->setSectionResizeMode(MeteorologyModel::UpperAirStation, QHeaderView::Fixed);
+    header->setSectionResizeMode(MeteorologyModel::OnSiteStation,   QHeaderView::Fixed);
+    header->setSectionResizeMode(MeteorologyModel::StartTime,       QHeaderView::Fixed);
+    header->setSectionResizeMode(MeteorologyModel::EndTime,         QHeaderView::Fixed);
+    header->setSectionResizeMode(MeteorologyModel::TotalHours,      QHeaderView::Fixed);
+    header->setSectionResizeMode(MeteorologyModel::CalmHours,       QHeaderView::Fixed);
+    header->setSectionResizeMode(MeteorologyModel::MissingHours,    QHeaderView::Fixed);
+
+    QFontMetrics fm = fontMetrics();
+    int maxCharWidth = fm.horizontalAdvance(QChar('W'));
+    int dateWidth = fm.horizontalAdvance("0000-00-00 00:00") + maxCharWidth * 2;
+
+    header->resizeSection(MeteorologyModel::SurfaceStation,  maxCharWidth * 10);
+    header->resizeSection(MeteorologyModel::UpperAirStation, maxCharWidth * 10);
+    header->resizeSection(MeteorologyModel::OnSiteStation,   maxCharWidth * 10);
+    header->resizeSection(MeteorologyModel::StartTime,       dateWidth);
+    header->resizeSection(MeteorologyModel::EndTime,         dateWidth);
+    header->resizeSection(MeteorologyModel::TotalHours,      maxCharWidth * 8);
+    header->resizeSection(MeteorologyModel::CalmHours,       maxCharWidth * 8);
+    header->resizeSection(MeteorologyModel::MissingHours,    maxCharWidth * 8);
 }
 
 void MeteorologyTableView::dropEvent(QDropEvent *e)

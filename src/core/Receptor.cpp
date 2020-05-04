@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <numeric>
 
 #include <boost/numeric/ublas/vector.hpp>
@@ -88,6 +89,39 @@ ReceptorNode ReceptorNodeGroup::getNode(int index) const
 std::size_t ReceptorNodeGroup::nodeCount() const
 {
     return nodes.size();
+}
+
+QPolygonF ReceptorNodeGroup::points() const
+{
+    QPolygonF result;
+    result.reserve(nodeCount());
+
+    for (const auto& node : nodes)
+        result.push_back(node.point());
+
+    return result;
+}
+
+QRectF ReceptorNodeGroup::boundingRect() const
+{
+    if (nodes.empty())
+        return QRectF();
+
+    double xmin = std::numeric_limits<double>::max();
+    double ymin = std::numeric_limits<double>::max();
+    double xmax = std::numeric_limits<double>::lowest();
+    double ymax = std::numeric_limits<double>::lowest();
+
+    for (const auto& node : nodes) {
+        xmin = std::min(xmin, node.x);
+        ymin = std::min(ymin, node.y);
+        xmax = std::max(xmax, node.x);
+        ymax = std::max(ymax, node.y);
+    }
+
+    const double w = xmax - xmin;
+    const double h = ymax - ymin;
+    return QRectF(xmin, ymax, w, h);
 }
 
 std::string ReceptorNodeGroup::format() const
@@ -252,9 +286,18 @@ QPolygonF ReceptorRingGroup::points() const
     QPolygonF result;
     result.reserve(nodeCount());
 
-    for (const auto& node : nodes) {
+    for (const auto& node : nodes)
         result.push_back(node.point());
-    }
+
+    return result;
+}
+
+QRectF ReceptorRingGroup::boundingRect() const
+{
+    QRectF result;
+
+    for (const QPolygonF &p : polygons)
+        result |= p.boundingRect();
 
     return result;
 }
@@ -444,6 +487,13 @@ QPolygonF ReceptorGridGroup::points() const
     }
 
     return result;
+}
+
+QRectF ReceptorGridGroup::boundingRect() const
+{
+    const int nx = std::max(0, xCount - 1);
+    const int ny = std::max(0, yCount - 1);
+    return QRectF(xInit, yInit + yDelta * ny, xDelta * nx, yDelta * ny);
 }
 
 void formatMatrix(fmt::memory_buffer& w, const std::string& keyword, const std::string& grpid,

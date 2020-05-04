@@ -301,23 +301,21 @@ OptionsPanel::OptionsPanel(QWidget *parent)
     // Unit Controls
     leUnitIn = new UDUnitsLineEdit;
     leUnitIn->setReadOnly(true);
-    leUnitIn->setBasePalette();
     leUnitInVal = new ReadOnlyLineEdit;
-    leUnitInVal->setBasePalette();
 
     leUnitOut = new UDUnitsLineEdit;
     leUnitOutVal = new ReadOnlyLineEdit;
-    leUnitOutVal->setBasePalette();
 
     leScaleFactor = new ReadOnlyLineEdit;
-    leScaleFactor->setBasePalette();
     leScaleFactor->setText("1");
 
     const QIcon syncIcon = this->style()->standardIcon(static_cast<QStyle::StandardPixmap>(AppStyle::CP_SyncArrow));
     int iconSize = this->style()->pixelMetric(QStyle::PM_SmallIconSize);
     const QPixmap syncPixmap = syncIcon.pixmap(QSize{iconSize, iconSize});
-    QLabel *syncLabel = new QLabel;
-    syncLabel->setPixmap(syncPixmap);
+    QLabel *syncLabel1 = new QLabel;
+    QLabel *syncLabel2 = new QLabel;
+    syncLabel1->setPixmap(syncPixmap);
+    syncLabel2->setPixmap(syncPixmap);
 
     // Toolbox
     exportTool = new ExportTool;
@@ -334,12 +332,12 @@ OptionsPanel::OptionsPanel(QWidget *parent)
     // Unit Layouts
     QHBoxLayout *unitLayout1 = new QHBoxLayout;
     unitLayout1->addWidget(leUnitIn);
-    unitLayout1->addWidget(syncLabel);
+    unitLayout1->addWidget(syncLabel1);
     unitLayout1->addWidget(leUnitInVal);
 
     QHBoxLayout *unitLayout2 = new QHBoxLayout;
     unitLayout2->addWidget(leUnitOut);
-    unitLayout2->addWidget(syncLabel);
+    unitLayout2->addWidget(syncLabel2);
     unitLayout2->addWidget(leUnitOutVal);
 
     // Grid Layout

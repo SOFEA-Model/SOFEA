@@ -14,22 +14,28 @@
 //
 
 #include "InputViewer.h"
+#include "core/Scenario.h"
 
 #include <QApplication>
 #include <QScrollBar>
 #include <QStringList>
 #include <QVBoxLayout>
-
-#include <string>
-#include <sstream>
+#include <QtDebug>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/spirit/home/x3/string/symbols.hpp>
 
+#include <Scintilla.h>
+#include <ScintillaEditBase.h>
 #include <SciLexer.h>
 
-const int LINE_MARGIN_INDEX = 0;
-const int FOLD_MARGIN_INDEX = 1;
+#include <sstream>
+
+const uptr_t LINE_MARGIN_INDEX = 0;
+const uptr_t FOLD_MARGIN_INDEX = 1;
+
+const sptr_t LINE_MARGIN_WIDTH = 56;
+const sptr_t FOLD_MARGIN_WIDTH = 28;
 
 int QColorToCA(const QColor& c)
 {
@@ -70,11 +76,12 @@ void InputViewer::setText(const std::string &text)
     sendMessage(SCI_CLEARALL);
     sendMessage(SCI_INSERTTEXT, 0, (sptr_t)text.data());
     sendMessage(SCI_SETREADONLY, true);
+    updateFoldState();
 }
 
-sptr_t InputViewer::sendMessage(unsigned int iMessage, uptr_t wParam, sptr_t lParam)
+sptr_t InputViewer::sendMessage(unsigned int message, uintptr_t wParam, intptr_t lParam)
 {
-    return sci->send(iMessage, wParam, lParam);
+    return sci->send(message, wParam, lParam);
 }
 
 void InputViewer::defineMarker(int marker, int markerType, int fg, int bg)
@@ -139,11 +146,11 @@ void InputViewer::setupMargins()
 
     // Line Number
     sendMessage(SCI_SETMARGINTYPEN,        LINE_MARGIN_INDEX, SC_MARGIN_NUMBER);
-    sendMessage(SCI_SETMARGINWIDTHN,       LINE_MARGIN_INDEX, 56);
+    sendMessage(SCI_SETMARGINWIDTHN,       LINE_MARGIN_INDEX, LINE_MARGIN_WIDTH);
 
     // Folding
     sendMessage(SCI_SETMARGINTYPEN,        FOLD_MARGIN_INDEX, SC_MARGIN_SYMBOL);
-    sendMessage(SCI_SETMARGINWIDTHN,       FOLD_MARGIN_INDEX, 28);
+    sendMessage(SCI_SETMARGINWIDTHN,       FOLD_MARGIN_INDEX, FOLD_MARGIN_WIDTH);
     sendMessage(SCI_SETMARGINMASKN,        FOLD_MARGIN_INDEX, SC_MASK_FOLDERS);
     sendMessage(SCI_SETMARGINSENSITIVEN,   FOLD_MARGIN_INDEX, 1);
     sendMessage(SCI_SETFOLDMARGINCOLOUR,   FOLD_MARGIN_INDEX, QColorToCA(marginColor)); // 0xfafafa
@@ -161,6 +168,43 @@ void InputViewer::setupConnections()
     connect(sci, &ScintillaEditBase::notify, this, &InputViewer::onNotify);
     connect(sci, &ScintillaEditBase::marginClicked, this, &InputViewer::onMarginClicked);
     connect(sci, &ScintillaEditBase::styleNeeded, this, &InputViewer::onStyleNeeded);
+}
+
+void InputViewer::updateFoldState()
+{
+    // Initialize the current fold state.
+    int levelPrev = sendMessage(SCI_GETFOLDLEVEL, 0) & SC_FOLDLEVELNUMBERMASK;
+    int levelCurrent = levelPrev;
+
+    // Set folding, iterating over all lines in the document.
+    int lineCount = sendMessage(SCI_GETLINECOUNT);
+    for (std::size_t i = 0; i < lineCount; ++i)
+    {
+        std::size_t lineLen = static_cast<std::size_t>(sendMessage(SCI_LINELENGTH, i));
+        std::string line(lineLen, '\0');
+        sendMessage(SCI_GETLINE, i, (uptr_t)line.data());
+
+        auto it = boost::make_split_iterator(line, boost::token_finder(boost::is_space(), boost::token_compress_on));
+        auto end = boost::algorithm::split_iterator<std::string::iterator>();
+        if (it != end && !boost::starts_with(*it, "**")) {
+            std::advance(it, 1);
+            if (it != end) {
+                auto keyword = *it;
+                if (boost::iequals(keyword, "STARTING"))
+                    levelCurrent++;
+                else if (boost::iequals(keyword, "FINISHED"))
+                    levelCurrent--;
+            }
+        }
+
+        int lev = levelPrev;
+        if (levelCurrent > levelPrev)
+            lev |= SC_FOLDLEVELHEADERFLAG;
+        if (lev != sendMessage(SCI_GETFOLDLEVEL, i))
+            sendMessage(SCI_SETFOLDLEVEL, i, lev);
+
+        levelPrev = levelCurrent;
+    }
 }
 
 void InputViewer::onMarginClicked(int position, int modifiers, int margin)
@@ -258,38 +302,6 @@ void InputViewer::onStyleNeeded(int position)
             sendMessage(SCI_SETSTYLING, lineLen - sspos, SCE_C_DEFAULT);
         }
     }
-
-    // Initialize the current fold state.
-    int levelPrev = sendMessage(SCI_GETFOLDLEVEL, 0) & SC_FOLDLEVELNUMBERMASK;
-    int levelCurrent = levelPrev;
-
-    // Set folding, iterating over all lines in the document.
-    int lineCount = sendMessage(SCI_GETLINECOUNT);
-    for (std::size_t i = 0; i < lineCount; ++i)
-    {
-        std::size_t lineLen = static_cast<std::size_t>(sendMessage(SCI_LINELENGTH, i));
-        std::string line(lineLen, '\0');
-        sendMessage(SCI_GETLINE, i, (uptr_t)line.data());
-
-        std::istringstream ss(line);
-        std::string pathway, keyword;
-        ss >> std::skipws >> pathway;
-        if (!boost::starts_with(pathway, "**")) {
-            ss >> keyword;
-            if (boost::iequals(keyword, "STARTING"))
-                levelCurrent++;
-            else if (boost::iequals(keyword, "FINISHED"))
-                levelCurrent--;
-        }
-
-        int lev = levelPrev;
-        if (levelCurrent > levelPrev)
-            lev |= SC_FOLDLEVELHEADERFLAG;
-        if (lev != sendMessage(SCI_GETFOLDLEVEL, i))
-            sendMessage(SCI_SETFOLDLEVEL, i, lev);
-
-        levelPrev = levelCurrent;
-    }
 }
 
 void InputViewer::onNotify(SCNotification *pscn)
@@ -297,7 +309,7 @@ void InputViewer::onNotify(SCNotification *pscn)
     Q_UNUSED(pscn)
 }
 
-void InputViewer::onCommand(uptr_t wParam, sptr_t lParam)
+void InputViewer::onCommand(uintptr_t wParam, intptr_t lParam)
 {
     Q_UNUSED(wParam)
     Q_UNUSED(lParam)

@@ -132,6 +132,7 @@ find_package(date CONFIG REQUIRED QUIET)
 find_package(fmt CONFIG REQUIRED QUIET)
 find_package(cereal CONFIG REQUIRED QUIET)
 find_package(netCDF CONFIG REQUIRED QUIET)
+find_package(OpenCL REQUIRED)
 
 ### Custom Builds
 # - geos
@@ -147,8 +148,7 @@ find_package(netCDF CONFIG REQUIRED QUIET)
 #   - add #ifndef _USE_MATH_DEFINES to udunits2.h
 
 find_package(geos PATHS "../external/geos-3.8.0dev/lib/cmake/GEOS" NO_DEFAULT_PATH CONFIG REQUIRED)
-
-find_package(PROJ PATHS "../external/proj-7.0.0/lib/cmake/proj" NO_DEFAULT_PATH CONFIG REQUIRED)
+find_package(PROJ PATHS "../external/proj-7.1.0dev/lib/cmake/proj" NO_DEFAULT_PATH CONFIG REQUIRED)
 
 set(GDAL_INCLUDE_DIR "../external/gdal-3.1.0dev/include")
 set(GDAL_LIBRARY_DIR "../external/gdal-3.1.0dev/lib")
@@ -211,21 +211,20 @@ set(SOURCES
     LogWidget.cpp
     MagneticDeclinationDialog.cpp
     MainWindow.cpp
-    MetFileInfoDialog.cpp
-    MetFileParser.cpp
     MeteorologyEditor.cpp
     MeteorologyFileDialog.cpp
+    MeteorologyInfoDialog.cpp
     MeteorologyStationData.cpp
     MeteorologyTableView.cpp
     MonteCarloDateTimeEdit.cpp
     MonteCarloLineEdit.cpp
-    PixmapUtilities.cpp
     PlotCurveTracker.cpp
     PlotItemTitleTracker.cpp
     ProjectOptionsDialog.cpp
     ProjectTreeView.cpp
     ProjectionEditor.cpp
     ReceptorDialog.cpp
+    ReceptorElevationEditor.cpp
     ReceptorEditor.cpp
     ReceptorTreeView.cpp
     RunModelDialog.cpp
@@ -236,7 +235,7 @@ set(SOURCES
     SettingsDialog.cpp
     ShapefileAttributeDialog.cpp
     ShapefileParser.cpp
-    SourceEditor.cpp
+    SourceGeometryEditor.cpp
     SourceGroupPages.cpp
     SourceGroupProperties.cpp
     SourceTable.cpp
@@ -248,6 +247,7 @@ set(SOURCES
     core/InputWriter.cpp
     core/Meteorology.cpp
     core/Projection.cpp
+    core/Raster.cpp
     core/Receptor.cpp
     core/Scenario.cpp
     core/Source.cpp
@@ -274,15 +274,19 @@ set(SOURCES
     models/FluxProfileModel.cpp
     models/LogFilterProxyModel.cpp
     models/MeteorologyModel.cpp
+    models/OpenCLDeviceInfoModel.cpp
+    models/ProcessModel.cpp
     models/ProjectModel.cpp
     models/ReceptorModel.cpp
     models/SamplingProxyModel.cpp
     models/SourceModel.cpp
+    models/WKTModel.cpp
     qtcurl/CurlEasy.cpp
     qtcurl/CurlMulti.cpp
     #ribbon/CRibbon.cpp
     #ribbon/RibbonWindow.cpp
-    widgets/BackgroundFrame.cpp
+    utilities/PixmapUtilities.cpp
+    widgets/BoundingBoxEditor.cpp
     widgets/ButtonLineEdit.cpp
     widgets/DoubleLineEdit.cpp
     widgets/ExtendedComboBox.cpp
@@ -291,16 +295,19 @@ set(SOURCES
     widgets/FilterProxyModel.cpp
     widgets/GridLayout.cpp
     widgets/GridLineFrame.cpp
+    widgets/GroupBoxFrame.cpp
     widgets/ListEditor.cpp
     widgets/MenuLineEdit.cpp
     widgets/NavButton.cpp
     widgets/PathEdit.cpp
     widgets/PlainTextEdit.cpp
+    widgets/ProgressBar.cpp
     widgets/ReadOnlyLineEdit.cpp
     widgets/ReadOnlyTextEdit.cpp
     widgets/StandardTableEditor.cpp
     widgets/StandardTableView.cpp
     widgets/StatusLabel.cpp
+    widgets/TabWidgetFrame.cpp
     widgets/VertexEditor.cpp
     sofea.qrc
     sofea.rc
@@ -328,13 +335,11 @@ set(HEADERS
     MainWindow.h
     MeteorologyEditor.h
     MeteorologyFileDialog.h
+    MeteorologyInfoDialog.h
     MeteorologyStationData.h
     MeteorologyTableView.h
-    MetFileInfoDialog.h
-    MetFileParser.h
     MonteCarloDateTimeEdit.h
     MonteCarloLineEdit.h
-    PixmapUtilities.h
     PlotCurveTracker.h
     PlotItemTitleTracker.h
     ProjectOptionsDialog.h
@@ -343,6 +348,7 @@ set(HEADERS
     ReceptorDelegate.h
     ReceptorDialog.h
     ReceptorEditor.h
+    ReceptorElevationEditor.h
     ReceptorTreeView.h
     ReceptorVisitor.h
     RunModelDialog.h
@@ -356,10 +362,11 @@ set(HEADERS
     ShapefileAttributeDialog.h
     ShapefileAttributeInfo.h
     ShapefileParser.h
-    SourceEditor.h
+    SourceGeometryEditor.h
     SourceGroupPages.h
     SourceGroupProperties.h
     SourceTable.h
+    SourceVisitor.h
     StandardPlot.h
     UDUnitsInterface.h
     UDUnitsLineEdit.h
@@ -367,8 +374,8 @@ set(HEADERS
     analysis/AnalysisOptions.h
     core/BufferZone.h
     core/Common.h
-    core/DateTimeConversion.h
     core/DateTimeDistribution.h
+    core/Error.h
     core/FluxProfile.h
     core/GenericDistribution.h
     core/InputFormat.h
@@ -376,11 +383,13 @@ set(HEADERS
     core/Meteorology.h
     core/Project.h
     core/Projection.h
+    core/Raster.h
     core/Receptor.h
     core/Scenario.h
     core/Serialization.h
     core/Source.h
     core/SourceGroup.h
+    core/TaskControl.h
     core/TerrainProcessor.h
     core/Validation.h
     ctk/ctkCollapsibleGroupBox.h
@@ -403,15 +412,20 @@ set(HEADERS
     models/FluxProfileModel.h
     models/LogFilterProxyModel.h
     models/MeteorologyModel.h
+    models/OpenCLDeviceInfoModel.h
+    models/ProcessModel.h
     models/ProjectModel.h
     models/ReceptorModel.h
     models/SamplingProxyModel.h
     models/SourceModel.h
+    models/WKTModel.h
     qtcurl/CurlEasy.h
     qtcurl/CurlMulti.h
     #ribbon/CRibbon.h
     #ribbon/RibbonWindow.h
-    widgets/BackgroundFrame.h
+    utilities/DateTimeConversion.h
+    utilities/PixmapUtilities.h
+    widgets/BoundingBoxEditor.h
     widgets/ButtonLineEdit.h
     widgets/DoubleLineEdit.h
     widgets/ExtendedComboBox.h
@@ -419,16 +433,19 @@ set(HEADERS
     widgets/FilterHeaderView.h
     widgets/GridLayout.h
     widgets/GridLineFrame.h
+    widgets/GroupBoxFrame.h
     widgets/ListEditor.h
     widgets/MenuLineEdit.h
     widgets/NavButton.h
     widgets/PathEdit.h
     widgets/PlainTextEdit.h
+    widgets/ProgressBar.h
     widgets/ReadOnlyLineEdit.h
     widgets/ReadOnlyTextEdit.h
     widgets/StandardTableEditor.h
     widgets/StandardTableView.h
     widgets/StatusLabel.h
+    widgets/TabWidgetFrame.h
     widgets/VertexEditor.h
 )
 
@@ -488,6 +505,9 @@ if(MSVC)
     target_compile_definitions(main PRIVATE -D_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING)
 endif()
 
+# OpenCL definitions
+target_compile_definitions(main PRIVATE CL_TARGET_OPENCL_VERSION=120)
+
 # Scintilla definitions
 target_compile_definitions(main PRIVATE -DSCINTILLA_QT)
 target_compile_definitions(main PRIVATE -DSCI_LEXER)
@@ -539,6 +559,7 @@ target_link_libraries(main PRIVATE EXPAT::EXPAT)
 target_link_libraries(main PRIVATE date::date date::tz)
 target_link_libraries(main PRIVATE fmt::fmt-header-only)
 target_link_libraries(main PRIVATE cereal)
+target_link_libraries(main PRIVATE OpenCL::OpenCL)
 target_link_libraries(main PRIVATE ${GDAL_LIBRARIES})
 target_link_libraries(main PRIVATE ${QWT_LIBRARIES})
 target_link_libraries(main PRIVATE ${QWTPOLAR_LIBRARIES})

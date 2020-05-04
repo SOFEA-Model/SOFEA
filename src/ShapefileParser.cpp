@@ -60,8 +60,7 @@ void ShapefileParser::parseSources(const QString& filename, SourceGroup *sgPtr)
 
     // Open the file with read-only access.
     SHPHandle handle = SHPOpen(filename.toStdString().c_str(), "rb");
-
-    if (handle <= 0) {
+    if (handle == nullptr) {
         BOOST_LOG_TRIVIAL(error) << "shapelib: error opening file";
         return;
     }

@@ -303,5 +303,9 @@
         <file>res/WindRose_40x.png</file>
         <file>res/WindRose_48x.png</file>
         <file>res/WindRose_64x.png</file>
+        <file>res/StatusInformation_grey_16x.png</file>
+        <file>res/StatusInformation_grey_20x.png</file>
+        <file>res/StatusInformation_grey_24x.png</file>
+        <file>res/StatusInformation_grey_32x.png</file>
     </qresource>
 </RCC>

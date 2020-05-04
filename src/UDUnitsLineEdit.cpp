@@ -27,9 +27,10 @@ UDUnitsLineEdit::UDUnitsLineEdit(QWidget *parent)
     setMaxLength(256);
     setAutoFillBackground(true);
 
-    m_defaultPalette = this->palette();
-    m_errorPalette = this->palette();
-    m_errorPalette.setColor(QPalette::Text, Qt::red);
+    defaultPalette_ = QLineEdit::palette();
+    normalPalette_ = QLineEdit::palette();
+    errorPalette_ = QLineEdit::palette();
+    errorPalette_.setColor(QPalette::Text, Qt::red);
 
     connect(this, &UDUnitsLineEdit::textChanged,
             this, &UDUnitsLineEdit::onTextChanged);
@@ -37,27 +38,31 @@ UDUnitsLineEdit::UDUnitsLineEdit(QWidget *parent)
 
 void UDUnitsLineEdit::setConvertFrom(const QString &unit)
 {
-    m_convertFromText = unit;
+    convertFromText_ = unit;
 }
 
-void UDUnitsLineEdit::setBasePalette()
+void UDUnitsLineEdit::setReadOnly(bool enable)
 {
-    QColor windowColor = QWidget::palette().window().color();
-    m_defaultPalette.setColor(QPalette::Base, windowColor);
-    m_errorPalette.setColor(QPalette::Base, windowColor);
-    this->setPalette(m_defaultPalette);
+    QLineEdit::setReadOnly(enable);
+
+    QColor textColor = enable ? defaultPalette_.color(QPalette::Disabled, QPalette::Text) :
+                                defaultPalette_.color(QPalette::Normal, QPalette::Text);
+
+    normalPalette_.setColor(QPalette::Text, textColor);
+
+    updatePalette();
 }
 
 QString UDUnitsLineEdit::parsedText()
 {
-    return m_parsedText;
+    return parsedText_;
 }
 
 double UDUnitsLineEdit::scaleFactor()
 {
     // Return the scale factor if "from" and "to" units are set.
-    if (!m_convertFromText.isEmpty() && !text().isEmpty()) {
-        return m_scaleFactor;
+    if (!convertFromText_.isEmpty() && !text().isEmpty()) {
+        return scaleFactor_;
     }
     else {
         return 1.0;
@@ -70,45 +75,36 @@ void UDUnitsLineEdit::onTextChanged(const QString &text)
     // If only the "to" unit is set, check for valid parse.
 
     if (text.isEmpty()) {
-        this->setPalette(m_defaultPalette);
-        this->setToolTip(QString());
-        m_parsedText = QString();
-    }
-    else {
-        // Check for valid parse.
-        UDUnits::Unit unit(text);
-
-        if (unit.isValid()) {
-            this->setPalette(m_defaultPalette);
-            this->setToolTip(QString());
-            m_parsedText = unit.toString();
-        }
-        else {
-            this->setPalette(m_errorPalette);
-            this->setToolTip(UDUnits::message);
-            m_parsedText = QString();
-        }
+        errorFlag_ = false;
+        parsedText_ = QString();
+        updatePalette();
+        updateToolTip();
+        emit unitsChanged();
+        return;
     }
 
-    // Check for valid conversion.
-    if (!m_convertFromText.isEmpty()) {
-        UDUnits::Unit from(m_convertFromText);
-        UDUnits::Unit to(text);
+    // Check for valid parse.
+    UDUnits::Unit unit(text);
+    if (unit.isValid()) {
+        errorFlag_ = false;
+        parsedText_ = unit.toString();
 
-        if (UDUnits::Converter::isConvertible(from, to)) {
-            this->setPalette(m_defaultPalette);
-            this->setToolTip(QString());
-
-            // Calculate the scale factor.
-            UDUnits::Converter converter(from, to);
-            m_scaleFactor = converter.convert(1.0);
-        }
-        else {
-            this->setPalette(m_errorPalette);
-            this->setToolTip(UDUnits::message);
+        // Check for valid conversion.
+        if (!convertFromText_.isEmpty()) {
+            UDUnits::Unit from(convertFromText_);
+            UDUnits::Unit to(text);
+            if (UDUnits::Converter::isConvertible(from, to)) {
+                UDUnits::Converter converter(from, to);
+                scaleFactor_ = converter.convert(1.0);
+            }
+            else {
+                errorFlag_ = true;
+            }
         }
     }
 
+    updatePalette();
+    updateToolTip();
     emit unitsChanged();
 }
 
@@ -121,4 +117,14 @@ void UDUnitsLineEdit::paintEvent(QPaintEvent* event)
     //this->initStyleOption(&option);
     //option.state = QStyle::State_Raised;
     //this->style()->drawPrimitive(QStyle::PE_FrameLineEdit, &option, &painter, this);
+}
+
+void UDUnitsLineEdit::updatePalette()
+{
+    setPalette(errorFlag_ ? errorPalette_ : normalPalette_);
+}
+
+void UDUnitsLineEdit::updateToolTip()
+{
+    setToolTip(errorFlag_ ? UDUnits::message : QString());
 }

@@ -13,11 +13,11 @@
 // limitations under the License.
 //
 
-#include "core/Validation.h"
-
-#include "core/Scenario.h"
-#include "MetFileParser.h"
 #include "ReceptorVisitor.h"
+#include "core/Error.h"
+#include "core/Projection.h"
+#include "core/Scenario.h"
+#include "core/Validation.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -63,9 +63,6 @@
 //         *Many*
 // UDUnitsInterface.cpp
 //     BOOST_LOG_TRIVIAL(error) << "udunits2: " << buf;
-// MetFileParser.cpp
-//     BOOST_LOG_SCOPED_THREAD_TAG("Source", "Model");
-//     BOOST_LOG_TRIVIAL(error) << e.what();
 
 namespace Validation {
 
@@ -86,42 +83,44 @@ ValidateScenario::ValidateScenario(const Scenario& s)
 
 void ValidateScenario::validateMeteorology()
 {
+    /*
     namespace fs = std::filesystem;
 
     if (s_.surfaceFile.empty()) {
         BOOST_LOG_TRIVIAL(error) << "Surface file is missing";
     }
     else {
-        //fs::path path(s_.surfaceFile);
-        //try {
-        //    if (!fs::exists(path) || !fs::is_regular_file(path)) {
-        //        BOOST_LOG_TRIVIAL(error) << "Surface file does not exist; check path";
-        //    }
-        //}
-        //catch (fs::filesystem_error& e) {
-        //    BOOST_LOG_TRIVIAL(error) << "Surface file error: " << e.what();
-        //}
+        fs::path path(s_.surfaceFile);
+        try {
+            if (!fs::exists(path) || !fs::is_regular_file(path)) {
+                BOOST_LOG_TRIVIAL(error) << "Surface file does not exist; check path";
+            }
+        }
+        catch (fs::filesystem_error& e) {
+            BOOST_LOG_TRIVIAL(error) << "Surface file error: " << e.what();
+        }
     }
 
     if (s_.upperAirFile.empty()) {
         BOOST_LOG_TRIVIAL(error) << "Upper air file is missing";
     }
     else {
-        //try {
-        //    fs::path path(s_.upperAirFile);
-        //    if (!fs::exists(path) || !fs::is_regular_file(path)) {
-        //        BOOST_LOG_TRIVIAL(error) << "Upper air file does not exist; check path";
-        //    }
-        //}
-        //catch (fs::filesystem_error& e) {
-        //    BOOST_LOG_TRIVIAL(error) << "Upper air file error: " << e.what();
-        //}
+        try {
+            fs::path path(s_.upperAirFile);
+            if (!fs::exists(path) || !fs::is_regular_file(path)) {
+                BOOST_LOG_TRIVIAL(error) << "Upper air file does not exist; check path";
+            }
+        }
+        catch (fs::filesystem_error& e) {
+            BOOST_LOG_TRIVIAL(error) << "Upper air file error: " << e.what();
+        }
     }
 
     // Try to parse file
     // Check for calm/missing hours exceed 10% threshold
     // Check for matching records in upper air file
     // Check for PROFBASE (anemometer elevation) below source or receptor elevations
+    */
 }
 
 void ValidateScenario::validateFluxProfiles()
@@ -163,7 +162,7 @@ void ValidateScenario::validateReceptors()
         std::string name = boost::apply_visitor(ReceptorGroupNameVisitor(), rg);
         std::size_t n = boost::apply_visitor(ReceptorNodeCountVisitor(), rg);
         if (n == 0)
-            BOOST_LOG_TRIVIAL(error) << "Receptor group '" << name << "' contains no receptors";
+            BOOST_LOG_TRIVIAL(warning) << "Receptor group '" << name << "' contains no receptors";
 
         for (std::size_t i = 0; i < n; ++i) {
             ReceptorNode node = boost::apply_visitor(ReceptorGroupNodeVisitor(i), rg);

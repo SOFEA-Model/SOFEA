@@ -42,7 +42,7 @@ bool IPCServer::start()
         return false;
     }
 
-    //BOOST_LOG_TRIVIAL(debug) << "IPC server started";
+    BOOST_LOG_TRIVIAL(debug) << "IPC server started";
     connect(server, &QLocalServer::newConnection, this, &IPCServer::clientConnected);
     return true;
 }
@@ -58,7 +58,7 @@ bool IPCServer::stop()
         return false;
     }
 
-    //BOOST_LOG_TRIVIAL(debug) << "IPC server stopped";
+    BOOST_LOG_TRIVIAL(debug) << "IPC server stopped";
     disconnect(server, &QLocalServer::newConnection, this, &IPCServer::clientConnected);
     connections.clear();
     return true;
@@ -76,8 +76,8 @@ void IPCServer::removePid(const qint64 pid)
 
 void IPCServer::clientConnected()
 {
-    //BOOST_LOG_SCOPED_THREAD_TAG("Source", "General");
-    //BOOST_LOG_TRIVIAL(debug) << "IPC client connected";
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "General");
+    BOOST_LOG_TRIVIAL(debug) << "IPC client connected";
 
     QLocalSocket *socket = server->nextPendingConnection();
     connections.push_back(socket);
@@ -87,8 +87,8 @@ void IPCServer::clientConnected()
 
 void IPCServer::clientDisconnected()
 {
-    //BOOST_LOG_SCOPED_THREAD_TAG("Source", "General");
-    //BOOST_LOG_TRIVIAL(debug) << "IPC client disconnected";
+    BOOST_LOG_SCOPED_THREAD_TAG("Source", "General");
+    BOOST_LOG_TRIVIAL(debug) << "IPC client disconnected";
 
     QLocalSocket *socket = qobject_cast<QLocalSocket*>(QObject::sender());
     connections.removeAll(socket);

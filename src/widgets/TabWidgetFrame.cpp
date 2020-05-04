@@ -13,19 +13,24 @@
 // limitations under the License.
 //
 
-#pragma once
+#include "TabWidgetFrame.h"
 
-#include <QFrame>
+#include <QPaintEvent>
+#include <QStyle>
+#include <QStylePainter>
+#include <QStyleOptionTabWidgetFrame>
+#include <QWidget>
 
-QT_BEGIN_NAMESPACE
-class QPaintEvent;
-class QWidget;
-QT_END_NAMESPACE
-
-class BackgroundFrame : public QFrame
+TabWidgetFrame::TabWidgetFrame(QWidget *parent)
+    : QFrame(parent)
 {
-public:
-    explicit BackgroundFrame(QWidget *parent = nullptr);
-protected:
-    void paintEvent(QPaintEvent *event) override;
-};
+    setAutoFillBackground(true);
+}
+
+void TabWidgetFrame::paintEvent(QPaintEvent* event)
+{
+    QStylePainter p(this);
+    QStyleOptionTabWidgetFrame opt;
+    opt.rect = rect();
+    p.drawPrimitive(QStyle::PE_FrameTabWidget, opt);
+}

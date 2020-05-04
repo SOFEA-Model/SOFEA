@@ -25,5 +25,4 @@ class ReadOnlyLineEdit : public QLineEdit
 {
 public:
     explicit ReadOnlyLineEdit(QWidget *parent = nullptr);
-    void setBasePalette();
 };
